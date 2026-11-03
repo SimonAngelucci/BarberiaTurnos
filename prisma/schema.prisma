@@ -37,6 +37,9 @@ model Business {
   tagline            String   @default("Reservá tu turno online")
   logoUrl            String?
   primaryColor       String   @default("#111827")
+  /// Color de fondo de la página pública (y del panel si applyBgToAdmin).
+  bgColor            String   @default("#fafafa")
+  applyBgToAdmin     Boolean  @default(false)
   timezone           String   @default("America/Argentina/Buenos_Aires")
   currency           String   @default("ARS")
   slotIntervalMin    Int      @default(30)
@@ -71,12 +74,27 @@ model Barber {
   id         String   @id @default(cuid())
   businessId String
   name       String
+  photoUrl   String?
+  bio        String?
   active     Boolean  @default(true)
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  workingHours WorkingHour[]
-  appointments Appointment[]
-  timeOffs     TimeOff[]
+  workingHours  WorkingHour[]
+  disabledSlots DisabledSlot[]
+  appointments  Appointment[]
+  timeOffs      TimeOff[]
+}
+
+/// Slot individual desactivado dentro de la franja laboral (recurrente por día de semana).
+/// startMin = minutos desde 00:00 locales del inicio de la celda (alineada al slotIntervalMin).
+model DisabledSlot {
+  id       String @id @default(cuid())
+  barberId String
+  weekday  Int
+  startMin Int
+  barber   Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@unique([barberId, weekday, startMin])
 }
 
 /// Franja laboral. weekday: 0=domingo ... 6=sábado. Minutos desde 00:00 locales.

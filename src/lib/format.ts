@@ -16,6 +16,15 @@ export const hhmmToMin = (s: string) => {
   return h * 60 + m;
 };
 
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** CSS de variables del tema. Los colores se validan para que nunca se inyecte CSS arbitrario. */
+export function themeCss(brand: string, bg: string) {
+  const b = HEX.test(brand) ? brand : "#111827";
+  const g = HEX.test(bg) ? bg : "#fafafa";
+  return `:root{--brand:${b};--brand-fg:${contrastFg(b)};--page-bg:${g};--page-fg:${contrastFg(g)}}`;
+}
+
 /** Texto legible sobre el color de marca */
 export function contrastFg(hex: string) {
   const n = parseInt(hex.replace("#", ""), 16);

@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { DateTime } from "luxon";
 import { z } from "zod";
-import { prisma, getBusiness } from "@/lib/db";
+import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { enqueueCancellation, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
+import { uploadImage, deleteImage } from "@/lib/upload";
 
 // Todas las actions son endpoints públicos: SIEMPRE validar sesión y datos.
 
@@ -66,15 +67,42 @@ export async function archiveService(formData: FormData) {
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.service.updateMany({ where: { id, businessId }, data: { active: false } });
   revalidatePath("/admin/services");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
-export async function addBarber(formData: FormData) {
+const barberSchema = z.object({
+  name: z.string().trim().min(1, "Poné un nombre").max(60),
+  bio: z.string().trim().max(400),
+});
+
+/** Crea o edita un barbero (nombre, foto, descripción). Con `id` edita; sin `id` crea. */
+export async function saveBarber(formData: FormData) {
   const { businessId } = await requireAdmin();
-  const name = z.string().trim().min(1).max(60).parse(formData.get("name"));
-  await prisma.barber.create({ data: { businessId, name } });
+  const id = formData.get("id")?.toString() || undefined;
+  const d = barberSchema.parse({ name: formData.get("name"), bio: formData.get("bio") ?? "" });
+
+  const existing = id ? await prisma.barber.findFirst({ where: { id, businessId } }) : null;
+  if (id && !existing) throw new Error("Barbero inexistente");
+
+  let photoUrl = existing?.photoUrl ?? null;
+  const uploaded = await uploadImage(formData.get("photo"), `${businessId}/barbers`);
+  if (uploaded) {
+    await deleteImage(photoUrl);
+    photoUrl = uploaded;
+  } else if (formData.get("removePhoto") === "on") {
+    await deleteImage(photoUrl);
+    photoUrl = null;
+  }
+
+  const data = { name: d.name, bio: d.bio || null, photoUrl };
+  if (existing) {
+    await prisma.barber.update({ where: { id: existing.id }, data: { ...data, active: formData.get("active") === "on" } });
+  } else {
+    await prisma.barber.create({ data: { ...data, businessId } });
+  }
+  revalidatePath("/admin/barbers");
   revalidatePath("/admin/schedule");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function saveSchedule(formData: FormData) {
@@ -83,23 +111,37 @@ export async function saveSchedule(formData: FormData) {
   const barber = await prisma.barber.findFirst({ where: { id: barberId, businessId } });
   if (!barber) throw new Error("Barbero inexistente");
 
+  const hhmm = z.string().regex(/^\d{2}:\d{2}$/);
   const rows: { barberId: string; weekday: number; startMin: number; endMin: number }[] = [];
+  const disabled: { barberId: string; weekday: number; startMin: number }[] = [];
   for (let wd = 0; wd < 7; wd++) {
     if (formData.get(`open_${wd}`) !== "on") continue;
-    const startMin = hhmmToMin(z.string().regex(/^\d{2}:\d{2}$/).parse(formData.get(`start_${wd}`)));
-    const endMin = hhmmToMin(z.string().regex(/^\d{2}:\d{2}$/).parse(formData.get(`end_${wd}`)));
-    if (endMin > startMin) rows.push({ barberId, weekday: wd, startMin, endMin });
+    const startMin = hhmmToMin(hhmm.parse(formData.get(`start_${wd}`)));
+    const endMin = hhmmToMin(hhmm.parse(formData.get(`end_${wd}`)));
+    if (endMin <= startMin) continue;
+    rows.push({ barberId, weekday: wd, startMin, endMin });
+
+    // Slots desactivados: "570,600" = 09:30 y 10:00. Solo se guardan los que caen dentro de la franja.
+    const offs = new Set(
+      String(formData.get(`off_${wd}`) ?? "")
+        .split(",")
+        .map((x) => parseInt(x, 10))
+        .filter((n) => Number.isInteger(n) && n >= startMin && n < endMin),
+    );
+    for (const startMinOff of offs) disabled.push({ barberId, weekday: wd, startMin: startMinOff });
   }
   await prisma.$transaction([
     prisma.workingHour.deleteMany({ where: { barberId } }),
     prisma.workingHour.createMany({ data: rows }),
+    prisma.disabledSlot.deleteMany({ where: { barberId } }),
+    prisma.disabledSlot.createMany({ data: disabled }),
   ]);
   revalidatePath("/admin/schedule");
 }
 
 export async function addTimeOff(formData: FormData) {
   const { businessId } = await requireAdmin();
-  const business = await getBusiness();
+  const business = await getBusinessById(businessId);
   const d = z
     .object({
       barberId: z.string().optional(),
@@ -135,8 +177,8 @@ export async function deleteTimeOff(formData: FormData) {
 const settingsSchema = z.object({
   name: z.string().trim().min(1).max(80),
   tagline: z.string().trim().max(120),
-  logoUrl: z.string().trim().url().or(z.literal("")),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  bgColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   timezone: z.string().refine((tz) => DateTime.now().setZone(tz).isValid, "Zona horaria inválida"),
   currency: z.string().length(3),
   slotIntervalMin: z.coerce.number().int().min(5).max(240),
@@ -156,13 +198,26 @@ export async function saveSettings(formData: FormData) {
     .map((x) => parseInt(x.trim(), 10))
     .filter((n) => Number.isFinite(n) && n > 0);
 
+  const current = await getBusinessById(businessId);
+  let logoUrl = current.logoUrl;
+  const uploaded = await uploadImage(formData.get("logo"), `${businessId}/logo`);
+  if (uploaded) {
+    await deleteImage(logoUrl);
+    logoUrl = uploaded;
+  } else if (formData.get("removeLogo") === "on") {
+    await deleteImage(logoUrl);
+    logoUrl = null;
+  }
+
   await prisma.business.update({
     where: { id: businessId },
     data: {
       name: d.name,
       tagline: d.tagline,
-      logoUrl: d.logoUrl || null,
+      logoUrl,
       primaryColor: d.primaryColor,
+      bgColor: d.bgColor,
+      applyBgToAdmin: formData.get("applyBgToAdmin") === "on",
       timezone: d.timezone,
       currency: d.currency.toUpperCase(),
       slotIntervalMin: d.slotIntervalMin,

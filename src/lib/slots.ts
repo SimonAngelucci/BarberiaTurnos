@@ -32,8 +32,9 @@ export async function getAvailableSlots({ businessId, barberId, serviceId, date 
   const nextDay = day.plus({ days: 1 });
   const weekday = day.weekday % 7; // luxon: 1=lun..7=dom -> 0=dom..6=sáb
 
-  const [hours, busy, timeOffs] = await Promise.all([
+  const [hours, disabledRows, busy, timeOffs] = await Promise.all([
     prisma.workingHour.findMany({ where: { barberId, weekday }, orderBy: { startMin: "asc" } }),
+    prisma.disabledSlot.findMany({ where: { barberId, weekday }, select: { startMin: true } }),
     prisma.appointment.findMany({
       where: {
         barberId,
@@ -58,8 +59,14 @@ export async function getAvailableSlots({ businessId, barberId, serviceId, date 
   const earliest = now.plus({ minutes: business.minNoticeMin }).toMillis();
   const slots: string[] = [];
 
+  // Slots que el barbero desactivó a mano. Una celda desactivada [c, c+intervalo) bloquea cualquier
+  // servicio que la cruce, así un servicio largo no puede "pisar" un horario deshabilitado.
+  const interval = business.slotIntervalMin;
+  const disabled = disabledRows.map((d) => d.startMin);
+
   for (const h of hours) {
-    for (let m = h.startMin; m + service.durationMin <= h.endMin; m += business.slotIntervalMin) {
+    for (let m = h.startMin; m + service.durationMin <= h.endMin; m += interval) {
+      if (disabled.some((c) => c < m + service.durationMin && c + interval > m)) continue;
       const start = day.plus({ minutes: m });
       const end = start.plus({ minutes: service.durationMin });
       const s = start.toMillis();

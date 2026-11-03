@@ -1,29 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { getBusiness } from "@/lib/db";
-import { contrastFg } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const b = await getBusiness();
-  return {
-    title: `${b.name} · Turnos`,
-    description: b.tagline,
-    icons: b.logoUrl ? { icon: b.logoUrl } : undefined,
-  };
-}
+export const metadata: Metadata = {
+  title: "Turnos online para barberías",
+  description: "Reservas online para tu barbería, con link propio.",
+};
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const b = await getBusiness();
-  const theme = `:root{--brand:${b.primaryColor};--brand-fg:${contrastFg(b.primaryColor)}}`;
+// El tema (colores/logo) lo inyecta cada sección: /b/[slug] para la página pública y /admin para el panel.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <head>
-        <style dangerouslySetInnerHTML={{ __html: theme }} />
-      </head>
       <body>{children}</body>
     </html>
   );

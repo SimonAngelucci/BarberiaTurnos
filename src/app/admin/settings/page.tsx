@@ -1,14 +1,23 @@
 import { requireAdmin } from "@/lib/auth";
-import { getBusiness } from "@/lib/db";
+import { getBusinessById } from "@/lib/db";
+import { uploadsEnabled } from "@/lib/upload";
+import { ImageField } from "@/components/ImageField";
 import { saveSettings } from "../actions";
 
-export default async function SettingsPage() {
-  await requireAdmin();
-  const b = await getBusiness();
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  const { businessId } = await requireAdmin();
+  const b = await getBusinessById(businessId);
+  const sp = await searchParams;
 
   return (
     <form action={saveSettings} className="space-y-4">
       <h1 className="text-xl font-bold">Configuración del negocio</h1>
+
+      {sp.welcome && (
+        <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">
+          ¡Tu barbería está creada! Tu link de reservas está arriba. Personalizá el nombre, el logo y los colores, y después cargá tus horarios.
+        </p>
+      )}
 
       <section className="card grid gap-3 sm:grid-cols-2">
         <div>
@@ -19,14 +28,25 @@ export default async function SettingsPage() {
           <label className="label">Frase</label>
           <input name="tagline" className="input" defaultValue={b.tagline} />
         </div>
-        <div>
-          <label className="label">Logo / favicon (URL)</label>
-          <input name="logoUrl" className="input" placeholder="https://…" defaultValue={b.logoUrl ?? ""} />
+        <div className="sm:col-span-2">
+          <ImageField name="logo" removeName="removeLogo" label="Logo" currentUrl={b.logoUrl} enabled={uploadsEnabled()} size={80} />
         </div>
+      </section>
+
+      <section className="card grid gap-3 sm:grid-cols-2">
+        <h2 className="font-semibold sm:col-span-2">Apariencia</h2>
         <div>
-          <label className="label">Color principal</label>
+          <label className="label">Color principal (botones y acentos)</label>
           <input name="primaryColor" type="color" className="h-11 w-full rounded-xl border border-neutral-300" defaultValue={b.primaryColor} />
         </div>
+        <div>
+          <label className="label">Color de fondo de la página</label>
+          <input name="bgColor" type="color" className="h-11 w-full rounded-xl border border-neutral-300" defaultValue={b.bgColor} />
+        </div>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" name="applyBgToAdmin" defaultChecked={b.applyBgToAdmin} /> Usar también este fondo en el panel de administración
+        </label>
+        <p className="text-xs text-neutral-500 sm:col-span-2">El texto se ajusta solo (claro u oscuro) según el color de fondo que elijas.</p>
       </section>
 
       <section className="card grid gap-3 sm:grid-cols-3">

@@ -5,18 +5,23 @@
 :root {
   --brand: #111827;
   --brand-fg: #ffffff;
+  --page-bg: #fafafa;
+  --page-fg: #171717;
 }
 
 body {
-  @apply bg-neutral-50 text-neutral-900 antialiased;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  @apply antialiased;
 }
 
 @layer components {
+  /* Las superficies blancas siempre llevan texto oscuro, sea cual sea el fondo de la página. */
   .card {
-    @apply rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm;
+    @apply rounded-2xl border border-neutral-200 bg-white p-4 text-neutral-900 shadow-sm;
   }
   .input {
-    @apply w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-neutral-200;
+    @apply w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 outline-none focus:border-brand focus:ring-2 focus:ring-neutral-200;
   }
   .btn {
     @apply inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-medium text-brand-fg transition active:scale-[.98] disabled:opacity-50;

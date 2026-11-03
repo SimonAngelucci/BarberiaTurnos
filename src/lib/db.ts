@@ -4,9 +4,14 @@ const g = globalThis as unknown as { prisma?: PrismaClient };
 export const prisma = g.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== "production") g.prisma = prisma;
 
-/** MVP single-tenant: el negocio es el primero. Para multi-tenant, resolver por host/slug. */
-export async function getBusiness() {
-  const b = await prisma.business.findFirst({ orderBy: { createdAt: "asc" } });
-  if (!b) throw new Error("No hay negocio configurado. Ejecutá `npm run db:seed`.");
+/** Negocio de la página pública, resuelto por el slug de la URL (/b/[slug]). */
+export async function getBusinessBySlug(slug: string) {
+  return prisma.business.findUnique({ where: { slug: slug.toLowerCase() } });
+}
+
+/** Negocio del admin logueado (siempre por el businessId de la sesión). */
+export async function getBusinessById(id: string) {
+  const b = await prisma.business.findUnique({ where: { id } });
+  if (!b) throw new Error("Negocio inexistente");
   return b;
 }

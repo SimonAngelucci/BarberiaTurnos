@@ -2,11 +2,12 @@ import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { DateTime } from "luxon";
-import { prisma, getBusiness } from "@/lib/db";
+import { prisma, getBusinessBySlug } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
 
 const schema = z.object({
+  slug: z.string().min(1).max(60),
   serviceId: z.string().min(1),
   barberId: z.string().min(1),
   startAt: z.string().datetime(),
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Número de WhatsApp inválido. Incluí el código de país (ej: +54 9 11 1234 5678)." }, { status: 400 });
   }
 
-  const business = await getBusiness();
+  const business = await getBusinessBySlug(d.slug);
+  if (!business) return NextResponse.json({ error: "Barbería inexistente" }, { status: 404 });
   const service = await prisma.service.findFirst({ where: { id: d.serviceId, businessId: business.id, active: true } });
   if (!service) return NextResponse.json({ error: "Servicio no disponible" }, { status: 400 });
 

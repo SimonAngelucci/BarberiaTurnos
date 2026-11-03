@@ -1,0 +1,65 @@
+import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
+import { uploadsEnabled } from "@/lib/upload";
+import { ImageField } from "@/components/ImageField";
+import { saveBarber } from "../actions";
+
+type B = { id: string; name: string; bio: string | null; photoUrl: string | null; active: boolean };
+
+function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
+  return (
+    <form action={saveBarber} className="space-y-3">
+      {b && <input type="hidden" name="id" value={b.id} />}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label">Nombre</label>
+          <input name="name" required maxLength={60} className="input" defaultValue={b?.name} placeholder="Ej: Martín" />
+        </div>
+        <ImageField name="photo" removeName="removePhoto" label="Foto de perfil" currentUrl={b?.photoUrl ?? null} enabled={enabled} />
+      </div>
+      <div>
+        <label className="label">Descripción (especialidades, experiencia…)</label>
+        <textarea
+          name="bio"
+          rows={3}
+          maxLength={400}
+          className="input"
+          defaultValue={b?.bio ?? ""}
+          placeholder="Ej: 8 años de experiencia. Especialista en fades y barba clásica."
+        />
+      </div>
+      <div className="flex items-center gap-4">
+        {b && (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="active" defaultChecked={b.active} /> Visible para clientes
+          </label>
+        )}
+        <button className="btn">{b ? "Guardar" : "Agregar barbero"}</button>
+      </div>
+    </form>
+  );
+}
+
+export default async function BarbersPage() {
+  const { businessId } = await requireAdmin();
+  const barbers = await prisma.barber.findMany({ where: { businessId }, orderBy: [{ active: "desc" }, { name: "asc" }] });
+  const enabled = uploadsEnabled();
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-bold">Barberos</h1>
+      <p className="text-sm opacity-70">La foto y la descripción se muestran en tu página de reservas para que el cliente elija.</p>
+
+      <div className="card space-y-3">
+        <h2 className="font-semibold">Nuevo barbero</h2>
+        <BarberForm enabled={enabled} />
+      </div>
+
+      {barbers.map((b) => (
+        <div key={b.id} className={`card ${b.active ? "" : "opacity-60"}`}>
+          <BarberForm b={b} enabled={enabled} />
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { Prisma } from "@prisma/client";
-import { prisma, getBusiness } from "@/lib/db";
+import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { fmtDateTime, fmtTime, money } from "@/lib/format";
 import { cancelAppointment, setAppointmentStatus } from "./actions";
@@ -44,7 +44,7 @@ function Row({ a, tz, showDate }: { a: Appt; tz: string; showDate?: boolean }) {
 
 export default async function DashboardPage() {
   const { businessId } = await requireAdmin();
-  const b = await getBusiness();
+  const b = await getBusinessById(businessId);
   const tz = b.timezone;
 
   const now = DateTime.now().setZone(tz);

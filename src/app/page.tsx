@@ -1,33 +1,20 @@
-import { prisma, getBusiness } from "@/lib/db";
-import { BookingFlow } from "@/components/BookingFlow";
+import Link from "next/link";
 
-export default async function HomePage() {
-  const b = await getBusiness();
-  const [services, barbers] = await Promise.all([
-    prisma.service.findMany({ where: { businessId: b.id, active: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.barber.findMany({ where: { businessId: b.id, active: true }, orderBy: { name: "asc" } }),
-  ]);
-
+export default function Landing() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-8">
-      <header className="mb-6 text-center">
-        {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt={b.name} className="mx-auto mb-3 h-16 w-16 rounded-full object-cover" />}
-        <h1 className="text-2xl font-bold">{b.name}</h1>
-        <p className="text-neutral-500">{b.tagline}</p>
-      </header>
-      <BookingFlow
-        timezone={b.timezone}
-        currency={b.currency}
-        maxAdvanceDays={Math.min(b.maxAdvanceDays, 60)}
-        services={services.map((s) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description,
-          priceCents: s.priceCents,
-          durationMin: s.durationMin,
-        }))}
-        barbers={barbers.map((x) => ({ id: x.id, name: x.name }))}
-      />
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
+      <div className="card space-y-4 text-center">
+        <h1 className="text-2xl font-bold">Turnos online para tu barbería</h1>
+        <p className="text-neutral-600">
+          Creá tu barbería, recibí tu link propio para que tus clientes reserven y administrá turnos, barberos y horarios desde el panel.
+        </p>
+        <Link href="/registro" className="btn w-full">
+          Crear mi barbería
+        </Link>
+        <Link href="/admin/login" className="btn-ghost w-full">
+          Ya tengo cuenta
+        </Link>
+      </div>
     </main>
   );
 }

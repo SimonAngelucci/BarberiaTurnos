@@ -43,6 +43,12 @@ export default function LoginPage() {
         <button className="btn w-full" disabled={busy}>
           {busy ? "Ingresando…" : "Ingresar"}
         </button>
+        <p className="text-center text-sm text-neutral-500">
+          ¿No tenés cuenta?{" "}
+          <a href="/registro" className="underline">
+            Crear mi barbería
+          </a>
+        </p>
       </form>
     </main>
   );

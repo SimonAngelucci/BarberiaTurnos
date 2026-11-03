@@ -6,11 +6,23 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { money } from "@/lib/format";
 
 type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number };
-type Barber = { id: string; name: string };
+type Barber = { id: string; name: string; photoUrl: string | null; bio: string | null };
 
-type Props = { services: Service[]; barbers: Barber[]; timezone: string; currency: string; maxAdvanceDays: number };
+type Props = { slug: string; services: Service[]; barbers: Barber[]; timezone: string; currency: string; maxAdvanceDays: number };
 
-export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceDays }: Props) {
+function Avatar({ b, size }: { b: Barber; size: number }) {
+  const style = { width: size, height: size };
+  return b.photoUrl ? (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img src={b.photoUrl} alt={b.name} style={style} className="shrink-0 rounded-full bg-neutral-100 object-cover" />
+  ) : (
+    <div style={style} className="flex shrink-0 items-center justify-center rounded-full bg-neutral-200 font-semibold text-neutral-600">
+      {b.name.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays }: Props) {
   const [service, setService] = useState<Service | null>(null);
   const [barberId, setBarberId] = useState<string | null>(barbers.length === 1 ? barbers[0].id : null);
   const [date, setDate] = useState<string | null>(null);
@@ -32,14 +44,14 @@ export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceD
     let cancelled = false;
     setSlots(null);
     setSlot(null);
-    fetch(`/api/availability?serviceId=${service.id}&barberId=${barberId}&date=${date}`)
+    fetch(`/api/availability?slug=${encodeURIComponent(slug)}&serviceId=${service.id}&barberId=${barberId}&date=${date}`)
       .then((r) => r.json())
       .then((j) => !cancelled && setSlots(j.slots ?? []))
       .catch(() => !cancelled && setSlots([]));
     return () => {
       cancelled = true;
     };
-  }, [service, barberId, date, reload]);
+  }, [slug, service, barberId, date, reload]);
 
   const phoneOk = parsePhoneNumberFromString(form.phone)?.isValid() ?? false;
   const formOk = form.firstName.trim().length >= 2 && form.lastName.trim().length >= 2 && phoneOk;
@@ -51,7 +63,7 @@ export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceD
     const res = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ serviceId: service.id, barberId, startAt: slot, ...form }),
+      body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form }),
     });
     const j = await res.json().catch(() => ({}));
     setBusy(false);
@@ -107,16 +119,33 @@ export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceD
       {service && barbers.length > 1 && (
         <section>
           <h2 className="mb-2 font-semibold">2. Elegí barbero</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {barbers.map((b) => (
               <button
                 key={b.id}
-                onClick={() => setBarberId(b.id)}
-                className={`rounded-full border px-4 py-2 ${barberId === b.id ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white"}`}
+                onClick={() => {
+                  setBarberId(b.id);
+                  setSlot(null);
+                }}
+                className={`card flex items-start gap-3 text-left transition ${barberId === b.id ? "!border-brand ring-2 ring-neutral-300" : ""}`}
               >
-                {b.name}
+                <Avatar b={b} size={56} />
+                <div className="min-w-0">
+                  <div className="font-medium">{b.name}</div>
+                  {b.bio && <div className="line-clamp-3 text-sm text-neutral-500">{b.bio}</div>}
+                </div>
               </button>
             ))}
+          </div>
+        </section>
+      )}
+
+      {service && barbers.length === 1 && (barbers[0].photoUrl || barbers[0].bio) && (
+        <section className="card flex items-start gap-3">
+          <Avatar b={barbers[0]} size={56} />
+          <div className="min-w-0">
+            <div className="font-medium">{barbers[0].name}</div>
+            {barbers[0].bio && <div className="text-sm text-neutral-500">{barbers[0].bio}</div>}
           </div>
         </section>
       )}
@@ -131,7 +160,7 @@ export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceD
                 <button
                   key={iso}
                   onClick={() => setDate(iso)}
-                  className={`flex min-w-16 flex-col items-center rounded-xl border px-3 py-2 ${date === iso ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white"}`}
+                  className={`flex min-w-16 flex-col items-center rounded-xl border px-3 py-2 ${date === iso ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900"}`}
                 >
                   <span className="text-xs uppercase">{d.toFormat("ccc")}</span>
                   <span className="text-lg font-semibold">{d.day}</span>
@@ -144,16 +173,16 @@ export function BookingFlow({ services, barbers, timezone, currency, maxAdvanceD
           {date && (
             <div className="mt-3">
               {slots === null ? (
-                <p className="text-sm text-neutral-500">Buscando horarios…</p>
+                <p className="text-sm opacity-70">Buscando horarios…</p>
               ) : slots.length === 0 ? (
-                <p className="text-sm text-neutral-500">No hay horarios disponibles ese día. Probá con otro.</p>
+                <p className="text-sm opacity-70">No hay horarios disponibles ese día. Probá con otro.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {slots.map((s) => (
                     <button
                       key={s}
                       onClick={() => setSlot(s)}
-                      className={`rounded-lg border py-2 text-sm font-medium ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white"}`}
+                      className={`rounded-lg border py-2 text-sm font-medium ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900"}`}
                     >
                       {DateTime.fromISO(s).setZone(timezone).toFormat("HH:mm")}
                     </button>

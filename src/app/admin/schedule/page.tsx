@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { DateTime } from "luxon";
-import { prisma, getBusiness } from "@/lib/db";
+import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { minToHHMM, fmtDateTime } from "@/lib/format";
-import { saveSchedule, addTimeOff, deleteTimeOff, addBarber } from "../actions";
+import { WeekScheduleEditor, type DayState } from "@/components/WeekScheduleEditor";
+import { saveSchedule, addTimeOff, deleteTimeOff } from "../actions";
 
 const DAYS = [
   { wd: 1, label: "Lunes" },
@@ -17,14 +18,15 @@ const DAYS = [
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ barber?: string }> }) {
   const { businessId } = await requireAdmin();
-  const business = await getBusiness();
+  const business = await getBusinessById(businessId);
   const sp = await searchParams;
 
   const barbers = await prisma.barber.findMany({ where: { businessId, active: true }, orderBy: { name: "asc" } });
   const barber = barbers.find((b) => b.id === sp.barber) ?? barbers[0];
 
-  const [hours, timeOffs] = await Promise.all([
+  const [hours, disabled, timeOffs] = await Promise.all([
     barber ? prisma.workingHour.findMany({ where: { barberId: barber.id } }) : [],
+    barber ? prisma.disabledSlot.findMany({ where: { barberId: barber.id } }) : [],
     prisma.timeOff.findMany({
       where: { businessId, endAt: { gte: new Date() } },
       orderBy: { startAt: "asc" },
@@ -32,6 +34,17 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     }),
   ]);
   const byDay = new Map(hours.map((h) => [h.weekday, h]));
+  const days: DayState[] = DAYS.map(({ wd, label }) => {
+    const h = byDay.get(wd);
+    return {
+      wd,
+      label,
+      open: !!h,
+      start: minToHHMM(h?.startMin ?? 540),
+      end: minToHHMM(h?.endMin ?? 1140),
+      off: disabled.filter((d) => d.weekday === wd).map((d) => d.startMin),
+    };
+  });
   const nowLocal = DateTime.now().setZone(business.timezone).toFormat("yyyy-MM-dd'T'HH:mm");
 
   return (
@@ -48,30 +61,16 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             {b.name}
           </Link>
         ))}
-        <form action={addBarber} className="flex gap-2">
-          <input name="name" placeholder="Nuevo barbero" required className="input !w-40 !py-1.5 !text-sm" />
-          <button className="btn-ghost">Agregar</button>
-        </form>
+        <Link href="/admin/barbers" className="btn-ghost">
+          Gestionar barberos
+        </Link>
       </div>
 
       {barber && (
-        <form action={saveSchedule} className="card space-y-3">
+        <form key={barber.id} action={saveSchedule} className="card space-y-3">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Días y horarios de {barber.name}</h2>
-          {DAYS.map(({ wd, label }) => {
-            const h = byDay.get(wd);
-            return (
-              <div key={wd} className="flex flex-wrap items-center gap-3">
-                <label className="flex w-32 items-center gap-2">
-                  <input type="checkbox" name={`open_${wd}`} defaultChecked={!!h} />
-                  {label}
-                </label>
-                <input type="time" name={`start_${wd}`} defaultValue={minToHHMM(h?.startMin ?? 540)} className="input !w-32" />
-                <span>a</span>
-                <input type="time" name={`end_${wd}`} defaultValue={minToHHMM(h?.endMin ?? 1140)} className="input !w-32" />
-              </div>
-            );
-          })}
+          <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} />
           <p className="text-xs text-neutral-500">
             Intervalo entre turnos: {business.slotIntervalMin} min (se cambia en «Negocio»). Zona horaria: {business.timezone}.
           </p>
