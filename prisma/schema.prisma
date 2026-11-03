@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum MessageKind {
+  CONFIRMATION
+  REMINDER
+  CANCELLATION
+}
+
+enum MessageStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+/// Tenant. En el MVP hay una sola fila; todo cuelga de businessId para poder escalar a multi-tenant.
+model Business {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  name               String
+  tagline            String   @default("Reservá tu turno online")
+  logoUrl            String?
+  primaryColor       String   @default("#111827")
+  timezone           String   @default("America/Argentina/Buenos_Aires")
+  currency           String   @default("ARS")
+  slotIntervalMin    Int      @default(30)
+  minNoticeMin       Int      @default(60)
+  maxAdvanceDays     Int      @default(30)
+  /// Minutos antes del turno en que se envía recordatorio. Ej: [1440, 120]
+  reminderOffsetsMin Int[]    @default([1440, 120])
+  confirmTemplate    String   @default("Hola {{nombre}}! Tu turno de {{servicio}} en {{negocio}} quedó confirmado para el {{fecha}} a las {{hora}}. ¡Te esperamos!")
+  reminderTemplate   String   @default("Hola {{nombre}}, te recordamos tu turno de {{servicio}} en {{negocio}}: {{fecha}} a las {{hora}}.")
+  cancelTemplate     String   @default("Hola {{nombre}}, lamentablemente tu turno de {{servicio}} del {{fecha}} a las {{hora}} en {{negocio}} fue cancelado. Escribinos para reprogramar.")
+  createdAt          DateTime @default(now())
+
+  admins       AdminUser[]
+  barbers      Barber[]
+  services     Service[]
+  customers    Customer[]
+  appointments Appointment[]
+  timeOffs     TimeOff[]
+  messages     Message[]
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  businessId   String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Barber {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  active     Boolean  @default(true)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  workingHours WorkingHour[]
+  appointments Appointment[]
+  timeOffs     TimeOff[]
+}
+
+/// Franja laboral. weekday: 0=domingo ... 6=sábado. Minutos desde 00:00 locales.
+/// Varias filas por día = horario cortado (mañana/tarde).
+model WorkingHour {
+  id       String @id @default(cuid())
+  barberId String
+  weekday  Int
+  startMin Int
+  endMin   Int
+  barber   Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([barberId, weekday])
+}
+
+/// Bloqueos (vacaciones, feriados, descansos). barberId null = todo el negocio.
+model TimeOff {
+  id         String   @id @default(cuid())
+  businessId String
+  barberId   String?
+  startAt    DateTime
+  endAt      DateTime
+  reason     String?
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  barber     Barber?  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, startAt])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  priceCents  Int
+  durationMin Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  businessId String
+  firstName  String
+  lastName   String
+  /// E.164, ej: +5491112345678
+  phone      String
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+
+  @@unique([businessId, phone])
+}
+
+/// startAt/endAt en UTC. La restricción anti-overbooking vive en prisma/constraints.sql.
+model Appointment {
+  id         String            @id @default(cuid())
+  businessId String
+  barberId   String
+  serviceId  String
+  customerId String
+  startAt    DateTime
+  endAt      DateTime
+  status     AppointmentStatus @default(CONFIRMED)
+  priceCents Int
+  createdAt  DateTime          @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  barber   Barber   @relation(fields: [barberId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  messages Message[]
+
+  @@index([businessId, startAt])
+  @@index([barberId, startAt])
+}
+
+/// Outbox de WhatsApp: se inserta en la misma operación que el turno y un worker/cron la despacha.
+model Message {
+  id            String        @id @default(cuid())
+  businessId    String
+  appointmentId String?
+  kind          MessageKind
+  to            String
+  body          String
+  templateName  String?
+  params        Json?
+  sendAt        DateTime
+  status        MessageStatus @default(PENDING)
+  attempts      Int           @default(0)
+  error         String?
+  externalId    String?
+  createdAt     DateTime      @default(now())
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([status, sendAt])
+}
