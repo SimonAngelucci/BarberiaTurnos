@@ -17,7 +17,7 @@ function Row({ a, tz, showDate }: { a: Appt; tz: string; showDate?: boolean }) {
           {a.customer.firstName} {a.customer.lastName}
         </div>
         <div className="truncate text-sm text-neutral-500">
-          {a.service.name} · {a.barber.name} ·{" "}
+          {a.service.name} · {a.barber?.name ?? "Barbero eliminado"} ·{" "}
           <a className="underline" href={`https://wa.me/${a.customer.phone.replace("+", "")}`} target="_blank">
             {a.customer.phone}
           </a>

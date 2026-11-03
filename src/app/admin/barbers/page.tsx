@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/upload";
 import { ImageField } from "@/components/ImageField";
+import { DeleteBarberButton } from "@/components/DeleteBarberButton";
 import { saveBarber } from "../actions";
 
 type B = { id: string; name: string; bio: string | null; photoUrl: string | null; active: boolean };
@@ -15,7 +16,7 @@ function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
           <label className="label">Nombre</label>
           <input name="name" required maxLength={60} className="input" defaultValue={b?.name} placeholder="Ej: Martín" />
         </div>
-        <ImageField name="photo" removeName="removePhoto" label="Foto de perfil" currentUrl={b?.photoUrl ?? null} enabled={enabled} />
+        <ImageField name="photo" removeName="removePhoto" label="Foto de perfil" currentUrl={b?.photoUrl ?? null} enabled={enabled} crop />
       </div>
       <div>
         <label className="label">Descripción (especialidades, experiencia…)</label>
@@ -45,6 +46,14 @@ export default async function BarbersPage() {
   const barbers = await prisma.barber.findMany({ where: { businessId }, orderBy: [{ active: "desc" }, { name: "asc" }] });
   const enabled = uploadsEnabled();
 
+  // Turnos futuros confirmados por barbero: el modal de eliminación los muestra y exige confirmarlos.
+  const future = await prisma.appointment.groupBy({
+    by: ["barberId"],
+    where: { businessId, status: "CONFIRMED", startAt: { gt: new Date() } },
+    _count: { _all: true },
+  });
+  const futureCount = new Map(future.map((f) => [f.barberId, f._count._all]));
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Barberos</h1>
@@ -58,6 +67,9 @@ export default async function BarbersPage() {
       {barbers.map((b) => (
         <div key={b.id} className={`card ${b.active ? "" : "opacity-60"}`}>
           <BarberForm b={b} enabled={enabled} />
+          <div className="mt-3 border-t border-neutral-100 pt-3">
+            <DeleteBarberButton id={b.id} name={b.name} futureCount={futureCount.get(b.id) ?? 0} />
+          </div>
         </div>
       ))}
     </div>

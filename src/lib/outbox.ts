@@ -73,6 +73,26 @@ export async function enqueueCancellation(appointmentId: string) {
   ]);
 }
 
+/**
+ * Prepara (sin ejecutar) las operaciones para avisar la cancelación de varios turnos a la vez:
+ * saltea sus recordatorios pendientes y encola un mensaje de cancelación por turno.
+ * Devuelve operaciones de Prisma para correr dentro de la misma transacción que la cancelación.
+ */
+export async function buildCancellationOps(appointmentIds: string[]) {
+  if (appointmentIds.length === 0) return [];
+  const appts = await prisma.appointment.findMany({
+    where: { id: { in: appointmentIds } },
+    include: { business: true, customer: true, service: true },
+  });
+  return [
+    prisma.message.updateMany({
+      where: { appointmentId: { in: appointmentIds }, kind: "REMINDER", status: "PENDING" },
+      data: { status: "SKIPPED" },
+    }),
+    prisma.message.createMany({ data: appts.map((a) => row(a, "CANCELLATION", new Date())) }),
+  ];
+}
+
 /** Envía los mensajes vencidos. Idempotente y seguro con ejecuciones concurrentes. */
 export async function dispatchDue(limit = 25) {
   const due = await prisma.message.findMany({

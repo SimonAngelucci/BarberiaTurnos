@@ -157,7 +157,8 @@ model Customer {
 model Appointment {
   id         String            @id @default(cuid())
   businessId String
-  barberId   String
+  /// null = el barbero fue eliminado; el turno queda en el historial.
+  barberId   String?
   serviceId  String
   customerId String
   startAt    DateTime
@@ -167,7 +168,7 @@ model Appointment {
   createdAt  DateTime          @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  barber   Barber   @relation(fields: [barberId], references: [id])
+  barber   Barber?  @relation(fields: [barberId], references: [id], onDelete: SetNull)
   service  Service  @relation(fields: [serviceId], references: [id])
   customer Customer @relation(fields: [customerId], references: [id])
   messages Message[]

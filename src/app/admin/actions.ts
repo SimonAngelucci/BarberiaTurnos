@@ -6,7 +6,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { enqueueCancellation, dispatchDue } from "@/lib/outbox";
+import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
 import { uploadImage, deleteImage } from "@/lib/upload";
 
@@ -103,6 +103,53 @@ export async function saveBarber(formData: FormData) {
   revalidatePath("/admin/barbers");
   revalidatePath("/admin/schedule");
   revalidatePath("/", "layout");
+}
+
+export type DeleteBarberResult = { ok: true; cancelled: number } | { ok: false; error: string };
+
+/**
+ * Elimina un barbero de forma permanente.
+ * - Sin turnos futuros: se borra directo.
+ * - Con turnos futuros: exige `cancelFuture` explícito; los cancela, avisa a los clientes por WhatsApp
+ *   y borra al barbero en UNA transacción (o se hace todo o no se hace nada).
+ * - Turnos pasados: quedan en el historial con barberId = null.
+ * Devuelve el error como dato (en producción Next oculta el mensaje de las excepciones).
+ */
+export async function deleteBarber(formData: FormData): Promise<DeleteBarberResult> {
+  const { businessId } = await requireAdmin();
+  const id = z.string().min(1).parse(formData.get("id"));
+  const cancelFuture = formData.get("cancelFuture") === "on";
+
+  try {
+    const barber = await prisma.barber.findFirst({ where: { id, businessId } });
+    if (!barber) return { ok: false, error: "Ese barbero ya no existe." };
+
+    const futureWhere = { barberId: id, businessId, status: "CONFIRMED" as const, startAt: { gt: new Date() } };
+    const preview = await prisma.appointment.count({ where: futureWhere });
+    if (preview > 0 && !cancelFuture) {
+      return { ok: false, error: `Tiene ${preview} turno${preview === 1 ? "" : "s"} futuro${preview === 1 ? "" : "s"}. Confirmá que se cancelarán para poder eliminarlo.` };
+    }
+
+    // Deja de ofrecerse ya, así nadie puede reservarle un turno mientras se borra.
+    await prisma.barber.update({ where: { id }, data: { active: false } });
+    const ids = (await prisma.appointment.findMany({ where: futureWhere, select: { id: true } })).map((a) => a.id);
+
+    await prisma.$transaction([
+      prisma.appointment.updateMany({ where: { id: { in: ids }, status: "CONFIRMED" }, data: { status: "CANCELLED" } }),
+      ...(await buildCancellationOps(ids)),
+      prisma.barber.delete({ where: { id } }),
+    ]);
+
+    await deleteImage(barber.photoUrl);
+    if (ids.length > 0) after(() => dispatchDue().catch(console.error));
+    revalidatePath("/admin/barbers");
+    revalidatePath("/admin/schedule");
+    revalidatePath("/admin");
+    return { ok: true, cancelled: ids.length };
+  } catch (e) {
+    console.error("deleteBarber", e);
+    return { ok: false, error: "No se pudo eliminar. Intentá de nuevo." };
+  }
 }
 
 export async function saveSchedule(formData: FormData) {
