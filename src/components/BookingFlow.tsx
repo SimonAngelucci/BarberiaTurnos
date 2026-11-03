@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { money } from "@/lib/format";
+import { DayPicker, type DayItem } from "./DayPicker";
 import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
 type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number };
@@ -49,6 +50,21 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     return Array.from({ length: Math.min(maxAdvanceDays, 30) + 1 }, (_, i) => today.plus({ days: i }).setLocale("es"));
   }, [timezone, maxAdvanceDays]);
 
+  const dayItems = useMemo<DayItem[]>(
+    () =>
+      days.map((d, i) => ({
+        iso: d.toISODate()!,
+        wd: d.toFormat("ccc").replace(".", ""),
+        day: d.day,
+        mon: d.toFormat("LLL").replace(".", ""),
+        monthLabel: d.toFormat("LLLL yyyy"),
+        tag: i === 0 ? "Hoy" : i === 1 ? "Mañana" : null,
+        weekend: d.weekday >= 6,
+        full: d.toFormat("cccc d 'de' LLLL"),
+      })),
+    [days],
+  );
+
   useEffect(() => {
     if (!service || !barberId || !date) return;
     let cancelled = false;
@@ -68,6 +84,8 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   useEffect(() => setChoice(options[0]?.choice ?? "NONE"), [options]);
   const selected = options.find((o) => o.choice === choice) ?? options[0];
   const online = !!selected && selected.choice !== "NONE";
+  // Podía pagar online pero eligió abonar en el local (efectivo o físico).
+  const payAtStore = !online && options.some((o) => o.choice !== "NONE");
 
   const phoneOk = parsePhoneNumberFromString(form.phone)?.isValid() ?? false;
   const formOk = form.firstName.trim().length >= 2 && form.lastName.trim().length >= 2 && phoneOk;
@@ -104,6 +122,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
         <p className="mt-2 text-neutral-600">
           {service.name} · {local.toFormat("cccc d 'de' LLLL")} a las {local.toFormat("HH:mm")}
         </p>
+        {payAtStore && <p className="mt-2 text-sm font-medium text-orange-700">Pago pendiente: lo abonás en el local.</p>}
         <p className="mt-2 text-sm text-neutral-500">Te enviamos la confirmación por WhatsApp y te vamos a recordar antes del turno.</p>
       </div>
     );
@@ -173,36 +192,27 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
       {service && barberId && (
         <section>
           <h2 className="mb-2 font-semibold">{barbers.length > 1 ? "3" : "2"}. Elegí el día</h2>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
-            {days.map((d) => {
-              const iso = d.toISODate()!;
-              return (
-                <button
-                  key={iso}
-                  onClick={() => setDate(iso)}
-                  className={`flex min-w-16 flex-col items-center rounded-xl border px-3 py-2 ${date === iso ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900"}`}
-                >
-                  <span className="text-xs uppercase">{d.toFormat("ccc")}</span>
-                  <span className="text-lg font-semibold">{d.day}</span>
-                  <span className="text-xs">{d.toFormat("LLL")}</span>
-                </button>
-              );
-            })}
-          </div>
+          <DayPicker days={dayItems} value={date} onChange={setDate} />
 
           {date && (
-            <div className="mt-3">
+            <div className="mt-3" aria-live="polite">
               {slots === null ? (
-                <p className="text-sm opacity-70">Buscando horarios…</p>
+                // Esqueleto mientras se buscan los horarios
+                <div className="grid grid-cols-4 gap-2" aria-label="Buscando horarios">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <div key={i} className="h-[38px] animate-pulse rounded-lg bg-black/10" style={{ animationDelay: `${i * 70}ms` }} />
+                  ))}
+                </div>
               ) : slots.length === 0 ? (
-                <p className="text-sm opacity-70">No hay horarios disponibles ese día. Probá con otro.</p>
+                <p className="animate-rise text-sm opacity-70">No hay horarios disponibles ese día. Probá con otro.</p>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  {slots.map((s) => (
+                <div key={date} className="grid grid-cols-4 gap-2">
+                  {slots.map((s, i) => (
                     <button
                       key={s}
                       onClick={() => setSlot(s)}
-                      className={`rounded-lg border py-2 text-sm font-medium ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900"}`}
+                      style={{ animationDelay: `${Math.min(i, 24) * 18}ms` }}
+                      className={`animate-rise rounded-lg border py-2 text-sm font-medium transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"}`}
                     >
                       {DateTime.fromISO(s).setZone(timezone).toFormat("HH:mm")}
                     </button>
@@ -271,8 +281,8 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                         )}
                         {o.choice === "NONE" && (
                           <>
-                            <strong>Pagar después</strong>
-                            <span className="block text-xs text-neutral-500">Reservás ahora y abonás en el local</span>
+                            <strong>Pagar en el local</strong>
+                            <span className="block text-xs text-neutral-500">Reservás ahora y abonás en efectivo o físico en el local</span>
                           </>
                         )}
                       </span>
@@ -284,7 +294,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           )}
           {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
           <button className="btn w-full" disabled={!formOk || busy} onClick={submit}>
-            {busy ? (online ? "Redirigiendo a Mercado Pago…" : "Confirmando…") : online ? `Pagar ${money(selected!.amountCents, currency)} con Mercado Pago` : "Confirmar turno"}
+            {busy ? (online ? "Redirigiendo a Mercado Pago…" : "Confirmando…") : online ? `Pagar ${money(selected!.amountCents, currency)} con Mercado Pago` : payAtStore ? "Reservar y pagar en el local" : "Confirmar turno"}
           </button>
         </section>
       )}

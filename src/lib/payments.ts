@@ -155,7 +155,7 @@ export async function applyMpPayment(businessId: string, mp: MpInfo): Promise<Ap
           where: { id: cur.id },
           data: {
             amountPaidCents: { increment: pay.amountCents },
-            paymentStatus: pay.kind === "FULL" ? "PAID" : cur.paymentStatus === "UNPAID" ? "DEPOSIT_PAID" : cur.paymentStatus,
+            paymentStatus: pay.kind === "FULL" ? "PAID" : cur.paymentStatus === "UNPAID" || cur.paymentStatus === "PENDING_AT_STORE" ? "DEPOSIT_PAID" : cur.paymentStatus,
           },
         });
       }

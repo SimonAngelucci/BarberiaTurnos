@@ -8,7 +8,7 @@ import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
-import { uploadImage, deleteImage } from "@/lib/upload";
+import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import { encryptSecret } from "@/lib/crypto";
 import { configSchema } from "@/lib/page-config";
 import type { Prisma } from "@prisma/client";
@@ -88,14 +88,16 @@ export async function saveBarber(formData: FormData) {
   const existing = id ? await prisma.barber.findFirst({ where: { id, businessId } }) : null;
   if (id && !existing) throw new Error("Barbero inexistente");
 
+  // La foto ya se subió desde el formulario (/api/admin/upload); acá solo se acepta una URL propia de esta barbería.
   let photoUrl = existing?.photoUrl ?? null;
-  const uploaded = await uploadImage(formData.get("photo"), `${businessId}/barbers`);
-  if (uploaded) {
-    await deleteImage(photoUrl);
-    photoUrl = uploaded;
-  } else if (formData.get("removePhoto") === "on") {
+  const newPhoto = formData.get("photoUrl")?.toString() ?? "";
+  if (formData.get("removePhoto") === "on") {
     await deleteImage(photoUrl);
     photoUrl = null;
+  } else if (newPhoto && newPhoto !== photoUrl) {
+    if (!isOwnBlobUrl(newPhoto, businessId)) throw new Error("Imagen inválida");
+    await deleteImage(photoUrl);
+    photoUrl = newPhoto;
   }
 
   const data = { name: d.name, bio: d.bio || null, photoUrl };
@@ -348,14 +350,16 @@ export async function saveSettings(formData: FormData) {
     .filter((n) => Number.isFinite(n) && n > 0);
 
   const current = await getBusinessById(businessId);
+  // El logo ya se subió desde el formulario (/api/admin/upload); acá solo se acepta una URL propia de esta barbería.
   let logoUrl = current.logoUrl;
-  const uploaded = await uploadImage(formData.get("logo"), `${businessId}/logo`);
-  if (uploaded) {
-    await deleteImage(logoUrl);
-    logoUrl = uploaded;
-  } else if (formData.get("removeLogo") === "on") {
+  const newLogo = formData.get("logoUrl")?.toString() ?? "";
+  if (formData.get("removeLogo") === "on") {
     await deleteImage(logoUrl);
     logoUrl = null;
+  } else if (newLogo && newLogo !== logoUrl) {
+    if (!isOwnBlobUrl(newLogo, businessId)) throw new Error("Imagen inválida");
+    await deleteImage(logoUrl);
+    logoUrl = newLogo;
   }
 
   await prisma.business.update({

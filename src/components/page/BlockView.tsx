@@ -42,7 +42,29 @@ export function BlockBox({ block, children, overlay, innerStyle, innerProps }: {
   );
 }
 
-function textStyle(b: TextBlock, line: number): CSSProperties {
+/** Efectos de lettering en CSS puro. Los colores ya vienen validados (#RRGGBB) por el esquema. */
+function fxCss(b: TextBlock): CSSProperties {
+  const c = b.color ?? "var(--page-fg)"; // color base: el elegido o el automático según el fondo
+  const f = b.fxColor;
+  switch (b.fx) {
+    case "shadow":
+      return { textShadow: `3px 3px 0 ${f}` };
+    case "outline":
+      return { color: "transparent", WebkitTextStroke: `2px ${c}` };
+    case "neon":
+      return { textShadow: `0 0 4px ${f}, 0 0 12px ${f}, 0 0 28px ${f}` };
+    case "gradient":
+      return { backgroundImage: `linear-gradient(90deg, ${c}, ${f})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
+    case "retro3d":
+      return { textShadow: [1, 2, 3, 4, 5].map((n) => `${n}px ${n}px 0 ${f}`).join(", ") };
+    case "stamp":
+      return { display: "inline-block", border: `0.12em solid ${c}`, padding: "0.1em 0.45em", borderRadius: "0.12em" };
+    default:
+      return {};
+  }
+}
+
+export function textStyle(b: TextBlock, line: number): CSSProperties {
   return {
     fontSize: fluidFont(b.size),
     fontWeight: b.weight,
@@ -51,6 +73,10 @@ function textStyle(b: TextBlock, line: number): CSSProperties {
     fontFamily: b.font ? FONTS[b.font].css : undefined,
     lineHeight: line,
     overflowWrap: "anywhere",
+    letterSpacing: b.tracking ? `${b.tracking}px` : undefined,
+    textTransform: b.caps ? "uppercase" : undefined,
+    transform: b.rotate ? `rotate(${b.rotate}deg)` : undefined,
+    ...fxCss(b),
   };
 }
 

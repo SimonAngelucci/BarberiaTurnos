@@ -70,7 +70,17 @@ export function EditableText({
         e.preventDefault();
         document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
       }}
-      style={{ ...style, outline: editing ? "2px solid #2563eb" : undefined, outlineOffset: 2, cursor: editing ? "text" : undefined, whiteSpace: multiline ? "pre-wrap" : undefined, minHeight: "1em" }}
+      style={{
+        ...style,
+        // Al editar se muestra el texto tal cual se escribió: `innerText` respeta las mayúsculas visuales y
+        // guardaría el texto ya en mayúsculas.
+        textTransform: editing ? "none" : style?.textTransform,
+        outline: editing ? "2px solid #2563eb" : undefined,
+        outlineOffset: 2,
+        cursor: editing ? "text" : undefined,
+        whiteSpace: multiline ? "pre-wrap" : undefined,
+        minHeight: "1em",
+      }}
       className={className}
     >
       {value}

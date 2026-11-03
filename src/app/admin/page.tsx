@@ -10,6 +10,8 @@ type Appt = Prisma.AppointmentGetPayload<{ include: { customer: true; service: t
 function PayBadge({ a, currency }: { a: Appt; currency: string }) {
   if (a.status === "PENDING_PAYMENT") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Esperando pago</span>;
   if (a.paymentStatus === "PAID") return <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">Pagado</span>;
+  if (a.paymentStatus === "PENDING_AT_STORE")
+    return <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-800">Pago pendiente en el local</span>;
   if (a.paymentStatus === "DEPOSIT_PAID")
     return (
       <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">

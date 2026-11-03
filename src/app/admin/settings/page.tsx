@@ -29,7 +29,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <input name="tagline" className="input" defaultValue={b.tagline} />
         </div>
         <div className="sm:col-span-2">
-          <ImageField name="logo" removeName="removeLogo" label="Logo" currentUrl={b.logoUrl} enabled={uploadsEnabled()} size={80} />
+          <ImageField name="logoUrl" removeName="removeLogo" kind="logo" label="Logo" currentUrl={b.logoUrl} enabled={uploadsEnabled()} size={80} />
         </div>
       </section>
 

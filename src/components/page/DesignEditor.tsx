@@ -238,7 +238,10 @@ export function DesignEditor({ initial, business, publicUrl, booking }: {
   }, [update, sel]);
 
   const add = useCallback((type: AddType) => {
-    const t = { weight: 400 as const, color: null, opacity: 1, align: "center" as const, font: null, widthPct: 100, mt: 0, mb: 12 };
+    const t = {
+      weight: 400 as const, color: null, opacity: 1, align: "center" as const, font: null, widthPct: 100, mt: 0, mb: 12,
+      fx: "none" as const, fxColor: "#ff2d95", tracking: 0, caps: false, rotate: 0,
+    };
     const nb: Block =
       type === "text" ? { id: newBlockId("t"), type: "text", text: "Tu texto aquí", size: 16, ...t }
       : type === "spacer" ? { id: newBlockId("s"), type: "spacer", height: 24 }

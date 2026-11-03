@@ -16,7 +16,7 @@ function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
           <label className="label">Nombre</label>
           <input name="name" required maxLength={60} className="input" defaultValue={b?.name} placeholder="Ej: Martín" />
         </div>
-        <ImageField name="photo" removeName="removePhoto" label="Foto de perfil" currentUrl={b?.photoUrl ?? null} enabled={enabled} crop />
+        <ImageField name="photoUrl" removeName="removePhoto" kind="barber" label="Foto de perfil" currentUrl={b?.photoUrl ?? null} enabled={enabled} crop />
       </div>
       <div>
         <label className="label">Descripción (especialidades, experiencia…)</label>

@@ -134,8 +134,10 @@ export function PaymentsForm(p: Props) {
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="allowPayLater" checked={later} onChange={(e) => setLater(e.target.checked)} className="mt-0.5" />
           <span>
-            Permitir <strong>«Pagar después»</strong>
-            <span className="block text-xs text-neutral-500">El cliente puede reservar sin pagar ahora. Si lo desactivás, el pago online es obligatorio.</span>
+            Permitir <strong>«Pagar en el local»</strong> (efectivo o físico)
+            <span className="block text-xs text-neutral-500">
+              El cliente reserva sin pagar online y el turno queda como «Pago pendiente en el local». Si lo desactivás, el pago online es obligatorio.
+            </span>
           </span>
         </label>
 
@@ -146,7 +148,7 @@ export function PaymentsForm(p: Props) {
               <li key={o.choice}>
                 {o.choice === "DEPOSIT" && <>Pagar seña: <strong>{money(o.amountCents, p.currency)}</strong></>}
                 {o.choice === "FULL" && <>Pagar el total: <strong>{money(o.amountCents, p.currency)}</strong></>}
-                {o.choice === "NONE" && <>Pagar después (en el local)</>}
+                {o.choice === "NONE" && <>Pagar en el local (efectivo o físico)</>}
               </li>
             ))}
           </ul>

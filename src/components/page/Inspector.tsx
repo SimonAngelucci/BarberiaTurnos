@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FONT_KEYS, FONTS, type Align, type Block, type FontKey, type PageConfig } from "@/lib/page-config";
+import { FONT_KEYS, FONTS, FX_KEYS, FX_LABELS, type Align, type Block, type FontKey, type FxKey, type PageConfig, type TextBlock } from "@/lib/page-config";
+import { textStyle } from "./BlockView";
+import { CLEAR_FX, TEXT_PRESETS } from "./presets";
 
 export type AddType = "text" | "spacer" | "logo" | "title" | "tagline";
 type Patch = (id: string, p: Record<string, unknown>, key?: string) => void;
@@ -64,19 +66,56 @@ function ColorField({ label, value, onChange }: { label: string; value: string |
   );
 }
 
-function FontSelect({ label, value, onChange, inherit }: { label: string; value: FontKey | null; onChange: (v: FontKey | null) => void; inherit?: boolean }) {
+function FontSelect({ label, value, onChange, inherit, classicOnly }: { label: string; value: FontKey | null; onChange: (v: FontKey | null) => void; inherit?: boolean; classicOnly?: boolean }) {
+  const group = (g: "classic" | "display") => FONT_KEYS.filter((k) => FONTS[k].group === g);
+  const opts = (g: "classic" | "display") =>
+    group(g).map((k) => (
+      <option key={k} value={k}>
+        {FONTS[k].label}
+      </option>
+    ));
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-neutral-600">{label}</span>
       <select className="input !py-1.5 !text-sm" value={value ?? ""} onChange={(e) => onChange((e.target.value || null) as FontKey | null)}>
         {inherit && <option value="">Igual que la página</option>}
-        {FONT_KEYS.map((k) => (
-          <option key={k} value={k}>
-            {FONTS[k].label}
-          </option>
-        ))}
+        <optgroup label="Clásicas">{opts("classic")}</optgroup>
+        {/* La fuente general se usa también en el formulario de reservas: las llamativas quedan para títulos y carteles. */}
+        {!classicOnly && <optgroup label="Con personalidad">{opts("display")}</optgroup>}
       </select>
     </label>
+  );
+}
+
+/** Estilos rápidos de lettering con vista previa real de cada uno. */
+function PresetGrid({ block, onPick }: { block: TextBlock; onPick: (v: Partial<TextBlock>) => void }) {
+  return (
+    <div>
+      <span className="mb-1 block text-xs font-medium text-neutral-600">Estilos rápidos de letra</span>
+      <div className="grid grid-cols-3 gap-1.5">
+        {TEXT_PRESETS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            title={p.label}
+            aria-label={`Estilo ${p.label}`}
+            onClick={() => onPick(p.values)}
+            style={{ background: p.tileBg }}
+            className="flex h-14 flex-col items-center justify-center overflow-hidden rounded-lg border border-neutral-300 px-1 transition hover:scale-[1.03] hover:border-neutral-500 active:scale-95 motion-reduce:transition-none"
+          >
+            <span style={{ ...textStyle({ ...block, ...p.values } as TextBlock, 1.1), fontSize: 18, opacity: 1, color: (p.values.fx === "outline" || p.values.fx === "gradient") ? undefined : p.tileFg, transform: undefined, display: "inline-block", whiteSpace: "nowrap" }}>
+              Barber
+            </span>
+            <span className="mt-0.5 text-[9px] font-medium" style={{ color: p.tileFg, opacity: 0.8 }}>
+              {p.label}
+            </span>
+          </button>
+        ))}
+      </div>
+      <button type="button" className="mt-1.5 text-xs text-neutral-500 underline" onClick={() => onPick(CLEAR_FX)}>
+        Quitar efectos y volver a texto simple
+      </button>
+    </div>
   );
 }
 
@@ -111,7 +150,7 @@ export function Inspector({ cfg, block, patch, setGlobal, add, remove, duplicate
           <h3 className="font-semibold">Página</h3>
           <p className="text-xs text-neutral-500">Tocá un elemento de la vista previa para editarlo. Doble clic sobre un texto para escribir.</p>
         </div>
-        <FontSelect label="Tipografía general" value={cfg.global.font} onChange={(v) => setGlobal({ font: v ?? "system" })} />
+        <FontSelect label="Tipografía general" classicOnly value={cfg.global.font} onChange={(v) => setGlobal({ font: v ?? "system" })} />
         <Range label="Ancho máximo de la página" value={cfg.global.maxWidth} min={360} max={1000} step={10} unit="px" onChange={(v) => setGlobal({ maxWidth: v }, "maxw")} />
         <Range label="Redondeo de las tarjetas" value={cfg.global.cardRadius} min={0} max={32} unit="px" onChange={(v) => setGlobal({ cardRadius: v }, "radius")} />
         <div>
@@ -175,6 +214,7 @@ export function Inspector({ cfg, block, patch, setGlobal, add, remove, duplicate
               onChange={(e) => p({ text: block.type === "text" ? e.target.value : e.target.value || null }, "text")}
             />
           </label>
+          <PresetGrid block={block} onPick={(v) => p(v as Record<string, unknown>)} />
           <Seg label="Alineación" value={block.align} options={ALIGN} onChange={(v) => p({ align: v })} />
           <Range label="Tamaño de letra" value={block.size} min={10} max={96} unit="px" onChange={(v) => p({ size: v }, "size")} />
           <Seg
@@ -190,6 +230,31 @@ export function Inspector({ cfg, block, patch, setGlobal, add, remove, duplicate
           />
           <FontSelect label="Tipografía" inherit value={block.font} onChange={(v) => p({ font: v })} />
           <ColorField label="Color del texto" value={block.color} onChange={(v) => p({ color: v }, "color")} />
+
+          <div className="space-y-3 rounded-xl border border-neutral-200 p-3">
+            <span className="block text-xs font-semibold text-neutral-700">Efectos de lettering</span>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-neutral-600">Efecto</span>
+              <select className="input !py-1.5 !text-sm" value={block.fx} onChange={(e) => p({ fx: e.target.value as FxKey })}>
+                {FX_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {FX_LABELS[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(block.fx === "shadow" || block.fx === "neon" || block.fx === "gradient" || block.fx === "retro3d") && (
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-neutral-600">{block.fx === "gradient" ? "Color final del degradé" : block.fx === "neon" ? "Color del brillo" : "Color de la sombra"}</span>
+                <input type="color" value={block.fxColor} onChange={(e) => p({ fxColor: e.target.value }, "fxcolor")} className="h-9 w-14 rounded-lg border border-neutral-300" />
+              </label>
+            )}
+            <Range label="Espacio entre letras" value={block.tracking} min={-4} max={24} unit="px" onChange={(v) => p({ tracking: v }, "tracking")} />
+            <Range label="Inclinación" value={block.rotate} min={-12} max={12} unit="°" onChange={(v) => p({ rotate: v }, "rotate")} />
+            <label className="flex items-center gap-2 text-xs font-medium text-neutral-600">
+              <input type="checkbox" checked={block.caps} onChange={(e) => p({ caps: e.target.checked })} /> TODO EN MAYÚSCULAS
+            </label>
+          </div>
           <Range label="Transparencia" value={Math.round(block.opacity * 100)} min={20} max={100} unit="%" onChange={(v) => p({ opacity: v / 100 }, "opacity")} />
           <Range label="Ancho del bloque" value={block.widthPct} min={20} max={100} unit="%" onChange={(v) => p({ widthPct: v }, "width")} />
         </>

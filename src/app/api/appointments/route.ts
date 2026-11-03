@@ -83,6 +83,8 @@ export async function POST(req: Request) {
           priceCents: service.priceCents,
           // Pago online: el horario queda retenido (PENDING_PAYMENT) hasta que Mercado Pago apruebe el cobro.
           status: online ? "PENDING_PAYMENT" : "CONFIRMED",
+          // Pudo pagar online y eligió el local: queda "Pago pendiente en el local". Sin pagos online, no se marca nada.
+          ...(!online && options.some((o) => o.choice !== "NONE") ? { paymentStatus: "PENDING_AT_STORE" as const } : {}),
         },
       });
       const payment = online

@@ -39,6 +39,8 @@ enum DepositType {
 /// Estado de cobro del turno.
 enum PaymentStatus {
   UNPAID
+  /// El cliente eligió pagar en el local (efectivo o físico) pudiendo pagar online.
+  PENDING_AT_STORE
   DEPOSIT_PAID
   PAID
 }

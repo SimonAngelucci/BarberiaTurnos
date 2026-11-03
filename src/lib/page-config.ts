@@ -4,20 +4,47 @@ import { z } from "zod";
 // Es un diseño por BLOQUES (no posiciones en píxeles): así se adapta solo a celular y escritorio.
 // El mismo esquema valida lo que llega del editor (servidor) y lo que se lee de la base (si está dañado, cae al diseño por defecto).
 
-export const FONT_KEYS = ["system", "inter", "poppins", "montserrat", "playfair", "oswald", "bebas", "lora", "robotoslab"] as const;
+export const FONT_KEYS = [
+  "system", "inter", "poppins", "montserrat", "playfair", "oswald", "bebas", "lora", "robotoslab",
+  // Con personalidad (para títulos y carteles; de una sola tipografía/grosor)
+  "bungee", "anton", "marker", "pacifico", "monoton", "blackops", "abril", "typewriter", "bangers", "rocksalt",
+] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
 
-/** Tipografías permitidas (lista cerrada: nunca se carga una fuente arbitraria). */
-export const FONTS: Record<FontKey, { label: string; css: string | undefined; google: string | null }> = {
-  system: { label: "Predeterminada", css: undefined, google: null },
-  inter: { label: "Inter", css: "'Inter', sans-serif", google: "Inter:wght@400;500;600;700" },
-  poppins: { label: "Poppins", css: "'Poppins', sans-serif", google: "Poppins:wght@400;500;600;700" },
-  montserrat: { label: "Montserrat", css: "'Montserrat', sans-serif", google: "Montserrat:wght@400;500;600;700" },
-  playfair: { label: "Playfair Display (elegante)", css: "'Playfair Display', serif", google: "Playfair+Display:wght@400;500;600;700" },
-  oswald: { label: "Oswald (compacta)", css: "'Oswald', sans-serif", google: "Oswald:wght@400;500;600;700" },
-  bebas: { label: "Bebas Neue (titulares)", css: "'Bebas Neue', sans-serif", google: "Bebas+Neue" },
-  lora: { label: "Lora (clásica)", css: "'Lora', serif", google: "Lora:wght@400;500;600;700" },
-  robotoslab: { label: "Roboto Slab", css: "'Roboto Slab', serif", google: "Roboto+Slab:wght@400;500;600;700" },
+/** Tipografías permitidas (lista cerrada: nunca se carga una fuente arbitraria). `group: "display"` = con personalidad. */
+export const FONTS: Record<FontKey, { label: string; css: string | undefined; google: string | null; group: "classic" | "display" }> = {
+  system: { label: "Predeterminada", css: undefined, google: null, group: "classic" },
+  inter: { label: "Inter", css: "'Inter', sans-serif", google: "Inter:wght@400;500;600;700", group: "classic" },
+  poppins: { label: "Poppins", css: "'Poppins', sans-serif", google: "Poppins:wght@400;500;600;700", group: "classic" },
+  montserrat: { label: "Montserrat", css: "'Montserrat', sans-serif", google: "Montserrat:wght@400;500;600;700", group: "classic" },
+  playfair: { label: "Playfair Display (elegante)", css: "'Playfair Display', serif", google: "Playfair+Display:wght@400;500;600;700", group: "classic" },
+  oswald: { label: "Oswald (compacta)", css: "'Oswald', sans-serif", google: "Oswald:wght@400;500;600;700", group: "classic" },
+  bebas: { label: "Bebas Neue (titulares)", css: "'Bebas Neue', sans-serif", google: "Bebas+Neue", group: "classic" },
+  lora: { label: "Lora (clásica)", css: "'Lora', serif", google: "Lora:wght@400;500;600;700", group: "classic" },
+  robotoslab: { label: "Roboto Slab", css: "'Roboto Slab', serif", google: "Roboto+Slab:wght@400;500;600;700", group: "classic" },
+  bungee: { label: "Bungee (cartel urbano)", css: "'Bungee', sans-serif", google: "Bungee", group: "display" },
+  anton: { label: "Anton (afiche, ultra condensada)", css: "'Anton', sans-serif", google: "Anton", group: "display" },
+  marker: { label: "Permanent Marker (marcador)", css: "'Permanent Marker', cursive", google: "Permanent+Marker", group: "display" },
+  pacifico: { label: "Pacifico (cursiva retro)", css: "'Pacifico', cursive", google: "Pacifico", group: "display" },
+  monoton: { label: "Monoton (neón de líneas)", css: "'Monoton', sans-serif", google: "Monoton", group: "display" },
+  blackops: { label: "Black Ops One (estarcido)", css: "'Black Ops One', sans-serif", google: "Black+Ops+One", group: "display" },
+  abril: { label: "Abril Fatface (editorial)", css: "'Abril Fatface', serif", google: "Abril+Fatface", group: "display" },
+  typewriter: { label: "Special Elite (máquina de escribir)", css: "'Special Elite', monospace", google: "Special+Elite", group: "display" },
+  bangers: { label: "Bangers (cómic)", css: "'Bangers', sans-serif", google: "Bangers", group: "display" },
+  rocksalt: { label: "Rock Salt (garabato)", css: "'Rock Salt', cursive", google: "Rock+Salt", group: "display" },
+};
+
+/** Efectos de texto. «stamp» = sello con borde; el resto se resuelve con CSS puro (ver BlockView). */
+export const FX_KEYS = ["none", "shadow", "outline", "neon", "gradient", "retro3d", "stamp"] as const;
+export type FxKey = (typeof FX_KEYS)[number];
+export const FX_LABELS: Record<FxKey, string> = {
+  none: "Ninguno",
+  shadow: "Sombra dura",
+  outline: "Contorno (letra hueca)",
+  neon: "Neón brillante",
+  gradient: "Degradé de color",
+  retro3d: "Relieve 3D retro",
+  stamp: "Sello con borde",
 };
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
@@ -37,6 +64,12 @@ const textStyle = {
   widthPct: n(20, 100),
   mt: n(0, 120),
   mb: n(0, 120),
+  // Lettering. Con valores por defecto: los diseños guardados antes de existir estos campos siguen siendo válidos.
+  fx: z.enum(FX_KEYS).default("none"),
+  fxColor: hex.default("#ff2d95"),
+  tracking: n(-4, 24).default(0),
+  caps: z.boolean().default(false),
+  rotate: n(-12, 12).default(0),
 };
 
 const logo = z.object({ id, type: z.literal("logo"), size: n(32, 240), shape: z.enum(["circle", "rounded", "square"]), align, mt: n(0, 120), mb: n(0, 120) });
@@ -67,7 +100,10 @@ export type Align = "left" | "center" | "right";
 
 /** Diseño por defecto: se ve igual que la página antes de existir el editor. */
 export function defaultConfig(): PageConfig {
-  const t = { weight: 700 as const, color: null, opacity: 1, align: "center" as const, font: null, widthPct: 100, mt: 0, mb: 0 };
+  const t = {
+    weight: 700 as const, color: null, opacity: 1, align: "center" as const, font: null, widthPct: 100, mt: 0, mb: 0,
+    fx: "none" as const, fxColor: "#ff2d95", tracking: 0, caps: false, rotate: 0,
+  };
   return {
     v: 1,
     global: { font: "system", maxWidth: 512, cardRadius: 16 },
