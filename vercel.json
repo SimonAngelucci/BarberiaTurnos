@@ -1,3 +1,4 @@
 {
+  "framework": "nextjs",
   "crons": [{ "path": "/api/cron/dispatch", "schedule": "0 8 * * *" }]
 }
