@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import type { MessageKind } from "@prisma/client";
 import { prisma } from "./db";
 import { sendWhatsApp } from "./whatsapp";
+import { money } from "./format";
 
 const MAX_ATTEMPTS = 3;
 
@@ -16,7 +17,7 @@ async function loadAppointment(id: string) {
   });
 }
 
-function buildVars(a: Awaited<ReturnType<typeof loadAppointment>>) {
+function buildVars(a: Awaited<ReturnType<typeof loadAppointment>>, paidCents = 0) {
   const local = DateTime.fromJSDate(a.startAt).setZone(a.business.timezone).setLocale("es");
   return {
     nombre: a.customer.firstName,
@@ -24,6 +25,7 @@ function buildVars(a: Awaited<ReturnType<typeof loadAppointment>>) {
     negocio: a.business.name,
     fecha: local.toFormat("cccc d 'de' LLLL"),
     hora: local.toFormat("HH:mm"),
+    monto: money(paidCents, a.business.currency),
   };
 }
 
@@ -31,12 +33,14 @@ const TEMPLATE_ENV: Record<MessageKind, string> = {
   CONFIRMATION: "WA_TPL_CONFIRM",
   REMINDER: "WA_TPL_REMINDER",
   CANCELLATION: "WA_TPL_CANCEL",
+  PAYMENT: "WA_TPL_PAYMENT",
 };
 
-function row(a: Awaited<ReturnType<typeof loadAppointment>>, kind: MessageKind, sendAt: Date) {
-  const vars = buildVars(a);
+function row(a: Awaited<ReturnType<typeof loadAppointment>>, kind: MessageKind, sendAt: Date, paidCents = 0) {
+  const vars = buildVars(a, paidCents);
+  const b = a.business;
   const tpl =
-    kind === "CONFIRMATION" ? a.business.confirmTemplate : kind === "REMINDER" ? a.business.reminderTemplate : a.business.cancelTemplate;
+    kind === "CONFIRMATION" ? b.confirmTemplate : kind === "REMINDER" ? b.reminderTemplate : kind === "PAYMENT" ? b.paymentTemplate : b.cancelTemplate;
   return {
     businessId: a.businessId,
     appointmentId: a.id,
@@ -44,17 +48,22 @@ function row(a: Awaited<ReturnType<typeof loadAppointment>>, kind: MessageKind, 
     to: a.customer.phone,
     body: render(tpl, vars),
     templateName: process.env[TEMPLATE_ENV[kind]] ?? null,
-    // Orden de variables {{1}}..{{5}} de las plantillas de Meta
-    params: [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio],
+    // Orden de variables {{1}}..{{5}} de las plantillas de Meta (la de pago agrega {{6}} = monto)
+    params: kind === "PAYMENT"
+      ? [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio, vars.monto]
+      : [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio],
     sendAt,
   };
 }
 
-/** Encola confirmación inmediata + recordatorios futuros. */
-export async function enqueueBookingMessages(appointmentId: string) {
+/**
+ * Encola la confirmación inmediata + recordatorios futuros.
+ * Si el turno se pagó online (`paidCents`), la confirmación es el mensaje de pago recibido.
+ */
+export async function enqueueBookingMessages(appointmentId: string, paidCents = 0) {
   const a = await loadAppointment(appointmentId);
   const now = Date.now();
-  const data = [row(a, "CONFIRMATION", new Date())];
+  const data = [paidCents > 0 ? row(a, "PAYMENT", new Date(), paidCents) : row(a, "CONFIRMATION", new Date())];
   for (const offset of a.business.reminderOffsetsMin) {
     const at = a.startAt.getTime() - offset * 60_000;
     if (at > now + 60_000) data.push(row(a, "REMINDER", new Date(at)));

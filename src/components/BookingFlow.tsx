@@ -4,11 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { money } from "@/lib/format";
+import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
 type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number };
 type Barber = { id: string; name: string; photoUrl: string | null; bio: string | null };
 
-type Props = { slug: string; services: Service[]; barbers: Barber[]; timezone: string; currency: string; maxAdvanceDays: number };
+type Props = {
+  slug: string;
+  services: Service[];
+  barbers: Barber[];
+  timezone: string;
+  currency: string;
+  maxAdvanceDays: number;
+  pay: PayConfig;
+};
 
 function Avatar({ b, size }: { b: Barber; size: number }) {
   const style = { width: size, height: size };
@@ -22,8 +31,9 @@ function Avatar({ b, size }: { b: Barber; size: number }) {
   );
 }
 
-export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays }: Props) {
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay }: Props) {
   const [service, setService] = useState<Service | null>(null);
+  const [choice, setChoice] = useState<PayChoice>("NONE");
   const [barberId, setBarberId] = useState<string | null>(barbers.length === 1 ? barbers[0].id : null);
   const [date, setDate] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[] | null>(null);
@@ -53,6 +63,12 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     };
   }, [slug, service, barberId, date, reload]);
 
+  // Opciones de pago para el servicio elegido (el servidor las vuelve a validar y calcula el monto real).
+  const options = useMemo(() => (service ? payOptions(service.priceCents, pay) : []), [service, pay]);
+  useEffect(() => setChoice(options[0]?.choice ?? "NONE"), [options]);
+  const selected = options.find((o) => o.choice === choice) ?? options[0];
+  const online = !!selected && selected.choice !== "NONE";
+
   const phoneOk = parsePhoneNumberFromString(form.phone)?.isValid() ?? false;
   const formOk = form.firstName.trim().length >= 2 && form.lastName.trim().length >= 2 && phoneOk;
 
@@ -63,9 +79,13 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     const res = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form }),
+      body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form, payment: selected?.choice ?? "NONE" }),
     });
     const j = await res.json().catch(() => ({}));
+    if (res.ok && j.checkoutUrl) {
+      window.location.href = j.checkoutUrl; // Checkout Pro de Mercado Pago; el botón queda ocupado hasta salir
+      return;
+    }
     setBusy(false);
     if (res.ok) return setDone(true);
     setError(j.error ?? "Error inesperado");
@@ -219,9 +239,52 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
             />
             {form.phone && !phoneOk && <p className="mt-1 text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
           </div>
+          {service && options.some((o) => o.choice !== "NONE") && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Pago</h3>
+              {options.length === 1 ? (
+                <p className="rounded-xl bg-neutral-50 p-3 text-sm">
+                  Para reservar tenés que pagar online {options[0].choice === "DEPOSIT" ? "una seña de" : "el total:"}{" "}
+                  <strong>{money(options[0].amountCents, currency)}</strong>
+                  {options[0].choice === "DEPOSIT" && <> (el resto, {money(service.priceCents - options[0].amountCents, currency)}, lo abonás en el local)</>}.
+                </p>
+              ) : (
+                <div className="space-y-2" role="radiogroup" aria-label="Forma de pago">
+                  {options.map((o) => (
+                    <label
+                      key={o.choice}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm ${selected?.choice === o.choice ? "border-brand ring-2 ring-neutral-300" : "border-neutral-300"}`}
+                    >
+                      <input type="radio" name="pay" checked={selected?.choice === o.choice} onChange={() => setChoice(o.choice)} />
+                      <span className="flex-1">
+                        {o.choice === "DEPOSIT" && (
+                          <>
+                            <strong>Pagar seña · {money(o.amountCents, currency)}</strong>
+                            <span className="block text-xs text-neutral-500">El resto ({money(service.priceCents - o.amountCents, currency)}) lo abonás en el local</span>
+                          </>
+                        )}
+                        {o.choice === "FULL" && (
+                          <>
+                            <strong>Pagar el total · {money(o.amountCents, currency)}</strong>
+                            <span className="block text-xs text-neutral-500">No abonás nada en el local</span>
+                          </>
+                        )}
+                        {o.choice === "NONE" && (
+                          <>
+                            <strong>Pagar después</strong>
+                            <span className="block text-xs text-neutral-500">Reservás ahora y abonás en el local</span>
+                          </>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
           <button className="btn w-full" disabled={!formOk || busy} onClick={submit}>
-            {busy ? "Confirmando…" : "Confirmar turno"}
+            {busy ? (online ? "Redirigiendo a Mercado Pago…" : "Confirmando…") : online ? `Pagar ${money(selected!.amountCents, currency)} con Mercado Pago` : "Confirmar turno"}
           </button>
         </section>
       )}

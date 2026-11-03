@@ -3,11 +3,23 @@ import type { Prisma } from "@prisma/client";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { fmtDateTime, fmtTime, money } from "@/lib/format";
-import { cancelAppointment, setAppointmentStatus } from "./actions";
+import { cancelAppointment, setAppointmentStatus, markAppointmentPaid } from "./actions";
 
 type Appt = Prisma.AppointmentGetPayload<{ include: { customer: true; service: true; barber: true } }>;
 
-function Row({ a, tz, showDate }: { a: Appt; tz: string; showDate?: boolean }) {
+function PayBadge({ a, currency }: { a: Appt; currency: string }) {
+  if (a.status === "PENDING_PAYMENT") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Esperando pago</span>;
+  if (a.paymentStatus === "PAID") return <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">Pagado</span>;
+  if (a.paymentStatus === "DEPOSIT_PAID")
+    return (
+      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
+        Seña {money(a.amountPaidCents, currency)} · falta {money(a.priceCents - a.amountPaidCents, currency)}
+      </span>
+    );
+  return null;
+}
+
+function Row({ a, tz, currency, showDate }: { a: Appt; tz: string; currency: string; showDate?: boolean }) {
   const active = a.status === "CONFIRMED";
   return (
     <li className="flex flex-wrap items-center gap-3 py-3">
@@ -20,11 +32,18 @@ function Row({ a, tz, showDate }: { a: Appt; tz: string; showDate?: boolean }) {
           {a.service.name} · {a.barber?.name ?? "Barbero eliminado"} ·{" "}
           <a className="underline" href={`https://wa.me/${a.customer.phone.replace("+", "")}`} target="_blank">
             {a.customer.phone}
-          </a>
+          </a>{" "}
+          <PayBadge a={a} currency={currency} />
         </div>
       </div>
       {active ? (
         <div className="flex gap-2">
+          {a.paymentStatus !== "PAID" && (
+            <form action={markAppointmentPaid}>
+              <input type="hidden" name="id" value={a.id} />
+              <button className="btn-ghost" title="Marcar como cobrado en el local">Cobrado</button>
+            </form>
+          )}
           <form action={setAppointmentStatus}>
             <input type="hidden" name="id" value={a.id} />
             <input type="hidden" name="status" value="COMPLETED" />
@@ -67,7 +86,7 @@ export default async function DashboardPage() {
     prisma.customer.count({ where: { businessId, createdAt: { gte: now.minus({ days: 7 }).toJSDate() } } }),
   ]);
 
-  const live = today.filter((a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW");
+  const live = today.filter((a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW" && a.status !== "PENDING_PAYMENT");
   const revenue = live.reduce((s, a) => s + a.priceCents, 0);
 
   const stats = [
@@ -95,7 +114,7 @@ export default async function DashboardPage() {
         ) : (
           <ul className="divide-y divide-neutral-100">
             {today.map((a) => (
-              <Row key={a.id} a={a} tz={tz} />
+              <Row key={a.id} a={a} tz={tz} currency={b.currency} />
             ))}
           </ul>
         )}
@@ -108,7 +127,7 @@ export default async function DashboardPage() {
         ) : (
           <ul className="divide-y divide-neutral-100">
             {upcoming.map((a) => (
-              <Row key={a.id} a={a} tz={tz} showDate />
+              <Row key={a.id} a={a} tz={tz} currency={b.currency} showDate />
             ))}
           </ul>
         )}

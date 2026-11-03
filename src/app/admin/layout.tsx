@@ -13,12 +13,14 @@ const links = [
   { href: "/admin/services", label: "Servicios" },
   { href: "/admin/barbers", label: "Barberos" },
   { href: "/admin/schedule", label: "Horarios" },
+  { href: "/admin/payments", label: "Pagos" },
+  { href: "/admin/design", label: "Diseño" },
   { href: "/admin/settings", label: "Negocio" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const business = session ? await prisma.business.findUnique({ where: { id: session.businessId } }) : null;
+  const business = session ? await prisma.business.findUnique({ where: { id: session.businessId }, omit: { mpAccessToken: true } }) : null;
 
   let publicUrl = "";
   if (business) {

@@ -18,7 +18,9 @@ body {
 @layer components {
   /* Las superficies blancas siempre llevan texto oscuro, sea cual sea el fondo de la página. */
   .card {
-    @apply rounded-2xl border border-neutral-200 bg-white p-4 text-neutral-900 shadow-sm;
+    @apply border border-neutral-200 bg-white p-4 text-neutral-900 shadow-sm;
+    /* El editor de diseño puede cambiar --card-radius; sin él queda en 1rem (= rounded-2xl). */
+    border-radius: var(--card-radius, 1rem);
   }
   .input {
     @apply w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 outline-none focus:border-brand focus:ring-2 focus:ring-neutral-200;

@@ -9,6 +9,8 @@ datasource db {
 }
 
 enum AppointmentStatus {
+  /// Reservó y eligió pagar online: el horario queda retenido unos minutos hasta que se aprueba el pago.
+  PENDING_PAYMENT
   CONFIRMED
   CANCELLED
   COMPLETED
@@ -19,6 +21,38 @@ enum MessageKind {
   CONFIRMATION
   REMINDER
   CANCELLATION
+  /// Pago recibido + turno confirmado (reemplaza a CONFIRMATION cuando se pagó online).
+  PAYMENT
+}
+
+enum PaymentMode {
+  DEPOSIT_ONLY
+  FULL_ONLY
+  BOTH
+}
+
+enum DepositType {
+  PERCENT
+  FIXED
+}
+
+/// Estado de cobro del turno.
+enum PaymentStatus {
+  UNPAID
+  DEPOSIT_PAID
+  PAID
+}
+
+enum PaymentKind {
+  DEPOSIT
+  FULL
+}
+
+enum PaymentState {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }
 
 enum MessageStatus {
@@ -40,6 +74,8 @@ model Business {
   /// Color de fondo de la página pública (y del panel si applyBgToAdmin).
   bgColor            String   @default("#fafafa")
   applyBgToAdmin     Boolean  @default(false)
+  /// Diseño de la página pública (editor visual). null = diseño por defecto. Ver src/lib/page-config.ts.
+  pageConfig         Json?
   timezone           String   @default("America/Argentina/Buenos_Aires")
   currency           String   @default("ARS")
   slotIntervalMin    Int      @default(30)
@@ -50,6 +86,20 @@ model Business {
   confirmTemplate    String   @default("Hola {{nombre}}! Tu turno de {{servicio}} en {{negocio}} quedó confirmado para el {{fecha}} a las {{hora}}. ¡Te esperamos!")
   reminderTemplate   String   @default("Hola {{nombre}}, te recordamos tu turno de {{servicio}} en {{negocio}}: {{fecha}} a las {{hora}}.")
   cancelTemplate     String   @default("Hola {{nombre}}, lamentablemente tu turno de {{servicio}} del {{fecha}} a las {{hora}} en {{negocio}} fue cancelado. Escribinos para reprogramar.")
+  paymentTemplate    String   @default("Hola {{nombre}}! Recibimos tu pago de {{monto}} por tu turno de {{servicio}} en {{negocio}}. Quedó confirmado para el {{fecha}} a las {{hora}}. ¡Te esperamos!")
+
+  // --- Pagos (Mercado Pago, credenciales propias de cada barbería) ---
+  paymentsEnabled    Boolean     @default(false)
+  paymentMode        PaymentMode @default(BOTH)
+  depositType        DepositType @default(PERCENT)
+  /// PERCENT: 1–100. FIXED: monto en centavos.
+  depositValue       Int         @default(30)
+  /// Permite reservar sin pagar en el momento ("Pagar después").
+  allowPayLater      Boolean     @default(true)
+  /// Access Token de Mercado Pago, cifrado (AES-256-GCM). Nunca se devuelve al navegador.
+  mpAccessToken      String?
+  /// Etiqueta de la cuenta conectada (ej. nickname) para mostrar en el panel.
+  mpAccountLabel     String?
   createdAt          DateTime @default(now())
 
   admins       AdminUser[]
@@ -165,8 +215,11 @@ model Appointment {
   endAt      DateTime
   status     AppointmentStatus @default(CONFIRMED)
   priceCents Int
+  paymentStatus   PaymentStatus @default(UNPAID)
+  amountPaidCents Int           @default(0)
   createdAt  DateTime          @default(now())
 
+  payments Payment[]
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   barber   Barber?  @relation(fields: [barberId], references: [id], onDelete: SetNull)
   service  Service  @relation(fields: [serviceId], references: [id])
@@ -175,6 +228,26 @@ model Appointment {
 
   @@index([businessId, startAt])
   @@index([barberId, startAt])
+}
+
+/// Intento de cobro (una preferencia de Mercado Pago). `id` viaja como external_reference.
+model Payment {
+  id             String       @id @default(cuid())
+  businessId     String
+  appointmentId  String
+  kind           PaymentKind
+  amountCents    Int
+  state          PaymentState @default(PENDING)
+  mpPreferenceId String?
+  mpPaymentId    String?      @unique
+  /// Observaciones operativas (ej. cobro aprobado cuando el horario ya se había liberado).
+  note           String?
+  createdAt      DateTime     @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, state])
+  @@index([appointmentId])
 }
 
 /// Outbox de WhatsApp: se inserta en la misma operación que el turno y un worker/cron la despacha.

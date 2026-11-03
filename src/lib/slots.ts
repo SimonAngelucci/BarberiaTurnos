@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { prisma } from "./db";
+import { HOLD_MINUTES } from "./payment-math";
 
 type Params = {
   businessId: string;
@@ -39,6 +40,8 @@ export async function getAvailableSlots({ businessId, barberId, serviceId, date 
       where: {
         barberId,
         status: { not: "CANCELLED" },
+        // Una reserva a la espera de pago que ya venció no ocupa el horario.
+        NOT: { status: "PENDING_PAYMENT", createdAt: { lt: new Date(Date.now() - HOLD_MINUTES * 60_000) } },
         startAt: { lt: nextDay.toJSDate() },
         endAt: { gt: day.toJSDate() },
       },

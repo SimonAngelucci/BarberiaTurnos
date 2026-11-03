@@ -9,6 +9,10 @@ import { requireAdmin } from "@/lib/auth";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
 import { uploadImage, deleteImage } from "@/lib/upload";
+import { encryptSecret } from "@/lib/crypto";
+import { configSchema } from "@/lib/page-config";
+import type { Prisma } from "@prisma/client";
+import { verifyMpToken } from "@/lib/payments";
 
 // Todas las actions son endpoints públicos: SIEMPRE validar sesión y datos.
 
@@ -219,6 +223,104 @@ export async function deleteTimeOff(formData: FormData) {
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.timeOff.deleteMany({ where: { id, businessId } });
   revalidatePath("/admin/schedule");
+}
+
+export type FormState = { ok: boolean; message?: string; error?: string } | null;
+
+const paymentSchema = z.object({
+  mode: z.enum(["DEPOSIT_ONLY", "FULL_ONLY", "BOTH"]),
+  depositType: z.enum(["PERCENT", "FIXED"]),
+  depositValue: z.coerce.number().positive("Poné un valor de seña mayor a 0"),
+  paymentTemplate: z.string().trim().min(1, "El mensaje de pago no puede estar vacío").max(600),
+  accessToken: z.string().trim().max(400),
+});
+
+/** Configuración de pagos de la barbería. Devuelve el error como dato (Next oculta mensajes de excepciones). */
+export async function savePaymentSettings(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { businessId } = await requireAdmin();
+  const parsed = paymentSchema.safeParse({
+    mode: formData.get("mode"),
+    depositType: formData.get("depositType"),
+    depositValue: formData.get("depositValue"),
+    paymentTemplate: formData.get("paymentTemplate"),
+    accessToken: formData.get("accessToken") ?? "",
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  const d = parsed.data;
+
+  let depositValue: number;
+  if (d.depositType === "PERCENT") {
+    if (!Number.isInteger(d.depositValue) || d.depositValue < 1 || d.depositValue > 100) return { ok: false, error: "El porcentaje de seña debe ser un entero entre 1 y 100" };
+    depositValue = d.depositValue;
+  } else {
+    depositValue = Math.round(d.depositValue * 100); // pesos → centavos
+    if (depositValue < 100 || depositValue > 100_000_000) return { ok: false, error: "El monto fijo de seña no es válido" };
+  }
+
+  try {
+    // Único lugar del panel que lee el token (para saber si ya hay uno); no sale de esta función.
+    const current = await prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { mpAccessToken: true, mpAccountLabel: true } });
+    let mpAccessToken = current.mpAccessToken;
+    let mpAccountLabel = current.mpAccountLabel;
+
+    if (formData.get("removeToken") === "on") {
+      mpAccessToken = null;
+      mpAccountLabel = null;
+    } else if (d.accessToken) {
+      const check = await verifyMpToken(d.accessToken);
+      if (!check.ok) return { ok: false, error: check.error };
+      mpAccessToken = encryptSecret(d.accessToken);
+      mpAccountLabel = check.label;
+    }
+
+    const wantsEnabled = formData.get("enabled") === "on";
+    if (wantsEnabled && !mpAccessToken) return { ok: false, error: "Para activar los pagos cargá primero tu Access Token de Mercado Pago." };
+
+    await prisma.business.update({
+      where: { id: businessId },
+      data: {
+        paymentsEnabled: wantsEnabled && !!mpAccessToken,
+        paymentMode: d.mode,
+        depositType: d.depositType,
+        depositValue,
+        allowPayLater: formData.get("allowPayLater") === "on",
+        paymentTemplate: d.paymentTemplate,
+        mpAccessToken,
+        mpAccountLabel,
+      },
+    });
+    revalidatePath("/admin/payments");
+    revalidatePath("/", "layout");
+    return { ok: true, message: wantsEnabled ? "Pagos activados y guardados." : "Configuración guardada. Los pagos están desactivados." };
+  } catch (e) {
+    console.error("savePaymentSettings", e);
+    return { ok: false, error: "No se pudo guardar. Intentá de nuevo." };
+  }
+}
+
+/** Publica el diseño de la página pública. Se valida TODO en el servidor (rangos, fuentes, colores, estructura). */
+export async function saveDesign(input: unknown): Promise<FormState> {
+  const { businessId } = await requireAdmin();
+  const parsed = configSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: `Diseño inválido: ${parsed.error.issues[0]?.message ?? "valores fuera de rango"}` };
+  try {
+    await prisma.business.update({ where: { id: businessId }, data: { pageConfig: parsed.data as Prisma.InputJsonValue } });
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Diseño publicado. Ya se ve en tu link." };
+  } catch (e) {
+    console.error("saveDesign", e);
+    return { ok: false, error: "No se pudo guardar. Intentá de nuevo." };
+  }
+}
+
+/** Marca un turno como cobrado en el local (efectivo, transferencia, etc.). */
+export async function markAppointmentPaid(formData: FormData) {
+  const { businessId } = await requireAdmin();
+  const id = z.string().min(1).parse(formData.get("id"));
+  const a = await prisma.appointment.findFirst({ where: { id, businessId, status: { in: ["CONFIRMED", "COMPLETED"] } } });
+  if (!a || a.paymentStatus === "PAID") return;
+  await prisma.appointment.update({ where: { id }, data: { paymentStatus: "PAID", amountPaidCents: a.priceCents } });
+  revalidatePath("/admin");
 }
 
 const settingsSchema = z.object({
