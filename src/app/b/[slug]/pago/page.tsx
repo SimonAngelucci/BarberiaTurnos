@@ -70,6 +70,15 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
               {appt.paymentStatus === "DEPOSIT_PAID" ? ` (seña). El resto (${money(appt.priceCents - appt.amountPaidCents, b.currency)}) lo abonás en el local.` : "."}{" "}
               Te enviamos la confirmación por WhatsApp.
             </p>
+            {b.allowClientChanges && appt.claimCode && (
+              <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3">
+                <div className="text-xs text-neutral-500">Tu código para reprogramar o cancelar</div>
+                <div className="my-1 font-mono text-2xl font-bold tracking-widest">{appt.claimCode}</div>
+                <Link href={`/b/${slug}/turno?c=${appt.claimCode}`} className="btn-ghost mt-1 w-full">
+                  Reprogramar o cancelar
+                </Link>
+              </div>
+            )}
           </>
         ) : pending && !inProcess ? (
           <>

@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessForCheckout } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
+import { generateClaimCode } from "@/lib/claim";
 import { payOptions } from "@/lib/payment-math";
 import { payConfig, createCheckout, expirePendingPayments, siteOrigin } from "@/lib/payments";
 
@@ -83,6 +84,9 @@ export async function POST(req: Request) {
           priceCents: service.priceCents,
           // Pago online: el horario queda retenido (PENDING_PAYMENT) hasta que Mercado Pago apruebe el cobro.
           status: online ? "PENDING_PAYMENT" : "CONFIRMED",
+          // Código para reprogramar/cancelar (único por restricción de la base) + primer evento del historial.
+          claimCode: generateClaimCode(),
+          events: { create: { businessId: business.id, kind: "CREATED", actor: "CLIENT", toStartAt: startAt } },
           // Pudo pagar online y eligió el local: queda "Pago pendiente en el local". Sin pagos online, no se marca nada.
           ...(!online && options.some((o) => o.choice !== "NONE") ? { paymentStatus: "PENDING_AT_STORE" as const } : {}),
         },
@@ -103,7 +107,7 @@ export async function POST(req: Request) {
     if (!online || !payment) {
       await enqueueBookingMessages(appt.id);
       after(() => dispatchDue().catch((e) => console.error("dispatch", e)));
-      return NextResponse.json({ id: appt.id }, { status: 201 });
+      return NextResponse.json({ id: appt.id, claimCode: appt.claimCode }, { status: 201 });
     }
 
     // Checkout Pro: si no se puede crear el cobro, se libera el horario y se avisa.

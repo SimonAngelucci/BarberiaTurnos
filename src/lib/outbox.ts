@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import type { MessageKind } from "@prisma/client";
 import { prisma } from "./db";
 import { sendWhatsApp } from "./whatsapp";
-import { money } from "./format";
+import { money, noticePhrase } from "./format";
 
 const MAX_ATTEMPTS = 3;
 
@@ -17,8 +17,12 @@ async function loadAppointment(id: string) {
   });
 }
 
-function buildVars(a: Awaited<ReturnType<typeof loadAppointment>>, paidCents = 0) {
-  const local = DateTime.fromJSDate(a.startAt).setZone(a.business.timezone).setLocale("es");
+type Appt = Awaited<ReturnType<typeof loadAppointment>>;
+
+function buildVars(a: Appt, paidCents = 0, prevStart?: Date) {
+  const tz = a.business.timezone;
+  const local = DateTime.fromJSDate(a.startAt).setZone(tz).setLocale("es");
+  const prev = prevStart ? DateTime.fromJSDate(prevStart).setZone(tz).setLocale("es") : null;
   return {
     nombre: a.customer.firstName,
     servicio: a.service.name,
@@ -26,6 +30,9 @@ function buildVars(a: Awaited<ReturnType<typeof loadAppointment>>, paidCents = 0
     fecha: local.toFormat("cccc d 'de' LLLL"),
     hora: local.toFormat("HH:mm"),
     monto: money(paidCents, a.business.currency),
+    codigo: a.claimCode ?? "",
+    fecha_anterior: prev?.toFormat("cccc d 'de' LLLL") ?? "",
+    hora_anterior: prev?.toFormat("HH:mm") ?? "",
   };
 }
 
@@ -34,24 +41,53 @@ const TEMPLATE_ENV: Record<MessageKind, string> = {
   REMINDER: "WA_TPL_REMINDER",
   CANCELLATION: "WA_TPL_CANCEL",
   PAYMENT: "WA_TPL_PAYMENT",
+  RESCHEDULE: "WA_TPL_RESCHEDULE",
+  SELF_CANCEL: "WA_TPL_SELFCANCEL",
 };
 
-function row(a: Awaited<ReturnType<typeof loadAppointment>>, kind: MessageKind, sendAt: Date, paidCents = 0) {
-  const vars = buildVars(a, paidCents);
-  const b = a.business;
-  const tpl =
-    kind === "CONFIRMATION" ? b.confirmTemplate : kind === "REMINDER" ? b.reminderTemplate : kind === "PAYMENT" ? b.paymentTemplate : b.cancelTemplate;
+/** Mensajes que llevan el código de reclamo para que el cliente pueda reprogramar o cancelar. */
+const WITH_CODE: MessageKind[] = ["CONFIRMATION", "PAYMENT", "RESCHEDULE"];
+
+function templateFor(b: Appt["business"], kind: MessageKind) {
+  switch (kind) {
+    case "CONFIRMATION": return b.confirmTemplate;
+    case "REMINDER": return b.reminderTemplate;
+    case "PAYMENT": return b.paymentTemplate;
+    case "RESCHEDULE": return b.rescheduleTemplate;
+    case "SELF_CANCEL": return b.selfCancelTemplate;
+    default: return b.cancelTemplate;
+  }
+}
+
+/**
+ * Si el texto guardado por la barbería no incluye {{codigo}} (todos los anteriores a esta función),
+ * se agrega solo el código y el plazo al final: así el cliente lo recibe sin que el dueño edite nada.
+ */
+function withClaimInfo(body: string, tpl: string, a: Appt) {
+  if (!a.claimCode || !a.business.allowClientChanges || tpl.includes("{{codigo}}")) return body;
+  const site = process.env.SITE_URL?.replace(/\/$/, "");
+  const link = site ? `\nGestioná tu turno acá: ${site}/b/${a.business.slug}/turno?c=${a.claimCode}` : "";
+  return `${body}\n\n🔑 Tu código para reprogramar o cancelar: ${a.claimCode}\nPodés hacerlo ${noticePhrase(a.business.changeMinNoticeMin)}.${link}`;
+}
+
+function row(a: Appt, kind: MessageKind, sendAt: Date, paidCents = 0, prevStart?: Date) {
+  const vars = buildVars(a, paidCents, prevStart);
+  const tpl = templateFor(a.business, kind);
+  const body = render(tpl, vars);
+  // Orden de variables {{1}}.. de las plantillas de Meta. Se agregan al final para no romper las ya aprobadas:
+  // pago = +monto, reprogramación = +fecha y hora anteriores, y el código solo si WA_TEMPLATE_CODE_PARAM=true.
+  const params = [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio];
+  if (kind === "PAYMENT") params.push(vars.monto);
+  if (kind === "RESCHEDULE") params.push(vars.fecha_anterior, vars.hora_anterior);
+  if (WITH_CODE.includes(kind) && process.env.WA_TEMPLATE_CODE_PARAM === "true") params.push(vars.codigo);
   return {
     businessId: a.businessId,
     appointmentId: a.id,
     kind,
     to: a.customer.phone,
-    body: render(tpl, vars),
+    body: WITH_CODE.includes(kind) ? withClaimInfo(body, tpl, a) : body,
     templateName: process.env[TEMPLATE_ENV[kind]] ?? null,
-    // Orden de variables {{1}}..{{5}} de las plantillas de Meta (la de pago agrega {{6}} = monto)
-    params: kind === "PAYMENT"
-      ? [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio, vars.monto]
-      : [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio],
+    params,
     sendAt,
   };
 }
@@ -99,6 +135,34 @@ export async function buildCancellationOps(appointmentIds: string[]) {
       data: { status: "SKIPPED" },
     }),
     prisma.message.createMany({ data: appts.map((a) => row(a, "CANCELLATION", new Date())) }),
+  ];
+}
+
+/**
+ * Operaciones (sin ejecutar) para mover un turno a otro horario: saltea los recordatorios viejos, encola el aviso
+ * de reprogramación y los recordatorios del nuevo horario. Se corren en la MISMA transacción que el cambio de fecha.
+ */
+export async function buildRescheduleOps(appointmentId: string, newStart: Date, newEnd: Date) {
+  const a = await loadAppointment(appointmentId);
+  const moved = { ...a, startAt: newStart, endAt: newEnd };
+  const now = Date.now();
+  const data = [row(moved, "RESCHEDULE", new Date(), 0, a.startAt)];
+  for (const offset of a.business.reminderOffsetsMin) {
+    const at = newStart.getTime() - offset * 60_000;
+    if (at > now + 60_000) data.push(row(moved, "REMINDER", new Date(at)));
+  }
+  return [
+    prisma.message.updateMany({ where: { appointmentId, kind: "REMINDER", status: "PENDING" }, data: { status: "SKIPPED" } }),
+    prisma.message.createMany({ data }),
+  ];
+}
+
+/** Operaciones (sin ejecutar) para avisar que el cliente canceló su propio turno. */
+export async function buildSelfCancelOps(appointmentId: string) {
+  const a = await loadAppointment(appointmentId);
+  return [
+    prisma.message.updateMany({ where: { appointmentId, kind: "REMINDER", status: "PENDING" }, data: { status: "SKIPPED" } }),
+    prisma.message.createMany({ data: [row(a, "SELF_CANCEL", new Date())] }),
   ];
 }
 

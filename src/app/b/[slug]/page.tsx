@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { BookingFlow } from "@/components/BookingFlow";
@@ -25,6 +26,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       currency={b.currency}
       maxAdvanceDays={Math.min(b.maxAdvanceDays, 60)}
       pay={payConfig(b)}
+      allowChanges={b.allowClientChanges}
       services={services.map((s) => ({
         id: s.id,
         name: s.name,
@@ -47,6 +49,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           </BlockBox>
         ))}
       </PageFrame>
+      {b.allowClientChanges && (
+        <p className="pb-8 text-center text-sm">
+          <Link href={`/b/${b.slug}/turno`} className="underline opacity-80 hover:opacity-100">
+            ¿Ya tenés un turno? Reprogramalo o cancelalo
+          </Link>
+        </p>
+      )}
     </main>
   );
 }

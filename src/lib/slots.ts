@@ -8,13 +8,15 @@ type Params = {
   serviceId: string;
   /** Fecha local del negocio, formato YYYY-MM-DD */
   date: string;
+  /** Al reprogramar: el propio turno no cuenta como ocupado (así se puede mover unos minutos). */
+  excludeAppointmentId?: string;
 };
 
 /**
  * Devuelve los inicios de turno disponibles (ISO UTC) para un día.
  * Toda la aritmética de horarios se hace en la zona horaria del negocio.
  */
-export async function getAvailableSlots({ businessId, barberId, serviceId, date }: Params): Promise<string[]> {
+export async function getAvailableSlots({ businessId, barberId, serviceId, date, excludeAppointmentId }: Params): Promise<string[]> {
   const [business, service, barber] = await Promise.all([
     prisma.business.findUnique({ where: { id: businessId } }),
     prisma.service.findFirst({ where: { id: serviceId, businessId, active: true } }),
@@ -40,6 +42,7 @@ export async function getAvailableSlots({ businessId, barberId, serviceId, date 
       where: {
         barberId,
         status: { not: "CANCELLED" },
+        ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
         // Una reserva a la espera de pago que ya venció no ocupa el horario.
         NOT: { status: "PENDING_PAYMENT", createdAt: { lt: new Date(Date.now() - HOLD_MINUTES * 60_000) } },
         startAt: { lt: nextDay.toJSDate() },

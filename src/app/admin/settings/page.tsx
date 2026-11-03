@@ -9,6 +9,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const b = await getBusinessById(businessId);
   const sp = await searchParams;
 
+  // Plazos habituales; si el guardado actual no está en la lista (ej. 90 min), se agrega para no perderlo.
+  const noticeHours = b.changeMinNoticeMin / 60;
+  const noticeOptions = [...new Set([0, 1, 2, 3, 4, 6, 12, 24, 48, 72, 168, noticeHours])].sort((x, y) => x - y);
+
   return (
     <form action={saveSettings} className="space-y-4">
       <h1 className="text-xl font-bold">Configuración del negocio</h1>
@@ -77,8 +81,34 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section className="card space-y-3">
+        <div>
+          <h2 className="font-semibold">Reprogramar y cancelar</h2>
+          <p className="text-xs text-neutral-500">
+            Al confirmar un turno, el cliente recibe por WhatsApp un código (ej. REC-8F3K9A) para reprogramar o cancelar desde tu página.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="allowClientChanges" defaultChecked={b.allowClientChanges} /> Permitir que los clientes reprogramen o cancelen
+        </label>
+        <div>
+          <label className="label">¿Hasta cuánto tiempo antes del turno pueden hacerlo?</label>
+          <select name="changeNoticeHours" className="input" defaultValue={noticeHours}>
+            {noticeOptions.map((h) => (
+              <option key={h} value={h}>
+                {h === 0 ? "Hasta el momento del turno" : h < 24 || h % 24 !== 0 ? `Hasta ${h} ${h === 1 ? "hora" : "horas"} antes` : `Hasta ${h / 24} ${h === 24 ? "día" : "días"} antes`}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-neutral-500">Pasado ese plazo el sistema no deja modificar el turno y le muestra al cliente un mensaje claro.</p>
+        </div>
+      </section>
+
+      <section className="card space-y-3">
         <h2 className="font-semibold">Mensajes de WhatsApp</h2>
-        <p className="text-xs text-neutral-500">Variables: {"{{nombre}} {{servicio}} {{fecha}} {{hora}} {{negocio}}"}</p>
+        <p className="text-xs text-neutral-500">Variables: {"{{nombre}} {{servicio}} {{fecha}} {{hora}} {{negocio}} {{codigo}}"}</p>
+        <p className="text-xs text-neutral-500">
+          El código de reclamo y el plazo se agregan solos al final del mensaje de confirmación (y de pago). Si preferís ubicarlo vos, escribí {"{{codigo}}"} en el texto.
+        </p>
         <div>
           <label className="label">Confirmación</label>
           <textarea name="confirmTemplate" rows={3} className="input" defaultValue={b.confirmTemplate} />
@@ -90,6 +120,16 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div>
           <label className="label">Cancelación</label>
           <textarea name="cancelTemplate" rows={3} className="input" defaultValue={b.cancelTemplate} />
+          <p className="mt-1 text-xs text-neutral-500">Se envía cuando vos cancelás un turno.</p>
+        </div>
+        <div>
+          <label className="label">Turno reprogramado por el cliente</label>
+          <textarea name="rescheduleTemplate" rows={3} className="input" defaultValue={b.rescheduleTemplate} />
+          <p className="mt-1 text-xs text-neutral-500">También podés usar {"{{fecha_anterior}} y {{hora_anterior}}"}.</p>
+        </div>
+        <div>
+          <label className="label">Turno cancelado por el cliente</label>
+          <textarea name="selfCancelTemplate" rows={3} className="input" defaultValue={b.selfCancelTemplate} />
         </div>
       </section>
 

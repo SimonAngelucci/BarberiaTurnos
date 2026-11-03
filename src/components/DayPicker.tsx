@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DateTime } from "luxon";
 
 export type DayItem = {
   iso: string;
@@ -16,6 +17,24 @@ export type DayItem = {
   /** "lunes 3 de noviembre" (para lectores de pantalla) */
   full: string;
 };
+
+/** Días desde hoy (en la zona del negocio) listos para el selector. */
+export function makeDayItems(timezone: string, count: number): DayItem[] {
+  const today = DateTime.now().setZone(timezone).startOf("day");
+  return Array.from({ length: count }, (_, i) => {
+    const d = today.plus({ days: i }).setLocale("es");
+    return {
+      iso: d.toISODate()!,
+      wd: d.toFormat("ccc").replace(".", ""),
+      day: d.day,
+      mon: d.toFormat("LLL").replace(".", ""),
+      monthLabel: d.toFormat("LLLL yyyy"),
+      tag: i === 0 ? "Hoy" : i === 1 ? "Mañana" : null,
+      weekend: d.weekday >= 6,
+      full: d.toFormat("cccc d 'de' LLLL"),
+    };
+  });
+}
 
 const W = 62; // ancho de cada día
 const H = 88;

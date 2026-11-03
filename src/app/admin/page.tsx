@@ -5,7 +5,34 @@ import { requireAdmin } from "@/lib/auth";
 import { fmtDateTime, fmtTime, money } from "@/lib/format";
 import { cancelAppointment, setAppointmentStatus, markAppointmentPaid } from "./actions";
 
-type Appt = Prisma.AppointmentGetPayload<{ include: { customer: true; service: true; barber: true } }>;
+type Appt = Prisma.AppointmentGetPayload<{ include: { customer: true; service: true; barber: true; events: true } }>;
+
+const ACTOR = { CLIENT: "El cliente", ADMIN: "Administración", SYSTEM: "El sistema" } as const;
+
+/** Código de reclamo + historial de cambios del turno (creación, reprogramaciones, cancelaciones). */
+function History({ a, tz }: { a: Appt; tz: string }) {
+  if (!a.claimCode && a.events.length === 0) return null;
+  const moved = a.events.filter((e) => e.kind === "RESCHEDULED").length;
+  return (
+    <details className="mt-1 text-xs text-neutral-500">
+      <summary className="cursor-pointer select-none">
+        {a.claimCode && <span className="font-mono">{a.claimCode}</span>}
+        {moved > 0 && <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-violet-800">Reprogramado{moved > 1 ? ` ×${moved}` : ""}</span>}
+        <span className="ml-2 underline">Historial</span>
+      </summary>
+      <ul className="mt-1 space-y-0.5 border-l-2 border-neutral-200 pl-2">
+        {a.events.map((e) => (
+          <li key={e.id}>
+            {fmtDateTime(e.createdAt, tz)} ·{" "}
+            {e.kind === "CREATED" && "Turno creado"}
+            {e.kind === "RESCHEDULED" && `${ACTOR[e.actor]} reprogramó: ${e.fromStartAt ? fmtDateTime(e.fromStartAt, tz) : "?"} → ${e.toStartAt ? fmtDateTime(e.toStartAt, tz) : "?"}`}
+            {e.kind === "CANCELLED" && `${ACTOR[e.actor]} canceló el turno${e.note ? ` (${e.note})` : ""}`}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 
 function PayBadge({ a, currency }: { a: Appt; currency: string }) {
   if (a.status === "PENDING_PAYMENT") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Esperando pago</span>;
@@ -37,6 +64,7 @@ function Row({ a, tz, currency, showDate }: { a: Appt; tz: string; currency: str
           </a>{" "}
           <PayBadge a={a} currency={currency} />
         </div>
+        <History a={a} tz={tz} />
       </div>
       {active ? (
         <div className="flex gap-2">
@@ -72,7 +100,7 @@ export default async function DashboardPage() {
   const todayStart = now.startOf("day");
   const tomorrow = todayStart.plus({ days: 1 });
   const weekEnd = todayStart.plus({ days: 8 });
-  const include = { customer: true, service: true, barber: true } as const;
+  const include = { customer: true, service: true, barber: true, events: { orderBy: { createdAt: "asc" } } } as const;
 
   const [today, upcoming, newCustomers] = await Promise.all([
     prisma.appointment.findMany({

@@ -20,11 +20,13 @@ export async function cancelAppointment(formData: FormData) {
   const { businessId } = await requireAdmin();
   const id = z.string().min(1).parse(formData.get("id"));
 
+  const before = await prisma.appointment.findFirst({ where: { id, businessId, status: "CONFIRMED" }, select: { startAt: true } });
   const res = await prisma.appointment.updateMany({
     where: { id, businessId, status: "CONFIRMED" },
     data: { status: "CANCELLED" },
   });
   if (res.count > 0) {
+    await prisma.appointmentEvent.create({ data: { businessId, appointmentId: id, kind: "CANCELLED", actor: "ADMIN", fromStartAt: before?.startAt ?? null } });
     await enqueueCancellation(id);
     after(() => dispatchDue().catch(console.error));
   }
@@ -143,6 +145,9 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
     await prisma.$transaction([
       prisma.appointment.updateMany({ where: { id: { in: ids }, status: "CONFIRMED" }, data: { status: "CANCELLED" } }),
       ...(await buildCancellationOps(ids)),
+      ...(ids.length > 0
+        ? [prisma.appointmentEvent.createMany({ data: ids.map((appointmentId) => ({ businessId, appointmentId, kind: "CANCELLED" as const, actor: "ADMIN" as const, note: "Barbero eliminado" })) })]
+        : []),
       prisma.barber.delete({ where: { id } }),
     ]);
 
@@ -339,6 +344,9 @@ const settingsSchema = z.object({
   confirmTemplate: z.string().trim().min(1).max(600),
   reminderTemplate: z.string().trim().min(1).max(600),
   cancelTemplate: z.string().trim().min(1).max(600),
+  rescheduleTemplate: z.string().trim().min(1).max(600),
+  selfCancelTemplate: z.string().trim().min(1).max(600),
+  changeNoticeHours: z.coerce.number().min(0).max(720),
 });
 
 export async function saveSettings(formData: FormData) {
@@ -380,6 +388,10 @@ export async function saveSettings(formData: FormData) {
       confirmTemplate: d.confirmTemplate,
       reminderTemplate: d.reminderTemplate,
       cancelTemplate: d.cancelTemplate,
+      rescheduleTemplate: d.rescheduleTemplate,
+      selfCancelTemplate: d.selfCancelTemplate,
+      allowClientChanges: formData.get("allowClientChanges") === "on",
+      changeMinNoticeMin: Math.round(d.changeNoticeHours * 60),
     },
   });
   revalidatePath("/", "layout");

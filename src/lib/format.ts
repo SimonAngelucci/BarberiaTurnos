@@ -16,6 +16,16 @@ export const hhmmToMin = (s: string) => {
   return h * 60 + m;
 };
 
+/** "hasta 2 horas antes del turno" — para mensajes y pantallas. */
+export function noticePhrase(min: number) {
+  if (min <= 0) return "hasta el momento del turno";
+  const days = min / 1440;
+  if (Number.isInteger(days)) return `hasta ${days} ${days === 1 ? "día" : "días"} antes del turno`;
+  const hours = min / 60;
+  if (Number.isInteger(hours)) return `hasta ${hours} ${hours === 1 ? "hora" : "horas"} antes del turno`;
+  return `hasta ${min} minutos antes del turno`;
+}
+
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /** CSS de variables del tema. Los colores se validan para que nunca se inyecte CSS arbitrario. */

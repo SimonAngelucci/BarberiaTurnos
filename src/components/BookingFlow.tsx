@@ -18,6 +18,8 @@ type Props = {
   currency: string;
   maxAdvanceDays: number;
   pay: PayConfig;
+  /** Si la barbería permite reprogramar/cancelar con código: se muestra el código al confirmar. */
+  allowChanges?: boolean;
 };
 
 function Avatar({ b, size }: { b: Barber; size: number }) {
@@ -32,7 +34,8 @@ function Avatar({ b, size }: { b: Barber; size: number }) {
   );
 }
 
-export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay }: Props) {
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false }: Props) {
+  const [claim, setClaim] = useState<string | null>(null);
   const [service, setService] = useState<Service | null>(null);
   const [choice, setChoice] = useState<PayChoice>("NONE");
   const [barberId, setBarberId] = useState<string | null>(barbers.length === 1 ? barbers[0].id : null);
@@ -105,7 +108,10 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
       return;
     }
     setBusy(false);
-    if (res.ok) return setDone(true);
+    if (res.ok) {
+      setClaim(typeof j.claimCode === "string" ? j.claimCode : null);
+      return setDone(true);
+    }
     setError(j.error ?? "Error inesperado");
     if (res.status === 409) {
       setSlot(null);
@@ -123,6 +129,16 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           {service.name} · {local.toFormat("cccc d 'de' LLLL")} a las {local.toFormat("HH:mm")}
         </p>
         {payAtStore && <p className="mt-2 text-sm font-medium text-orange-700">Pago pendiente: lo abonás en el local.</p>}
+        {allowChanges && claim && (
+          <div className="mt-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3">
+            <div className="text-xs text-neutral-500">Tu código para reprogramar o cancelar</div>
+            <div className="my-1 font-mono text-2xl font-bold tracking-widest">{claim}</div>
+            <p className="text-xs text-neutral-500">Guardalo: también te lo enviamos por WhatsApp.</p>
+            <a href={`/b/${slug}/turno?c=${encodeURIComponent(claim)}`} className="btn-ghost mt-2 w-full">
+              Reprogramar o cancelar
+            </a>
+          </div>
+        )}
         <p className="mt-2 text-sm text-neutral-500">Te enviamos la confirmación por WhatsApp y te vamos a recordar antes del turno.</p>
       </div>
     );

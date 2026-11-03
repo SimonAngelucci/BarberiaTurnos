@@ -23,6 +23,22 @@ enum MessageKind {
   CANCELLATION
   /// Pago recibido + turno confirmado (reemplaza a CONFIRMATION cuando se pagó online).
   PAYMENT
+  /// El cliente reprogramó su turno con el código de reclamo.
+  RESCHEDULE
+  /// El cliente canceló su turno con el código de reclamo.
+  SELF_CANCEL
+}
+
+enum AppointmentEventKind {
+  CREATED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum EventActor {
+  CLIENT
+  ADMIN
+  SYSTEM
 }
 
 enum PaymentMode {
@@ -89,6 +105,13 @@ model Business {
   reminderTemplate   String   @default("Hola {{nombre}}, te recordamos tu turno de {{servicio}} en {{negocio}}: {{fecha}} a las {{hora}}.")
   cancelTemplate     String   @default("Hola {{nombre}}, lamentablemente tu turno de {{servicio}} del {{fecha}} a las {{hora}} en {{negocio}} fue cancelado. Escribinos para reprogramar.")
   paymentTemplate    String   @default("Hola {{nombre}}! Recibimos tu pago de {{monto}} por tu turno de {{servicio}} en {{negocio}}. Quedó confirmado para el {{fecha}} a las {{hora}}. ¡Te esperamos!")
+
+  // --- Reprogramar / cancelar por el cliente (con el código de reclamo) ---
+  allowClientChanges Boolean  @default(true)
+  /// Anticipación mínima, en minutos, para poder reprogramar o cancelar (0 = hasta el momento del turno).
+  changeMinNoticeMin Int      @default(120)
+  rescheduleTemplate String   @default("Hola {{nombre}}, tu turno de {{servicio}} en {{negocio}} fue reprogramado: ahora es el {{fecha}} a las {{hora}} (antes: {{fecha_anterior}} a las {{hora_anterior}}). Tu código sigue siendo {{codigo}}.")
+  selfCancelTemplate String   @default("Hola {{nombre}}, cancelaste tu turno de {{servicio}} del {{fecha}} a las {{hora}} en {{negocio}}. Cuando quieras, reservá uno nuevo.")
 
   // --- Pagos (Mercado Pago, credenciales propias de cada barbería) ---
   paymentsEnabled    Boolean     @default(false)
@@ -219,8 +242,11 @@ model Appointment {
   priceCents Int
   paymentStatus   PaymentStatus @default(UNPAID)
   amountPaidCents Int           @default(0)
+  /// Código para que el cliente reprograme o cancele (ej. REC-8F3K9A). null en turnos anteriores a esta función.
+  claimCode  String?           @unique
   createdAt  DateTime          @default(now())
 
+  events   AppointmentEvent[]
   payments Payment[]
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   barber   Barber?  @relation(fields: [barberId], references: [id], onDelete: SetNull)
@@ -230,6 +256,24 @@ model Appointment {
 
   @@index([businessId, startAt])
   @@index([barberId, startAt])
+}
+
+/// Historial de cambios de un turno (creación, reprogramaciones, cancelaciones) y quién los hizo.
+model AppointmentEvent {
+  id            String               @id @default(cuid())
+  businessId    String
+  appointmentId String
+  kind          AppointmentEventKind
+  actor         EventActor
+  fromStartAt   DateTime?
+  toStartAt     DateTime?
+  note          String?
+  createdAt     DateTime             @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, createdAt])
+  @@index([businessId, createdAt])
 }
 
 /// Intento de cobro (una preferencia de Mercado Pago). `id` viaja como external_reference.
