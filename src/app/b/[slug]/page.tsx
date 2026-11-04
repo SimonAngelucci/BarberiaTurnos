@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { BookingFlow } from "@/components/BookingFlow";
 import { payConfig } from "@/lib/payments";
+import { getAccess } from "@/lib/billing";
 import { fontsHref, resolveConfig, usedFonts } from "@/lib/page-config";
 import { BlockBox, BlockContent, PageFrame } from "@/components/page/BlockView";
 
@@ -19,7 +20,16 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const config = resolveConfig(b.pageConfig);
   const fonts = fontsHref(usedFonts(config));
 
-  const booking = (
+  // Suscripción vencida o con pago pendiente: en lugar del formulario se muestra un aviso claro.
+  const accepting = (await getAccess(b.id)).bookable;
+
+  const booking = !accepting ? (
+    <div className="card space-y-1 text-center">
+      <div className="text-3xl">🛠️</div>
+      <h2 className="text-lg font-bold">Reservas no disponibles por ahora</h2>
+      <p className="text-sm text-neutral-600">Esta barbería no está aceptando reservas online en este momento. Probá más tarde o comunicate con ella directamente.</p>
+    </div>
+  ) : (
     <BookingFlow
       slug={b.slug}
       timezone={b.timezone}

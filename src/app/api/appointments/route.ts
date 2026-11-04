@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessForCheckout } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
+import { getAccess } from "@/lib/billing";
 import { generateClaimCode } from "@/lib/claim";
 import { payOptions } from "@/lib/payment-math";
 import { payConfig, createCheckout, expirePendingPayments, siteOrigin } from "@/lib/payments";
@@ -40,6 +41,10 @@ export async function POST(req: Request) {
 
   const business = await getBusinessForCheckout(d.slug); // incluye el token cifrado: solo se usa acá, en el servidor
   if (!business) return NextResponse.json({ error: "Barbería inexistente" }, { status: 404 });
+  // Suscripción vencida o con pago pendiente: no se aceptan reservas nuevas (las ya agendadas siguen en pie).
+  if (!(await getAccess(business.id)).bookable) {
+    return NextResponse.json({ error: "Esta barbería no está aceptando reservas en este momento. Probá más tarde o comunicate con ella." }, { status: 403 });
+  }
   const service = await prisma.service.findFirst({ where: { id: d.serviceId, businessId: business.id, active: true } });
   if (!service) return NextResponse.json({ error: "Servicio no disponible" }, { status: 400 });
 

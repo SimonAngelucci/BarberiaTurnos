@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "prisma generate && tsc --noEmit",
     "db:setup": "prisma db push && prisma db execute --file prisma/constraints.sql --schema prisma/schema.prisma",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "superadmin:create": "tsx prisma/create-superadmin.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

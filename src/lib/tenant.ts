@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import { newTrialEnd } from "./billing";
 
 /** "Barbería Don Pepe!" -> "barberia-don-pepe" */
 export function slugify(input: string) {
@@ -35,7 +36,7 @@ export class EmailTakenError extends Error {}
  * Crea una barbería completa: negocio + admin + un barbero con horario Lun–Sáb 9–19
  * y servicios de ejemplo para que la página pública no quede vacía.
  */
-export async function createBusiness(input: { name: string; email: string; password: string }) {
+export async function createBusiness(input: { name: string; email: string; password: string; creator?: { id: string; code: string } | null }) {
   const email = input.email.trim().toLowerCase();
   if (await prisma.adminUser.findUnique({ where: { email }, select: { id: true } })) throw new EmailTakenError();
   const passwordHash = await bcrypt.hash(input.password, 10);
@@ -50,6 +51,10 @@ export async function createBusiness(input: { name: string; email: string; passw
         data: {
           slug,
           name: input.name.trim(),
+          // Quién la trajo (si usó un código de creador) y el mes de prueba gratis: sin tarjeta y sin cobros.
+          creatorId: input.creator?.id ?? null,
+          creatorCode: input.creator?.code ?? null,
+          subscription: { create: { status: "TRIAL", trialEndsAt: newTrialEnd() } },
           admins: { create: { email, passwordHash } },
           services: {
             createMany: {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { getAccess } from "@/lib/billing";
 import { UploadError, uploadImage } from "@/lib/upload";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ const FOLDERS = { logo: "logo", barber: "barbers" } as const;
 export async function POST(req: Request) {
   const session = await getSession(); // /api no pasa por el middleware: se valida acá
   if (!session) return NextResponse.json({ error: "Tu sesión venció. Volvé a ingresar." }, { status: 401 });
+  if ((await getAccess(session.businessId)).readonly) {
+    return NextResponse.json({ error: "Tu cuenta está en modo solo lectura: regularizá tu suscripción para subir imágenes." }, { status: 403 });
+  }
 
   const fd = await req.formData().catch(() => null);
   const kind = String(fd?.get("kind") ?? "");

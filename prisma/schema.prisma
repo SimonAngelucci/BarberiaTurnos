@@ -125,8 +125,18 @@ model Business {
   mpAccessToken      String?
   /// Etiqueta de la cuenta conectada (ej. nickname) para mostrar en el panel.
   mpAccountLabel     String?
+
+  // --- Suscripción a la plataforma ---
+  /// Cuenta exenta de cobro (demo, socios, pruebas): siempre con acceso completo.
+  billingExempt      Boolean  @default(false)
+  /// Creador (influencer) cuyo código se usó al registrarse.
+  creatorId          String?
+  /// Código tal como se ingresó al registrarse; queda guardado aunque el código se desactive después.
+  creatorCode        String?
   createdAt          DateTime @default(now())
 
+  creator      Creator?       @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  subscription Subscription?
   admins       AdminUser[]
   barbers      Barber[]
   services     Service[]
@@ -317,4 +327,170 @@ model Message {
   appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
   @@index([status, sendAt])
+}
+
+// ============================================================================
+// Suscripciones de las barberías a la plataforma (Mercado Pago Suscripciones)
+// ============================================================================
+
+enum SubscriptionStatus {
+  /// Mes de prueba gratis (sin cobros).
+  TRIAL
+  ACTIVE
+  /// El cobro falló: la cuenta queda en solo lectura hasta regularizar.
+  PAST_DUE
+  CANCELED
+  /// La prueba terminó sin haber contratado un plan.
+  EXPIRED
+}
+
+enum SubscriptionPaymentStatus {
+  APPROVED
+  REJECTED
+  PENDING
+}
+
+enum CreatorBenefit {
+  /// Solo registrar cuántas barberías trajo.
+  TRACKING
+  /// Porcentaje de cada cobro de las barberías que trajo.
+  COMMISSION
+  /// Meses gratis por cada barbería que paga.
+  FREE_MONTHS
+}
+
+enum EarningKind {
+  COMMISSION
+  FREE_MONTHS
+}
+
+enum EarningStatus {
+  PENDING
+  PAID
+  VOID
+}
+
+/// Planes que contratan las barberías. Los administra el Super Admin.
+model Plan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  /// Precio mensual en centavos.
+  priceCents  Int
+  currency    String   @default("ARS")
+  /// Tope de barberos del plan. null = ilimitados.
+  maxBarbers  Int?
+  /// Lista de características para mostrar (una por línea en el panel).
+  features    String[] @default([])
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+/// Una por barbería. `status` se mantiene con webhooks y un proceso periódico; el acceso real se calcula en src/lib/billing.ts.
+model Subscription {
+  id               String             @id @default(cuid())
+  businessId       String             @unique
+  /// Plan elegido (puede estar pendiente de autorizar en Mercado Pago).
+  planId           String?
+  status           SubscriptionStatus @default(TRIAL)
+  trialEndsAt      DateTime
+  /// Fin del período ya cobrado (o fecha del próximo cobro).
+  currentPeriodEnd DateTime?
+  nextPaymentAt    DateTime?
+  /// Suscripción (preapproval) en Mercado Pago y su estado: pending | authorized | paused | cancelled.
+  mpPreapprovalId  String?            @unique
+  mpStatus         String?
+  /// Link de Mercado Pago para terminar de autorizar la suscripción.
+  mpInitPoint      String?
+  payerEmail       String?
+  pastDueSince     DateTime?
+  canceledAt       DateTime?
+  lastSyncedAt     DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  business Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan     Plan?                 @relation(fields: [planId], references: [id], onDelete: SetNull)
+  payments SubscriptionPayment[]
+
+  @@index([status, trialEndsAt])
+}
+
+/// Historial de cobros de la suscripción. Un registro por cobro autorizado de Mercado Pago (idempotente).
+model SubscriptionPayment {
+  id                    String                    @id @default(cuid())
+  subscriptionId        String
+  businessId            String
+  mpAuthorizedPaymentId String                    @unique
+  mpPaymentId           String?
+  amountCents           Int
+  currency              String                    @default("ARS")
+  status                SubscriptionPaymentStatus
+  detail                String?
+  paidAt                DateTime?
+  createdAt             DateTime                  @default(now())
+
+  subscription Subscription    @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  earnings     CreatorEarning[]
+
+  @@index([businessId, createdAt])
+}
+
+/// Creador / influencer con un código propio (ej. JUAN20) para traer barberías.
+model Creator {
+  id                String         @id @default(cuid())
+  /// Siempre en mayúsculas. No se edita una vez creado (los links ya repartidos dejarían de andar).
+  code              String         @unique
+  name              String
+  email             String?
+  benefitType       CreatorBenefit @default(TRACKING)
+  /// COMMISSION: porcentaje (1–100) de cada cobro.
+  commissionPercent Int            @default(0)
+  /// COMMISSION: cantidad de meses por barbería durante los que se paga comisión. null = de por vida.
+  commissionMonths  Int?
+  /// FREE_MONTHS: meses gratis que se acreditan por cada barbería que empieza a pagar.
+  freeMonths        Int            @default(0)
+  active            Boolean        @default(true)
+  notes             String?
+  createdAt         DateTime       @default(now())
+
+  businesses Business[]
+  earnings   CreatorEarning[]
+}
+
+/// Lo que se le debe a un creador. Se genera solo con cada cobro aprobado; el pago al creador es manual por ahora.
+model CreatorEarning {
+  id                    String        @id @default(cuid())
+  creatorId             String
+  businessId            String?
+  /// Nombre de la barbería al momento del cobro (por si después se elimina).
+  businessName          String
+  subscriptionPaymentId String?
+  kind                  EarningKind
+  /// COMMISSION: monto en centavos.
+  amountCents           Int           @default(0)
+  /// FREE_MONTHS: meses a acreditar.
+  months                Int           @default(0)
+  status                EarningStatus @default(PENDING)
+  note                  String?
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+
+  creator Creator              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  payment SubscriptionPayment? @relation(fields: [subscriptionPaymentId], references: [id], onDelete: SetNull)
+
+  @@unique([subscriptionPaymentId, kind])
+  @@index([creatorId, status])
+}
+
+/// Dueños de la plataforma. Se crean solo desde la consola (npm run superadmin:create), nunca desde la web.
+model PlatformAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
 }

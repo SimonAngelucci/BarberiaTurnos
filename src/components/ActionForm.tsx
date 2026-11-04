@@ -1,0 +1,39 @@
+"use client";
+
+import { useActionState } from "react";
+import type { FormState } from "@/app/admin/actions";
+
+/** Formulario que muestra el error o la confirmación que devuelve la acción (Next oculta los mensajes de las excepciones). */
+export function ActionForm({
+  action,
+  submitLabel,
+  children,
+  className = "space-y-3",
+  resetOnSuccess = false,
+}: {
+  action: (prev: FormState, fd: FormData) => Promise<FormState>;
+  submitLabel: string;
+  children: React.ReactNode;
+  className?: string;
+  resetOnSuccess?: boolean;
+}) {
+  const [state, formAction, pending] = useActionState(async (prev: FormState, fd: FormData) => {
+    const r = await action(prev, fd);
+    return r;
+  }, null);
+
+  return (
+    <form action={formAction} className={className} key={resetOnSuccess && state?.ok ? "ok" : "form"}>
+      {children}
+      {state?.error && (
+        <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700">
+          {state.error}
+        </p>
+      )}
+      {state?.ok && state.message && <p className="rounded-lg bg-green-50 p-2 text-sm text-green-800">{state.message}</p>}
+      <button className="btn" disabled={pending}>
+        {pending ? "Guardando…" : submitLabel}
+      </button>
+    </form>
+  );
+}

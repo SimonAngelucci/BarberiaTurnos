@@ -31,7 +31,9 @@ export async function verifyToken(token?: string): Promise<Session | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, key());
-    return { adminId: payload.adminId as string, businessId: payload.businessId as string };
+    // Exige los dos ids: un token firmado por nosotros pero de otro tipo (ej. el del Super Admin) no es una sesión de barbería.
+    if (typeof payload.adminId !== "string" || typeof payload.businessId !== "string") return null;
+    return { adminId: payload.adminId, businessId: payload.businessId };
   } catch {
     return null;
   }

@@ -5,7 +5,8 @@ import { after } from "next/server";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { prisma, getBusinessById } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireWritable } from "@/lib/guard";
+import { getAccess } from "@/lib/billing";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
 import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
@@ -17,7 +18,7 @@ import { verifyMpToken } from "@/lib/payments";
 // Todas las actions son endpoints públicos: SIEMPRE validar sesión y datos.
 
 export async function cancelAppointment(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
 
   const before = await prisma.appointment.findFirst({ where: { id, businessId, status: "CONFIRMED" }, select: { startAt: true } });
@@ -34,7 +35,7 @@ export async function cancelAppointment(formData: FormData) {
 }
 
 export async function setAppointmentStatus(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
   const status = z.enum(["COMPLETED", "NO_SHOW"]).parse(formData.get("status"));
   await prisma.appointment.updateMany({ where: { id, businessId, status: "CONFIRMED" }, data: { status } });
@@ -49,7 +50,7 @@ const serviceSchema = z.object({
 });
 
 export async function saveService(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = formData.get("id")?.toString();
   const d = serviceSchema.parse(Object.fromEntries(formData));
   const data = {
@@ -69,7 +70,7 @@ export async function saveService(formData: FormData) {
 
 /** Soft delete: conserva el historial de turnos. */
 export async function archiveService(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.service.updateMany({ where: { id, businessId }, data: { active: false } });
   revalidatePath("/admin/services");
@@ -83,7 +84,7 @@ const barberSchema = z.object({
 
 /** Crea o edita un barbero (nombre, foto, descripción). Con `id` edita; sin `id` crea. */
 export async function saveBarber(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = formData.get("id")?.toString() || undefined;
   const d = barberSchema.parse({ name: formData.get("name"), bio: formData.get("bio") ?? "" });
 
@@ -106,6 +107,11 @@ export async function saveBarber(formData: FormData) {
   if (existing) {
     await prisma.barber.update({ where: { id: existing.id }, data: { ...data, active: formData.get("active") === "on" } });
   } else {
+    // Tope de barberos del plan contratado (durante la prueba no hay tope).
+    const { barberLimit } = await getAccess(businessId);
+    if (barberLimit !== null && (await prisma.barber.count({ where: { businessId, active: true } })) >= barberLimit) {
+      throw new Error(`Tu plan permite hasta ${barberLimit} barberos. Cambiá de plan para agregar más.`);
+    }
     await prisma.barber.create({ data: { ...data, businessId } });
   }
   revalidatePath("/admin/barbers");
@@ -124,7 +130,7 @@ export type DeleteBarberResult = { ok: true; cancelled: number } | { ok: false; 
  * Devuelve el error como dato (en producción Next oculta el mensaje de las excepciones).
  */
 export async function deleteBarber(formData: FormData): Promise<DeleteBarberResult> {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
   const cancelFuture = formData.get("cancelFuture") === "on";
 
@@ -164,7 +170,7 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
 }
 
 export async function saveSchedule(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const barberId = z.string().min(1).parse(formData.get("barberId"));
   const barber = await prisma.barber.findFirst({ where: { id: barberId, businessId } });
   if (!barber) throw new Error("Barbero inexistente");
@@ -198,7 +204,7 @@ export async function saveSchedule(formData: FormData) {
 }
 
 export async function addTimeOff(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const business = await getBusinessById(businessId);
   const d = z
     .object({
@@ -226,7 +232,7 @@ export async function addTimeOff(formData: FormData) {
 }
 
 export async function deleteTimeOff(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.timeOff.deleteMany({ where: { id, businessId } });
   revalidatePath("/admin/schedule");
@@ -244,7 +250,7 @@ const paymentSchema = z.object({
 
 /** Configuración de pagos de la barbería. Devuelve el error como dato (Next oculta mensajes de excepciones). */
 export async function savePaymentSettings(_prev: FormState, formData: FormData): Promise<FormState> {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const parsed = paymentSchema.safeParse({
     mode: formData.get("mode"),
     depositType: formData.get("depositType"),
@@ -307,7 +313,7 @@ export async function savePaymentSettings(_prev: FormState, formData: FormData):
 
 /** Publica el diseño de la página pública. Se valida TODO en el servidor (rangos, fuentes, colores, estructura). */
 export async function saveDesign(input: unknown): Promise<FormState> {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const parsed = configSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: `Diseño inválido: ${parsed.error.issues[0]?.message ?? "valores fuera de rango"}` };
   try {
@@ -322,7 +328,7 @@ export async function saveDesign(input: unknown): Promise<FormState> {
 
 /** Marca un turno como cobrado en el local (efectivo, transferencia, etc.). */
 export async function markAppointmentPaid(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
   const a = await prisma.appointment.findFirst({ where: { id, businessId, status: { in: ["CONFIRMED", "COMPLETED"] } } });
   if (!a || a.paymentStatus === "PAID") return;
@@ -350,7 +356,7 @@ const settingsSchema = z.object({
 });
 
 export async function saveSettings(formData: FormData) {
-  const { businessId } = await requireAdmin();
+  const { businessId } = await requireWritable();
   const d = settingsSchema.parse(Object.fromEntries(formData));
   const reminderOffsetsMin = d.reminders
     .split(",")

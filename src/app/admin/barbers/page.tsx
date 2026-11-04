@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { getAccess } from "@/lib/billing";
 import { uploadsEnabled } from "@/lib/upload";
 import { ImageField } from "@/components/ImageField";
 import { DeleteBarberButton } from "@/components/DeleteBarberButton";
@@ -46,6 +48,10 @@ export default async function BarbersPage() {
   const barbers = await prisma.barber.findMany({ where: { businessId }, orderBy: [{ active: "desc" }, { name: "asc" }] });
   const enabled = uploadsEnabled();
 
+  // Tope de barberos del plan contratado (durante la prueba no hay tope).
+  const access = await getAccess(businessId);
+  const atLimit = access.barberLimit !== null && barbers.filter((x) => x.active).length >= access.barberLimit;
+
   // Turnos futuros confirmados por barbero: el modal de eliminación los muestra y exige confirmarlos.
   const future = await prisma.appointment.groupBy({
     by: ["barberId"],
@@ -61,7 +67,17 @@ export default async function BarbersPage() {
 
       <div className="card space-y-3">
         <h2 className="font-semibold">Nuevo barbero</h2>
-        <BarberForm enabled={enabled} />
+        {atLimit && (
+          <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            Tu plan permite hasta {access.barberLimit} {access.barberLimit === 1 ? "barbero" : "barberos"} y ya llegaste al tope.{" "}
+            <Link href="/admin/billing" className="font-semibold underline">
+              Cambiar de plan
+            </Link>
+          </p>
+        )}
+        <fieldset disabled={atLimit} className="m-0 min-w-0 border-0 p-0">
+          <BarberForm enabled={enabled} />
+        </fieldset>
       </div>
 
       {barbers.map((b) => (
