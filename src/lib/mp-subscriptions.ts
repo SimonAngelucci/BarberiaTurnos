@@ -73,7 +73,10 @@ export const searchAuthorizedPayments = (preapprovalId: string) =>
 
 /** Crea la suscripción. Si la prueba sigue vigente, el primer cobro se programa para el día en que termina. */
 function createPreapproval(sub: Subscription, plan: Plan, payerEmail: string, origin: string) {
-  const startsLater = sub.trialEndsAt.getTime() > Date.now() + 10 * 60_000;
+  // Solo para pruebas: BILLING_CHARGE_NOW=true cobra al autorizar, sin esperar el fin de la prueba gratis.
+  // La prueba gratis sigue existiendo; para volver a la normalidad hay que sacar la variable (o ponerla en "false").
+  const chargeNow = process.env.BILLING_CHARGE_NOW === "true";
+  const startsLater = !chargeNow && sub.trialEndsAt.getTime() > Date.now() + 10 * 60_000;
   return mp<MpPreapproval>("POST", "/preapproval", {
     reason: `${APP_NAME()} · Plan ${plan.name}`,
     external_reference: sub.id,
