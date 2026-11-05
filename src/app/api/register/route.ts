@@ -20,16 +20,16 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
   }
-  // Código de creador: si lo ingresó tiene que existir y estar activo (así corrige un error de tipeo en el momento).
-  let creator: { id: string; code: string } | null = null;
-  const code = parsed.data.creatorCode?.toUpperCase().replace(/\s+/g, "");
-  if (code) {
-    const found = await prisma.creator.findFirst({ where: { code, active: true }, select: { id: true, code: true } });
-    if (!found) return NextResponse.json({ error: "Ese código de creador no existe o ya no está activo." }, { status: 400 });
-    creator = found;
-  }
-
   try {
+    // Código de creador: si lo ingresó tiene que existir y estar activo (así corrige un error de tipeo en el momento).
+    let creator: { id: string; code: string } | null = null;
+    const code = parsed.data.creatorCode?.toUpperCase().replace(/\s+/g, "");
+    if (code) {
+      const found = await prisma.creator.findFirst({ where: { code, active: true }, select: { id: true, code: true } });
+      if (!found) return NextResponse.json({ error: "Ese código de creador no existe o ya no está activo." }, { status: 400 });
+      creator = found;
+    }
+
     const { business, admin } = await createBusiness({ name: parsed.data.name, email: parsed.data.email, password: parsed.data.password, creator });
     await createSession({ adminId: admin.id, businessId: business.id });
     return NextResponse.json({ ok: true, slug: business.slug }, { status: 201 });
