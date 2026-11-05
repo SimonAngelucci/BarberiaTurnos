@@ -5,7 +5,7 @@ import { UploadError, uploadImage } from "@/lib/upload";
 
 export const dynamic = "force-dynamic";
 
-const FOLDERS = { logo: "logo", barber: "barbers" } as const;
+const FOLDERS = { logo: "logo", barber: "barbers", hero: "hero", gallery: "gallery" } as const;
 
 /**
  * Subida inmediata de logo / foto de barbero. Responde SIEMPRE con JSON y un mensaje claro

@@ -144,6 +144,9 @@ model Business {
   appointments Appointment[]
   timeOffs     TimeOff[]
   messages     Message[]
+  profile      BusinessProfile?
+  photos       BusinessPhoto[]
+  reviews      Review[]
 }
 
 model AdminUser {
@@ -493,4 +496,81 @@ model PlatformAdmin {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Contenido de la página pública (portada, galería, reseñas, acerca de, contacto)
+// ----------------------------------------------------------------------------------------------------------
+
+enum PhotoKind {
+  HERO
+  GALLERY
+}
+
+enum ReviewStatus {
+  /// Enviada por un cliente, esperando aprobación del administrador.
+  PENDING
+  APPROVED
+  /// Aprobada alguna vez o rechazada: no se muestra, pero queda guardada.
+  HIDDEN
+}
+
+enum ReviewSource {
+  ADMIN
+  CLIENT
+}
+
+/// Textos, contacto y redes de la página pública. Una fila por barbería (se crea al guardar por primera vez).
+model BusinessProfile {
+  businessId     String  @id
+  aboutTitle     String?
+  aboutText      String?
+  policyText     String?
+  /// Teléfono y WhatsApp en formato internacional (E.164), validados al guardar.
+  phone          String?
+  whatsapp       String?
+  email          String?
+  address        String?
+  /// Link de Google Maps validado; si falta, se arma uno a partir de la dirección.
+  mapsUrl        String?
+  /// Links ya normalizados (https).
+  instagram      String?
+  facebook       String?
+  tiktok         String?
+  youtube        String?
+  website        String?
+  /// Si está activo, la página pública muestra reseñas y deja que los clientes envíen la suya (con aprobación).
+  reviewsEnabled Boolean @default(false)
+  updatedAt      DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model BusinessPhoto {
+  id         String    @id @default(cuid())
+  businessId String
+  url        String
+  kind       PhotoKind
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, kind, sortOrder])
+}
+
+model Review {
+  id         String       @id @default(cuid())
+  businessId String
+  authorName String
+  /// 1 a 5.
+  rating     Int
+  comment    String
+  status     ReviewStatus @default(PENDING)
+  source     ReviewSource @default(CLIENT)
+  createdAt  DateTime     @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status, createdAt])
 }

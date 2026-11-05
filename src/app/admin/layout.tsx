@@ -16,6 +16,7 @@ const links = [
   { href: "/admin/schedule", label: "Horarios" },
   { href: "/admin/payments", label: "Pagos" },
   { href: "/admin/design", label: "Diseño" },
+  { href: "/admin/profile", label: "Mi página" },
   { href: "/admin/billing", label: "Suscripción" },
   { href: "/admin/settings", label: "Negocio" },
 ];
@@ -62,9 +63,16 @@ function BillingBanner({ a }: { a: Access }) {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // El login vive dentro de /admin pero no es parte del panel: sin menú, sin aviso de suscripción ni barra del link público,
+  // aunque ya haya una sesión iniciada. (Tampoco se consulta la base: no hace falta para mostrar el formulario.)
+  const path = (await headers()).get("x-pathname") ?? "";
+  if (path === "/admin/login") return <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">{children}</div>;
+
   const session = await getSession();
   const business = session ? await prisma.business.findUnique({ where: { id: session.businessId }, omit: { mpAccessToken: true } }) : null;
   const access = business ? await getAccess(business.id) : null;
+  // Reseñas de clientes esperando aprobación (se muestra como globito en «Mi página»). Si falla, el panel igual carga.
+  const pendingReviews = business ? await prisma.review.count({ where: { businessId: business.id, status: "PENDING" } }).catch(() => 0) : 0;
 
   let publicUrl = "";
   if (business) {
@@ -76,8 +84,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // En solo lectura se deshabilitan todos los formularios del panel (salvo la pantalla de suscripción, que tiene que seguir
   // funcionando para poder regularizar). La defensa real está en el servidor: las acciones exigen la suscripción al día.
-  const path = (await headers()).get("x-pathname") ?? "";
-  const lock = !!access?.readonly && !path.startsWith("/admin/billing");
+  const lock =!!access?.readonly && !path.startsWith("/admin/billing");
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">
@@ -90,6 +97,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {links.map((l) => (
             <Link key={l.href} href={l.href} className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100">
               {l.label}
+              {l.href === "/admin/profile" && pendingReviews > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold text-white" title="Reseñas por aprobar">
+                  {pendingReviews}
+                </span>
+              )}
             </Link>
           ))}
           <div className="ml-auto">

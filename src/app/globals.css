@@ -9,6 +9,22 @@
   --page-fg: #171717;
 }
 
+/* Los links de la barra de la página pública (#turnos, #galeria…) deslizan suave. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 body {
   background: var(--page-bg);
   color: var(--page-fg);
