@@ -151,7 +151,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {hasGallery && (
             <SiteSection id="galeria" title="Galería">
-              <Gallery photos={gallery} />
+              <Gallery photos={gallery} visible={profile?.galleryVisible ?? 4} />
             </SiteSection>
           )}
 
@@ -162,7 +162,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           )}
 
           {(hasAddress || hasContactInfo) && (
-            <SiteSection id="direccion" title="Dirección y contacto">
+            <SiteSection id="direccion" title="Dirección y contacto" center>
               <div className="space-y-4">
                 {profile?.address && <MapEmbed address={profile.address} />}
                 <ContactCard p={profile!} />
@@ -174,7 +174,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
       {/* Franja de cierre: el color de fondo de la barbería con un toque de su color de marca, así siempre combina */}
       <footer
-        className="mt-16 border-t border-[color-mix(in_srgb,var(--page-fg)_10%,transparent)] px-4 pb-28 pt-10 text-center lg:pb-12"
+        className="mt-16 border-t border-[color-mix(in_srgb,var(--page-fg)_10%,transparent)] px-4 pb-24 pt-10 text-center lg:pb-12"
         style={{ background: "color-mix(in srgb, var(--page-bg) 90%, var(--brand))", color: "var(--page-fg)" }}
       >
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3">

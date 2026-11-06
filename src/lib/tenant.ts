@@ -51,6 +51,7 @@ export async function createBusiness(input: { name: string; email: string; passw
         data: {
           slug,
           name: input.name.trim(),
+          onboardingStep: 0, // las barberías nuevas arrancan con la guía de bienvenida
           // Quién la trajo (si usó un código de creador) y el mes de prueba gratis: sin tarjeta y sin cobros.
           creatorId: input.creator?.id ?? null,
           creatorCode: input.creator?.code ?? null,

@@ -6,6 +6,7 @@ import { fmtDate, getAccess, type Access } from "@/lib/billing";
 import { themeCss } from "@/lib/format";
 import { LogoutButton } from "@/components/LogoutButton";
 import { CopyLink } from "@/components/CopyLink";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <fieldset disabled={lock} className="m-0 min-w-0 border-0 p-0">
         {children}
       </fieldset>
+      {business && business.onboardingStep < 4 && <OnboardingGuide initialStep={business.onboardingStep} publicUrl={publicUrl} />}
     </div>
   );
 }

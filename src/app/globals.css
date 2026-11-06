@@ -16,6 +16,16 @@
   }
 }
 
+/* Galería deslizable: cada foto ocupa 1/N del ancho (N = fotos visibles; en celular, hasta 2). */
+.gallery-item {
+  flex: 0 0 calc((100% - (var(--cols-sm, 2) - 1) * 0.5rem) / var(--cols-sm, 2));
+}
+@media (min-width: 640px) {
+  .gallery-item {
+    flex-basis: calc((100% - (var(--cols, 4) - 1) * 0.5rem) / var(--cols, 4));
+  }
+}
+
 @layer utilities {
   .no-scrollbar {
     scrollbar-width: none;
@@ -49,6 +59,23 @@ body {
   .animate-rise {
     animation: none;
   }
+}
+
+/* Animaciones de la guía de bienvenida (se desactivan con «reducir movimiento») */
+@keyframes ob-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ob-pop { from { opacity: 0; transform: translateY(16px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes ob-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes ob-slide { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes ob-float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+@keyframes ob-fall { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(105vh) rotate(540deg); opacity: 0.8; } }
+.ob-fade { animation: ob-fade 0.3s ease-out both; }
+.ob-pop { animation: ob-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.ob-rise { animation: ob-rise 0.5s ease-out both; }
+.ob-slide { animation: ob-slide 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.ob-float { display: inline-block; animation: ob-float 3s ease-in-out infinite; }
+.ob-confetti { animation: ob-fall linear forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .ob-fade, .ob-pop, .ob-rise, .ob-slide, .ob-float, .ob-confetti { animation: none; }
 }
 
 @layer components {

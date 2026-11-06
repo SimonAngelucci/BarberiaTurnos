@@ -9,7 +9,7 @@ import {
   MAX_GALLERY_PHOTOS,
   MAX_HERO_PHOTOS,
   aboutSchema,
-  contactSchema,
+  cleanText,
   normalizeMapsUrl,
   normalizePhone,
   normalizeSocial,
@@ -53,29 +53,53 @@ export async function saveAbout(_p: FormState, fd: FormData): Promise<FormState>
 export async function saveContact(_p: FormState, fd: FormData): Promise<FormState> {
   const g = await session();
   if (!g.s) return fail(g.error!);
-  const parsed = contactSchema.safeParse(Object.fromEntries(fd));
-  if (!parsed.success) return fail(firstError(parsed.error));
-  const d = parsed.data;
-  let data;
-  try {
-    data = {
-      phone: normalizePhone(d.phone, "El teléfono"),
-      whatsapp: normalizePhone(d.whatsapp, "El WhatsApp"),
-      email: d.email || null,
-      address: d.address,
-      mapsUrl: normalizeMapsUrl(d.mapsUrl),
-      instagram: normalizeSocial("instagram", d.instagram),
-      facebook: normalizeSocial("facebook", d.facebook),
-      tiktok: normalizeSocial("tiktok", d.tiktok),
-      youtube: normalizeSocial("youtube", d.youtube),
-      website: normalizeWebsite(d.website),
-    };
-  } catch (e) {
-    return fail(e instanceof Error ? e.message : "Datos inválidos");
-  }
   const { businessId } = g.s;
+  const raw = (k: string, max: number) => {
+    const v = fd.get(k);
+    return typeof v === "string" ? v.slice(0, max) : "";
+  };
+
+  // Cada campo se valida por separado: los vacíos se guardan vacíos (esa parte no se muestra) y los válidos se guardan siempre.
+  // Si alguno es inválido se conserva lo que tenía antes ese campo y se avisa cuál corregir; no se pierde nada de lo demás.
+  const data: Record<string, string | null> = {};
+  const errors: string[] = [];
+  const set = (key: string, fn: () => string | null) => {
+    try {
+      data[key] = fn();
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : `El campo ${key} no es válido.`);
+    }
+  };
+  set("phone", () => normalizePhone(raw("phone", 30), "El teléfono"));
+  set("whatsapp", () => normalizePhone(raw("whatsapp", 30), "El WhatsApp"));
+  set("email", () => {
+    const v = raw("email", 120).trim();
+    if (v && !z.string().email().safeParse(v).success) throw new Error("El email no es válido.");
+    return v || null;
+  });
+  set("address", () => cleanText(raw("address", 200)) || null);
+  set("mapsUrl", () => normalizeMapsUrl(raw("mapsUrl", 500)));
+  set("instagram", () => normalizeSocial("instagram", raw("instagram", 200)));
+  set("facebook", () => normalizeSocial("facebook", raw("facebook", 200)));
+  set("tiktok", () => normalizeSocial("tiktok", raw("tiktok", 200)));
+  set("youtube", () => normalizeSocial("youtube", raw("youtube", 200)));
+  set("website", () => normalizeWebsite(raw("website", 200)));
+
   await prisma.businessProfile.upsert({ where: { businessId }, create: { businessId, ...data }, update: data });
   refresh();
+  if (errors.length) return fail(`Guardamos lo demás, pero hay que corregir: ${errors.join(" ")}`);
+  return { ok: true, message: "Guardado." };
+}
+
+/** Cuántas fotos de la galería se ven a la vez en la página pública (1 a 8); el resto se desliza hacia el costado. */
+export async function saveGallerySettings(_p: FormState, fd: FormData): Promise<FormState> {
+  const g = await session();
+  if (!g.s) return fail(g.error!);
+  const n = Number(fd.get("galleryVisible"));
+  if (!Number.isInteger(n) || n < 1 || n > 8) return fail("Elegí un número entre 1 y 8.");
+  const { businessId } = g.s;
+  await prisma.businessProfile.upsert({ where: { businessId }, create: { businessId, galleryVisible: n }, update: { galleryVisible: n } });
+  revalidatePath("/admin/profile");
   return { ok: true, message: "Guardado." };
 }
 

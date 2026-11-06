@@ -53,7 +53,7 @@ export function ContactCard({ p: raw }: { p: Profile }) {
   return (
     <div className="space-y-4">
       {(p.whatsapp || p.phone || p.email) && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {p.whatsapp && (
             <a href={whatsappHref(p.whatsapp)} {...EXTERNAL} className="btn">
               WhatsApp
@@ -91,7 +91,7 @@ export function ContactCard({ p: raw }: { p: Profile }) {
       )}
 
       {socials.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap justify-center gap-2 pt-1">
           {socials.map((k) => (
             <a key={k} href={p[k]!} {...EXTERNAL} className="rounded-full border border-neutral-300 px-3.5 py-1.5 text-sm font-medium hover:bg-neutral-100">
               {SOCIAL_LABELS[k]}

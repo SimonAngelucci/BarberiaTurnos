@@ -6,7 +6,7 @@ import { MAX_GALLERY_PHOTOS, MAX_HERO_PHOTOS } from "@/lib/profile";
 import { ActionForm } from "@/components/ActionForm";
 import { PhotoManager } from "@/components/PhotoManager";
 import { Stars } from "@/components/site/Stars";
-import { createReview, deleteReview, saveAbout, saveContact, saveReviewSettings, setReviewStatus } from "./actions";
+import { createReview, deleteReview, saveAbout, saveContact, saveGallerySettings, saveReviewSettings, setReviewStatus } from "./actions";
 
 const STATUS = {
   PENDING: ["Pendiente de aprobación", "bg-amber-100 text-amber-800"],
@@ -59,12 +59,29 @@ export default async function ProfilePage() {
         </p>
       </div>
 
-      <Section id="portada" title="Portada" hint={`Fotos grandes que pasan solas arriba de tu página. Conviene que sean horizontales. Hasta ${MAX_HERO_PHOTOS}. Si cargás portada, el logo, el nombre y el eslogan se muestran sobre las fotos.`}>
+      <Section id="portada" title="Portada" hint={`Fotos grandes que pasan solas arriba de tu página. Conviene que sean horizontales. Hasta ${MAX_HERO_PHOTOS}. Sin fotos, la portada es una franja con el color de tu marca.`}>
         <PhotoManager kind="HERO" photos={hero} max={MAX_HERO_PHOTOS} enabled={enabled} />
       </Section>
 
       <Section id="galeria" title="Galería" hint={`Fotos del local y de tus trabajos. Hasta ${MAX_GALLERY_PHOTOS}.`}>
         <PhotoManager kind="GALLERY" photos={gallery} max={MAX_GALLERY_PHOTOS} enabled={enabled} />
+        <div className="border-t border-neutral-100 pt-3">
+          <ActionForm action={saveGallerySettings} submitLabel="Guardar">
+            <div>
+              <label className="label" htmlFor="galleryVisible">
+                Fotos visibles a la vez en tu página
+              </label>
+              <select id="galleryVisible" name="galleryVisible" defaultValue={String(profile?.galleryVisible ?? 4)} className="input sm:max-w-[12rem]">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-neutral-400">Las demás se desplazan hacia el costado. En celular se ven hasta 2 a la vez.</p>
+            </div>
+          </ActionForm>
+        </div>
       </Section>
 
       <Section id="acerca" title="Acerca de y política de reserva" hint="Dejá un campo vacío y esa parte no se muestra.">

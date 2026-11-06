@@ -92,6 +92,9 @@ model Business {
   /// Color de fondo de la página pública (y del panel si applyBgToAdmin).
   bgColor            String   @default("#fafafa")
   applyBgToAdmin     Boolean  @default(false)
+  /// Guía de bienvenida: 0 = bienvenida, 1 = servicios, 2 = barberos, 3 = mi página, 4 o más = terminada u omitida.
+  /// El valor por defecto (4) es para las barberías que ya existían: solo las nuevas la ven (createBusiness la deja en 0).
+  onboardingStep     Int      @default(4)
   /// Diseño de la página pública (editor visual). null = diseño por defecto. Ver src/lib/page-config.ts.
   pageConfig         Json?
   timezone           String   @default("America/Argentina/Buenos_Aires")
@@ -541,6 +544,8 @@ model BusinessProfile {
   website        String?
   /// Si está activo, la página pública muestra reseñas y deja que los clientes envíen la suya (con aprobación).
   reviewsEnabled Boolean @default(false)
+  /// Cuántas fotos de la galería se ven a la vez en la página pública; el resto se desliza hacia el costado.
+  galleryVisible Int     @default(4)
   updatedAt      DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import type { FormState } from "@/app/admin/actions";
 
 /** Formulario que muestra el error o la confirmación que devuelve la acción (Next oculta los mensajes de las excepciones). */
@@ -22,8 +22,18 @@ export function ActionForm({
     return r;
   }, null);
 
+  // Se envía a mano (en vez de `action={…}`): React 19 vacía los campos de un formulario al terminar su acción, y con eso
+  // se perdía todo lo escrito cuando un campo era inválido. Así lo escrito se conserva y solo se limpia si resetOnSuccess.
   return (
-    <form action={formAction} className={className} key={resetOnSuccess && state?.ok ? "ok" : "form"}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => formAction(fd));
+      }}
+      className={className}
+      key={resetOnSuccess && state?.ok ? "ok" : "form"}
+    >
       {children}
       {state?.error && (
         <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700">
