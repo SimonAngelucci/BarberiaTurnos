@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 export type NavItem = { id: string; label: string };
 
 /**
- * Barra de acceso rápido: queda fija arriba, se desliza horizontalmente en celular y marca la sección que se está viendo.
- * Los colores salen de la barbería (fondo y texto de la página), así que funciona con cualquier tema.
+ * Barra superior minimalista: secciones a la izquierda (se desliza en celular y marca la que se está viendo) y, a la derecha,
+ * el teléfono para llamar. Los colores salen de la barbería (fondo y texto de la página).
  */
-export function SiteNav({ items }: { items: NavItem[] }) {
+export function SiteNav({ items, phoneHref, phoneLabel }: { items: NavItem[]; phoneHref: string | null; phoneLabel: string | null }) {
   const [active, setActive] = useState(items[0]?.id ?? "");
   const bar = useRef<HTMLDivElement>(null);
   const ids = items.map((x) => x.id).join(",");
@@ -39,25 +39,34 @@ export function SiteNav({ items }: { items: NavItem[] }) {
   }, [active]);
 
   return (
-    <nav
-      aria-label="Secciones de la página"
+    <header
       className="sticky top-0 z-30 border-b border-black/10 backdrop-blur"
-      style={{ background: "color-mix(in srgb, var(--page-bg) 88%, transparent)", color: "var(--page-fg)" }}
+      style={{ background: "color-mix(in srgb, var(--page-bg) 92%, transparent)", color: "var(--page-fg)" }}
     >
-      <div ref={bar} className="no-scrollbar mx-auto flex max-w-3xl items-center gap-1 overflow-x-auto px-2 sm:justify-center">
-        {items.map((it) => (
-          <a
-            key={it.id}
-            href={`#${it.id}`}
-            data-id={it.id}
-            aria-current={active === it.id ? "true" : undefined}
-            onClick={() => setActive(it.id)}
-            className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition ${active === it.id ? "border-current opacity-100" : "border-transparent opacity-60 hover:opacity-100"}`}
-          >
-            {it.label}
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-2 sm:px-4">
+        <nav aria-label="Secciones de la página" ref={bar} className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+          {items.map((it) => (
+            <a
+              key={it.id}
+              href={`#${it.id}`}
+              data-id={it.id}
+              aria-current={active === it.id ? "true" : undefined}
+              onClick={() => setActive(it.id)}
+              className={`whitespace-nowrap border-b-2 px-3 py-3.5 text-sm font-medium transition ${active === it.id ? "border-current opacity-100" : "border-transparent opacity-60 hover:opacity-100"}`}
+            >
+              {it.label}
+            </a>
+          ))}
+        </nav>
+        {phoneHref && (
+          <a href={phoneHref} aria-label={phoneLabel ? `Llamar al ${phoneLabel}` : "Llamar"} className="flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold hover:bg-black/5">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+            </svg>
+            {phoneLabel && <span className="hidden sm:inline">{phoneLabel}</span>}
           </a>
-        ))}
+        )}
       </div>
-    </nav>
+    </header>
   );
 }

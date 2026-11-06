@@ -28,8 +28,22 @@ const EXTERNAL = { target: "_blank", rel: "noopener noreferrer" } as const;
 export const hasContact = (p: Profile) => !!(p.phone || p.whatsapp || p.email || p.address || p.mapsUrl || SOCIALS.some((k) => p[k]));
 
 // Los datos ya se validaron al guardarse; esto es un segundo seguro al mostrarlos (solo http(s) y teléfonos con formato internacional).
-const safeUrl = (u: string | null): u is string => !!u && /^https?:\/\//i.test(u);
-const safePhone = (v: string | null): v is string => !!v && /^\+\d{6,15}$/.test(v);
+export const safeUrl = (u: string | null): u is string => !!u && /^https?:\/\//i.test(u);
+export const safePhone = (v: string | null): v is string => !!v && /^\+\d{6,15}$/.test(v);
+
+/** Mapa incrustado a partir de la dirección (no necesita clave). Solo se muestra si hay dirección cargada. */
+export function MapEmbed({ address }: { address: string }) {
+  return (
+    <iframe
+      title="Ubicación en Google Maps"
+      src={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`}
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      sandbox="allow-scripts allow-same-origin allow-popups"
+      className="h-64 w-full rounded-[var(--card-radius,1rem)] border border-neutral-200 bg-neutral-100 shadow-sm"
+    />
+  );
+}
 
 export function ContactCard({ p: raw }: { p: Profile }) {
   const p = { ...raw, phone: safePhone(raw.phone) ? raw.phone : null, whatsapp: safePhone(raw.whatsapp) ? raw.whatsapp : null };

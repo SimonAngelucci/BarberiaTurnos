@@ -5,13 +5,15 @@ import { BookingFlow } from "@/components/BookingFlow";
 import { payConfig } from "@/lib/payments";
 import { getAccess } from "@/lib/billing";
 import { FONTS, fontsHref, resolveConfig, usedFonts } from "@/lib/page-config";
-import { BlockBox, BlockContent, PageFrame } from "@/components/page/BlockView";
+import { telHref, whatsappHref, prettyPhone } from "@/lib/profile";
 import { SiteNav, type NavItem } from "@/components/site/SiteNav";
 import { SiteSection } from "@/components/site/SiteSection";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { Gallery } from "@/components/site/Gallery";
 import { Reviews } from "@/components/site/Reviews";
-import { ContactCard, TextCard, hasContact } from "@/components/site/InfoSections";
+import { BusinessCard } from "@/components/site/BusinessCard";
+import { MobileBookBar } from "@/components/site/MobileBookBar";
+import { ContactCard, MapEmbed, TextCard, hasContact, safePhone } from "@/components/site/InfoSections";
 
 export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -35,7 +37,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const config = resolveConfig(b.pageConfig);
   const fonts = fontsHref(usedFonts(config));
 
-  // Qué secciones tiene esta barbería. Las que no tienen contenido no se muestran; sin nada cargado la página queda como siempre.
+  // Todo sale del panel: las secciones sin contenido no se muestran.
   const hero = photos.filter((p) => p.kind === "HERO").map((p) => p.url);
   const gallery = photos.filter((p) => p.kind === "GALLERY").map((p) => p.url);
   const hasReviews = !!profile?.reviewsEnabled;
@@ -43,20 +45,23 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const hasPolicy = !!profile?.policyText;
   const hasContactInfo = !!profile && hasContact(profile);
   const hasGallery = gallery.length > 0;
-  const extras = hero.length > 0 || hasReviews || hasAbout || hasPolicy || hasContactInfo || hasGallery;
+  const hasAddress = !!(profile?.address || profile?.mapsUrl);
 
-  // Con portada, el logo, el nombre y el eslogan ya se muestran sobre las fotos: no se repiten en el bloque de reservas.
+  // El nombre y el eslogan siguen pudiendo personalizarse desde el editor de diseño.
   const heroTitle = config.blocks.find((x) => x.type === "title");
   const heroTagline = config.blocks.find((x) => x.type === "tagline");
-  const pageConfig = hero.length > 0 ? { ...config, blocks: config.blocks.filter((x) => x.type !== "logo" && x.type !== "title" && x.type !== "tagline") } : config;
+  const title = heroTitle && "text" in heroTitle && heroTitle.text ? heroTitle.text : b.name;
+  const tagline = heroTagline && "text" in heroTagline && heroTagline.text ? heroTagline.text : b.tagline;
+
+  const phone = safePhone(profile?.phone ?? null) ? profile!.phone! : safePhone(profile?.whatsapp ?? null) ? profile!.whatsapp! : null;
+  const isWhatsappOnly = !!phone && phone === profile?.whatsapp && phone !== profile?.phone;
 
   const nav: NavItem[] = [
-    ...(hero.length > 0 ? [{ id: "inicio", label: "Inicio" }] : []),
-    { id: "turnos", label: "Turnos" },
-    ...(hasReviews ? [{ id: "resenas", label: "Reseñas" }] : []),
-    ...(hasGallery ? [{ id: "galeria", label: "Galería" }] : []),
+    { id: "servicios", label: "Servicios" },
     ...(hasAbout ? [{ id: "acerca", label: "Acerca de" }] : []),
-    ...(hasContactInfo ? [{ id: "contacto", label: "Contacto" }] : []),
+    ...(hasGallery ? [{ id: "galeria", label: "Galería" }] : []),
+    ...(hasReviews ? [{ id: "resenas", label: "Reseñas" }] : []),
+    ...(hasAddress || hasContactInfo ? [{ id: "direccion", label: "Dirección" }] : []),
   ];
 
   // Suscripción vencida o con pago pendiente: en lugar del formulario se muestra un aviso claro.
@@ -88,73 +93,85 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   );
 
   return (
-    <main className="min-h-screen">
+    <main
+      className="min-h-screen pb-28 lg:pb-16"
+      style={{ fontFamily: FONTS[config.global.font].css, ["--card-radius" as string]: `${config.global.cardRadius}px` }}
+    >
       {/* React 19 sube este <link> al <head> y evita duplicados */}
       {fonts && <link rel="stylesheet" href={fonts} precedence="default" />}
 
-      {extras && <SiteNav items={nav} />}
+      <SiteNav
+        items={nav}
+        phoneHref={phone ? (isWhatsappOnly ? whatsappHref(phone) : telHref(phone)) : null}
+        phoneLabel={phone ? prettyPhone(phone) : null}
+      />
 
-      {hero.length > 0 && (
-        <div style={{ fontFamily: FONTS[config.global.font].css }}>
-          <HeroCarousel
-            photos={hero}
-            name={heroTitle && "text" in heroTitle && heroTitle.text ? heroTitle.text : b.name}
-            tagline={heroTagline && "text" in heroTagline && heroTagline.text ? heroTagline.text : b.tagline}
+      <HeroCarousel photos={hero} />
+
+      <div className="mx-auto grid max-w-5xl items-start gap-6 px-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+        {/* Tarjeta del negocio: arriba en celular, a la derecha (y fija al desplazarse) en pantallas grandes */}
+        <aside className="-mt-10 lg:order-2 lg:-mt-24 lg:sticky lg:top-20">
+          <BusinessCard
+            name={title}
+            tagline={tagline}
             logoUrl={b.logoUrl}
-            ctaHref="#turnos"
+            average={reviewStats._avg.rating}
+            total={reviewStats._count._all}
+            showRating={hasReviews}
+            contact={profile}
+            bookHref="#servicios"
+            bookLabel="Reservar"
           />
-        </div>
-      )}
+        </aside>
 
-      <div id="turnos" className="scroll-mt-14">
-        <PageFrame config={pageConfig}>
-          {pageConfig.blocks.map((block) => (
-            <BlockBox key={block.id} block={block}>
-              <BlockContent block={block} ctx={{ name: b.name, tagline: b.tagline, logoUrl: b.logoUrl, booking }} />
-            </BlockBox>
-          ))}
-        </PageFrame>
+        <div className="min-w-0 space-y-10 pt-2 lg:order-1 lg:pt-8">
+          {hasPolicy && (
+            <SiteSection title="Política de reservas">
+              <TextCard text={profile!.policyText!} />
+            </SiteSection>
+          )}
+
+          <SiteSection id="servicios">
+            {booking}
+            {b.allowClientChanges && (
+              <p className="mt-4 text-sm">
+                <Link href={`/b/${b.slug}/turno`} className="underline opacity-80 hover:opacity-100">
+                  ¿Ya tenés un turno? Reprogramalo o cancelalo
+                </Link>
+              </p>
+            )}
+          </SiteSection>
+
+          {hasAbout && (
+            <SiteSection id="acerca" title={profile!.aboutTitle || "Acerca de"}>
+              <TextCard text={profile!.aboutText!} />
+            </SiteSection>
+          )}
+
+          {hasGallery && (
+            <SiteSection id="galeria" title="Galería">
+              <Gallery photos={gallery} />
+            </SiteSection>
+          )}
+
+          {hasReviews && (
+            <SiteSection id="resenas" title="Reseñas">
+              <Reviews slug={b.slug} reviews={reviews} average={reviewStats._avg.rating} total={reviewStats._count._all} timezone={b.timezone} />
+            </SiteSection>
+          )}
+
+          {(hasAddress || hasContactInfo) && (
+            <SiteSection id="direccion" title="Dirección y contacto">
+              <div className="space-y-4">
+                {profile?.address && <MapEmbed address={profile.address} />}
+                <ContactCard p={profile!} />
+              </div>
+            </SiteSection>
+          )}
+        </div>
       </div>
 
-      {b.allowClientChanges && (
-        <p className={`text-center text-sm ${extras ? "pb-2" : "pb-8"}`}>
-          <Link href={`/b/${b.slug}/turno`} className="underline opacity-80 hover:opacity-100">
-            ¿Ya tenés un turno? Reprogramalo o cancelalo
-          </Link>
-        </p>
-      )}
-
-      {hasPolicy && (
-        <SiteSection title="Política de reserva" config={config}>
-          <TextCard text={profile!.policyText!} />
-        </SiteSection>
-      )}
-
-      {hasReviews && (
-        <SiteSection id="resenas" title="Reseñas" config={config}>
-          <Reviews slug={b.slug} reviews={reviews} average={reviewStats._avg.rating} total={reviewStats._count._all} timezone={b.timezone} />
-        </SiteSection>
-      )}
-
-      {hasGallery && (
-        <SiteSection id="galeria" title="Galería" config={config}>
-          <Gallery photos={gallery} />
-        </SiteSection>
-      )}
-
-      {hasAbout && (
-        <SiteSection id="acerca" title={profile!.aboutTitle || "Acerca de"} config={config}>
-          <TextCard text={profile!.aboutText!} />
-        </SiteSection>
-      )}
-
-      {hasContactInfo && (
-        <SiteSection id="contacto" title="Contacto" config={config}>
-          <ContactCard p={profile!} />
-        </SiteSection>
-      )}
-
-      {extras && <div className="h-8" />}
+      {accepting && <MobileBookBar targetId="servicios" label="Reservar" />}
     </main>
   );
 }

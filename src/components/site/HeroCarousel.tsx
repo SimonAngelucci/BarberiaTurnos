@@ -5,10 +5,11 @@ import { useEffect, useRef, useState } from "react";
 const INTERVAL_MS = 5500;
 
 /**
- * Portada con las fotos de la barbería: pasan solas con un fundido suave. Se detiene al pasar el mouse / tocar / enfocar,
+ * Portada: solo las fotos de la barbería, pasan solas con un fundido suave. Se detiene al pasar el mouse / tocar / enfocar,
  * con la pestaña oculta y si la persona pidió «reducir movimiento». Se puede cambiar con los puntos o deslizando.
+ * Sin fotos muestra una franja con el color de la marca.
  */
-export function HeroCarousel({ photos, name, tagline, logoUrl, ctaHref }: { photos: string[]; name: string; tagline: string; logoUrl: string | null; ctaHref: string }) {
+export function HeroCarousel({ photos }: { photos: string[] }) {
   const [i, setI] = useState(0);
   const [held, setHeld] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -37,10 +38,13 @@ export function HeroCarousel({ photos, name, tagline, logoUrl, ctaHref }: { phot
 
   const go = (d: number) => setI((x) => (x + d + n) % n);
 
+  if (n === 0) {
+    return <div aria-hidden className="h-32 w-full sm:h-44 lg:h-52" style={{ background: "linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, #ffffff))" }} />;
+  }
+
   return (
     <div
-      id="inicio"
-      className="relative isolate h-[70vh] max-h-[640px] min-h-[400px] w-full overflow-hidden bg-neutral-900 text-white"
+      className="relative isolate h-[34vh] max-h-[420px] min-h-[220px] w-full overflow-hidden bg-neutral-900 lg:h-[380px]"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}
@@ -68,22 +72,10 @@ export function HeroCarousel({ photos, name, tagline, logoUrl, ctaHref }: { phot
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${k === i ? "opacity-100" : "opacity-0"}`}
         />
       ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/25" />
-
-      <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-2xl flex-col items-center gap-3 px-6 pb-14 text-center">
-        {logoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="" className="h-20 w-20 rounded-full bg-white object-cover shadow-lg ring-2 ring-white/70" />
-        )}
-        <h1 className="text-balance text-3xl font-bold leading-tight drop-shadow sm:text-5xl">{name}</h1>
-        {tagline && <p className="text-balance text-base text-white/85 drop-shadow sm:text-lg">{tagline}</p>}
-        <a href={ctaHref} className="btn mt-2 !px-6 !py-3 shadow-lg ring-2 ring-white/70">
-          Reservar turno
-        </a>
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
 
       {n > 1 && (
-        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2" role="tablist" aria-label="Fotos de la portada">
+        <div className="absolute inset-x-0 bottom-14 flex justify-center gap-2 lg:bottom-6" role="tablist" aria-label="Fotos de la portada">
           {photos.map((_, k) => (
             <button
               key={k}
@@ -92,7 +84,7 @@ export function HeroCarousel({ photos, name, tagline, logoUrl, ctaHref }: { phot
               aria-selected={k === i}
               aria-label={`Foto ${k + 1} de ${n}`}
               onClick={() => setI(k)}
-              className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"}`}
+              className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/90"}`}
             />
           ))}
         </div>

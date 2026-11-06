@@ -147,8 +147,8 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="mb-2 font-semibold">1. Elegí un servicio</h2>
-        <div className="space-y-2">
+        <h2 className="mb-3 text-xl font-bold tracking-tight">Servicios</h2>
+        <div className="space-y-2.5">
           {services.map((s) => (
             <button
               key={s.id}
@@ -156,15 +156,27 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 setService(s);
                 setSlot(null);
               }}
-              className={`card w-full text-left transition ${service?.id === s.id ? "!border-brand ring-2 ring-neutral-300" : ""}`}
+              aria-pressed={service?.id === s.id}
+              className={`card group w-full !p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${service?.id === s.id ? "!border-brand ring-2 ring-brand/30" : ""}`}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-medium">{s.name}</div>
-                  {s.description && <div className="text-sm text-neutral-500">{s.description}</div>}
-                  <div className="text-xs text-neutral-400">{s.durationMin} min</div>
+              <div className="flex items-center gap-3.5">
+                <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition group-hover:bg-brand group-hover:text-brand-fg">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="6" cy="6" r="3" />
+                    <circle cx="6" cy="18" r="3" />
+                    <path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12" />
+                  </svg>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">{s.name}</div>
+                  {s.description && <div className="line-clamp-2 text-sm text-neutral-500">{s.description}</div>}
+                  <div className="mt-0.5 text-sm text-neutral-500">
+                    {s.durationMin} min · <span className="font-semibold text-neutral-900">{money(s.priceCents, currency)}</span>
+                  </div>
                 </div>
-                <div className="font-semibold">{money(s.priceCents, currency)}</div>
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
               </div>
             </button>
           ))}
@@ -173,7 +185,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {service && barbers.length > 1 && (
         <section>
-          <h2 className="mb-2 font-semibold">2. Elegí barbero</h2>
+          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí barbero</h2>
           <div className="grid gap-2 sm:grid-cols-2">
             {barbers.map((b) => (
               <button
@@ -207,7 +219,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {service && barberId && (
         <section>
-          <h2 className="mb-2 font-semibold">{barbers.length > 1 ? "3" : "2"}. Elegí el día</h2>
+          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí el día</h2>
           <DayPicker days={dayItems} value={date} onChange={setDate} />
 
           {date && (
