@@ -9,6 +9,7 @@ import { requireWritable } from "@/lib/guard";
 import { getAccess } from "@/lib/billing";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
+import { remapDisabled } from "@/lib/schedule-grid";
 import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import { encryptSecret } from "@/lib/crypto";
 import { configSchema } from "@/lib/page-config";
@@ -171,26 +172,55 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
 
 /**
  * Modalidad de los horarios. Solo cambia cómo se calculan los inicios que ve el cliente: no toca reservas, duraciones de
- * servicios, días ni horarios de atención. El intervalo manual se guarda aparte y se conserva al pasar a automático.
+ * servicios, días ni horarios de atención. El intervalo se guarda aparte y se conserva al cambiar de modalidad.
  */
 export async function saveScheduleMode(_prev: FormState, formData: FormData): Promise<FormState> {
   const { businessId } = await requireWritable();
   const mode = formData.get("scheduleMode");
   if (mode !== "AUTO" && mode !== "MANUAL") return { ok: false, error: "Elegí una modalidad." };
-
-  const data: { scheduleMode: "AUTO" | "MANUAL"; slotIntervalMin?: number } = { scheduleMode: mode };
-  if (mode === "MANUAL") {
-    const n = Number(formData.get("slotIntervalMin"));
-    if (!Number.isInteger(n) || n < 5 || n > 240 || n % 5 !== 0) return { ok: false, error: "El intervalo tiene que ser un número entero de minutos, múltiplo de 5, entre 5 y 240." };
-    data.slotIntervalMin = n;
-  }
-  await prisma.business.update({ where: { id: businessId }, data });
+  await prisma.business.update({ where: { id: businessId }, data: { scheduleMode: mode } });
   revalidatePath("/admin/schedule");
   revalidatePath("/", "layout");
   return {
     ok: true,
-    message: mode === "AUTO" ? "Modo automático activado: los horarios se calculan según la duración de cada servicio." : `Modo manual activado: los turnos empiezan cada ${data.slotIntervalMin} minutos.`,
+    message: mode === "AUTO" ? "Modo automático activado: los horarios se calculan según la duración de cada servicio." : "Modo manual activado: los turnos empiezan cada cierto intervalo fijo.",
   };
+}
+
+/**
+ * Intervalo de los horarios (5 a 240 minutos, el que quieras). En modo manual es cada cuánto empieza un turno; en ambos modos
+ * es el tamaño de las celdas que se activan o desactivan en la grilla. Los horarios que ya estaban desactivados se llevan a la
+ * grilla nueva (ver remapDisabled), así que cambiarlo no reabre ni pierde bloqueos. Las reservas no se tocan.
+ */
+export async function saveSlotInterval(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { businessId } = await requireWritable();
+  const n = Number(formData.get("slotIntervalMin"));
+  if (!Number.isInteger(n) || n < 5 || n > 240) return { ok: false, error: "El intervalo tiene que ser un número entero de minutos, entre 5 y 240." };
+
+  const business = await prisma.business.findUnique({ where: { id: businessId }, select: { slotIntervalMin: true } });
+  if (!business) return { ok: false, error: "No encontramos tu negocio." };
+  if (business.slotIntervalMin === n) return { ok: true, message: `El intervalo ya era de ${n} minutos.` };
+
+  const [hours, disabled] = await Promise.all([
+    prisma.workingHour.findMany({ where: { barber: { businessId } }, select: { barberId: true, weekday: true, startMin: true, endMin: true } }),
+    prisma.disabledSlot.findMany({ where: { barber: { businessId } }, select: { barberId: true, weekday: true, startMin: true } }),
+  ]);
+  const next: { barberId: string; weekday: number; startMin: number }[] = [];
+  for (const h of hours) {
+    const oldStarts = disabled.filter((d) => d.barberId === h.barberId && d.weekday === h.weekday).map((d) => d.startMin);
+    if (!oldStarts.length) continue;
+    for (const m of remapDisabled({ startMin: h.startMin, endMin: h.endMin, oldStarts, oldInterval: business.slotIntervalMin, newInterval: n })) {
+      next.push({ barberId: h.barberId, weekday: h.weekday, startMin: m });
+    }
+  }
+  await prisma.$transaction([
+    prisma.disabledSlot.deleteMany({ where: { barber: { businessId } } }),
+    prisma.disabledSlot.createMany({ data: next }),
+    prisma.business.update({ where: { id: businessId }, data: { slotIntervalMin: n } }),
+  ]);
+  revalidatePath("/admin/schedule");
+  revalidatePath("/", "layout");
+  return { ok: true, message: `Listo: los horarios ahora se generan cada ${n} minutos. Los que tenías desactivados se mantuvieron.` };
 }
 
 export async function saveSchedule(formData: FormData) {

@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { minToHHMM, fmtDateTime } from "@/lib/format";
 import { WeekScheduleEditor, type DayState } from "@/components/WeekScheduleEditor";
 import { ScheduleModeForm } from "@/components/ScheduleModeForm";
+import { IntervalForm } from "@/components/IntervalForm";
 import { saveSchedule, addTimeOff, deleteTimeOff } from "../actions";
 
 const DAYS = [
@@ -62,7 +63,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <h2 className="font-semibold">Modalidad de horarios</h2>
           <p className="text-sm text-neutral-500">Cambiarla no afecta las reservas ya hechas ni la duración de tus servicios: solo cambia los horarios que ven tus clientes.</p>
         </div>
-        <ScheduleModeForm mode={business.scheduleMode} interval={business.slotIntervalMin} />
+        <ScheduleModeForm mode={business.scheduleMode} />
+        <div className="border-t border-neutral-100 pt-3">
+          <IntervalForm interval={business.slotIntervalMin} mode={business.scheduleMode} />
+        </div>
       </section>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -81,13 +85,13 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       </div>
 
       {barber && (
-        <form key={barber.id} action={saveSchedule} className="card space-y-3">
+        <form key={`${barber.id}-${business.slotIntervalMin}`} action={saveSchedule} className="card space-y-3">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Días y horarios de {barber.name}</h2>
           <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} />
           <p className="text-xs text-neutral-500">
             {business.scheduleMode === "MANUAL"
-              ? `Intervalo entre turnos: ${business.slotIntervalMin} min (se cambia arriba, en «Modalidad de horarios»).`
+              ? `Los turnos empiezan cada ${business.slotIntervalMin} min (se cambia arriba, en «Generar horarios cada»).`
               : `En modo automático los inicios los calcula el sistema; los bloques de ${business.slotIntervalMin} min sirven para dejar sin turnos una franja puntual (ej: una pausa).`}{" "}
             Zona horaria: {business.timezone}.
           </p>
