@@ -14,9 +14,9 @@ type Profile = {
 };
 
 /** Texto libre del administrador: se muestra como texto plano (respeta los saltos de línea), nunca como HTML. */
-export function TextCard({ text }: { text: string }) {
+export function TextCard({ text, plain = false }: { text: string; plain?: boolean }) {
   return (
-    <div className="card">
+    <div className={plain ? "" : "card"}>
       <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{text}</p>
     </div>
   );
@@ -40,7 +40,7 @@ export function MapEmbed({ address }: { address: string }) {
       loading="lazy"
       referrerPolicy="no-referrer-when-downgrade"
       sandbox="allow-scripts allow-same-origin allow-popups"
-      className="h-64 w-full rounded-[var(--card-radius,1rem)] border border-neutral-200 bg-neutral-100 shadow-sm"
+      className="h-72 w-full rounded-3xl bg-black/5 sm:h-80"
     />
   );
 }
@@ -51,7 +51,7 @@ export function ContactCard({ p: raw }: { p: Profile }) {
   const maps = safeUrl(mapsCandidate) ? mapsCandidate : null;
   const socials = SOCIALS.filter((k) => safeUrl(p[k]));
   return (
-    <div className="card space-y-4">
+    <div className="space-y-4">
       {(p.whatsapp || p.phone || p.email) && (
         <div className="flex flex-wrap gap-2">
           {p.whatsapp && (
@@ -91,7 +91,7 @@ export function ContactCard({ p: raw }: { p: Profile }) {
       )}
 
       {socials.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
+        <div className="flex flex-wrap gap-2 pt-1">
           {socials.map((k) => (
             <a key={k} href={p[k]!} {...EXTERNAL} className="rounded-full border border-neutral-300 px-3.5 py-1.5 text-sm font-medium hover:bg-neutral-100">
               {SOCIAL_LABELS[k]}

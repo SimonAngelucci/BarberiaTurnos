@@ -81,6 +81,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       maxAdvanceDays={Math.min(b.maxAdvanceDays, 60)}
       pay={payConfig(b)}
       allowChanges={b.allowClientChanges}
+      logoUrl={b.logoUrl}
       services={services.map((s) => ({
         id: s.id,
         name: s.name,
@@ -94,7 +95,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   return (
     <main
-      className="min-h-screen pb-28 lg:pb-16"
+      className="min-h-screen"
       style={{ fontFamily: FONTS[config.global.font].css, ["--card-radius" as string]: `${config.global.cardRadius}px` }}
     >
       {/* React 19 sube este <link> al <head> y evita duplicados */}
@@ -144,7 +145,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {hasAbout && (
             <SiteSection id="acerca" title={profile!.aboutTitle || "Acerca de"}>
-              <TextCard text={profile!.aboutText!} />
+              <TextCard text={profile!.aboutText!} plain />
             </SiteSection>
           )}
 
@@ -170,6 +171,26 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           )}
         </div>
       </div>
+
+      {/* Franja de cierre: el color de fondo de la barbería con un toque de su color de marca, así siempre combina */}
+      <footer
+        className="mt-16 border-t border-[color-mix(in_srgb,var(--page-fg)_10%,transparent)] px-4 pb-28 pt-10 text-center lg:pb-12"
+        style={{ background: "color-mix(in srgb, var(--page-bg) 90%, var(--brand))", color: "var(--page-fg)" }}
+      >
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3">
+          {b.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={b.logoUrl} alt="" className="h-12 w-12 rounded-full bg-white object-cover shadow-sm" />
+          )}
+          <p className="text-lg font-bold tracking-tight">{title}</p>
+          {profile?.address && <p className="text-sm opacity-70">{profile.address}</p>}
+          {accepting && (
+            <a href="#servicios" className="btn mt-1 !rounded-full !px-6">
+              Reservar turno
+            </a>
+          )}
+        </div>
+      </footer>
 
       {accepting && <MobileBookBar targetId="servicios" label="Reservar" />}
     </main>

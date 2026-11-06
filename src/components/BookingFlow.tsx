@@ -20,6 +20,8 @@ type Props = {
   pay: PayConfig;
   /** Si la barbería permite reprogramar/cancelar con código: se muestra el código al confirmar. */
   allowChanges?: boolean;
+  /** Logo de la barbería: se muestra al lado del título «Servicios». */
+  logoUrl?: string | null;
 };
 
 function Avatar({ b, size }: { b: Barber; size: number }) {
@@ -34,7 +36,7 @@ function Avatar({ b, size }: { b: Barber; size: number }) {
   );
 }
 
-export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false }: Props) {
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false, logoUrl = null }: Props) {
   const [claim, setClaim] = useState<string | null>(null);
   const [service, setService] = useState<Service | null>(null);
   const [choice, setChoice] = useState<PayChoice>("NONE");
@@ -147,7 +149,13 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="mb-3 text-xl font-bold tracking-tight">Servicios</h2>
+        <div className="mb-3 flex items-center gap-3">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-cover shadow-sm" />
+          )}
+          <h2 className="text-xl font-bold tracking-tight">Servicios</h2>
+        </div>
         <div className="space-y-2.5">
           {services.map((s) => (
             <button
