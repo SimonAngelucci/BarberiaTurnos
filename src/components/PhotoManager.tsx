@@ -2,38 +2,9 @@
 
 import { useRef, useState, useTransition } from "react";
 import { addPhoto, movePhoto, removePhoto } from "@/app/admin/profile/actions";
-
-const TYPES = ["image/png", "image/jpeg", "image/webp"];
-const MAX_SOURCE = 15 * 1024 * 1024; // foto original del celular; se achica antes de subir
-const MAX_UPLOAD = 2 * 1024 * 1024; // lo que acepta el servidor
-const MAX_SIDE = 1920;
+import { IMAGE_TYPES as TYPES, MAX_SOURCE, shrink } from "@/lib/client-image";
 
 type Photo = { id: string; url: string };
-
-/** Achica y recomprime la foto (máx. 1920 px de lado, JPEG): las fotos de celular pesan varios MB y el servidor acepta hasta 2 MB. */
-async function shrink(file: File): Promise<File> {
-  let bmp: ImageBitmap;
-  try {
-    bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); // respeta la orientación de la cámara
-  } catch {
-    throw new Error("No se pudo leer la imagen. Probá con otra.");
-  }
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bmp.width * scale);
-  canvas.height = Math.round(bmp.height * scale);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Tu navegador no pudo procesar la imagen.");
-  ctx.fillStyle = "#fff"; // los PNG con transparencia quedan sobre blanco
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  bmp.close?.();
-  for (const q of [0.85, 0.7, 0.55]) {
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q));
-    if (blob && blob.size <= MAX_UPLOAD) return new File([blob], "foto.jpg", { type: "image/jpeg" });
-  }
-  throw new Error("La foto sigue siendo muy pesada. Probá con otra.");
-}
 
 export function PhotoManager({ kind, photos, max, enabled }: { kind: "HERO" | "GALLERY"; photos: Photo[]; max: number; enabled: boolean }) {
   const picker = useRef<HTMLInputElement>(null);

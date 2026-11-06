@@ -572,6 +572,13 @@ model BusinessProfile {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+/// Elemento de la portada (solo imágenes) o de la galería (fotos y videos cortos). Los archivos viven en Vercel Blob;
+/// acá solo se guardan las URLs y los metadatos.
 model BusinessPhoto {
   id         String    @id @default(cuid())
   businessId String
@@ -579,6 +586,16 @@ model BusinessPhoto {
   kind       PhotoKind
   sortOrder  Int       @default(0)
   createdAt  DateTime  @default(now())
+  mediaType  MediaType @default(IMAGE)
+  /// Videos: imagen de portada (poster) que se ve mientras el video carga.
+  posterUrl  String?
+  width      Int?
+  height     Int?
+  /// Videos: duración y peso, informativos (los límites se validan al subir).
+  durationMs Int?
+  sizeBytes  Int?
+  /// Oculto = sigue guardado pero no se muestra en la página pública.
+  visible    Boolean   @default(true)
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 

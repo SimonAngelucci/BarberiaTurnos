@@ -5,6 +5,7 @@ import { fmtDateTime } from "@/lib/format";
 import { MAX_GALLERY_PHOTOS, MAX_HERO_PHOTOS } from "@/lib/profile";
 import { ActionForm } from "@/components/ActionForm";
 import { PhotoManager } from "@/components/PhotoManager";
+import { MediaManager } from "@/components/MediaManager";
 import { Stars } from "@/components/site/Stars";
 import { createReview, deleteReview, saveAbout, saveContact, saveGallerySettings, saveReviewSettings, setReviewStatus } from "./actions";
 
@@ -41,7 +42,7 @@ export default async function ProfilePage() {
   const b = await getBusinessById(businessId);
   const [profile, photos, reviews] = await Promise.all([
     prisma.businessProfile.findUnique({ where: { businessId } }),
-    prisma.businessPhoto.findMany({ where: { businessId }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true, url: true, kind: true } }),
+    prisma.businessPhoto.findMany({ where: { businessId }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true, url: true, kind: true, mediaType: true, posterUrl: true, visible: true } }),
     prisma.review.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 100 }),
   ]);
   const enabled = uploadsEnabled();
@@ -63,8 +64,8 @@ export default async function ProfilePage() {
         <PhotoManager kind="HERO" photos={hero} max={MAX_HERO_PHOTOS} enabled={enabled} />
       </Section>
 
-      <Section id="galeria" title="Galería" hint={`Fotos del local y de tus trabajos. Hasta ${MAX_GALLERY_PHOTOS}.`}>
-        <PhotoManager kind="GALLERY" photos={gallery} max={MAX_GALLERY_PHOTOS} enabled={enabled} />
+      <Section id="galeria" title="Galería" hint={`Fotos y videos cortos del local y de tus trabajos. Hasta ${MAX_GALLERY_PHOTOS} elementos.`}>
+        <MediaManager items={gallery} max={MAX_GALLERY_PHOTOS} enabled={enabled} />
         <div className="border-t border-neutral-100 pt-3">
           <ActionForm action={saveGallerySettings} submitLabel="Guardar">
             <div>

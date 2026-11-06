@@ -24,7 +24,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     prisma.service.findMany({ where: { businessId: b.id, active: true }, orderBy: { sortOrder: "asc" } }),
     prisma.barber.findMany({ where: { businessId: b.id, active: true }, orderBy: { name: "asc" } }),
     prisma.businessProfile.findUnique({ where: { businessId: b.id } }),
-    prisma.businessPhoto.findMany({ where: { businessId: b.id }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { url: true, kind: true } }),
+    // Solo lo visible: lo que el administrador ocultó sigue guardado pero no llega a la página.
+    prisma.businessPhoto.findMany({
+      where: { businessId: b.id, visible: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { url: true, kind: true, mediaType: true, posterUrl: true },
+    }),
     prisma.review.findMany({
       where: { businessId: b.id, status: "APPROVED" },
       orderBy: { createdAt: "desc" },
@@ -38,8 +43,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const fonts = fontsHref(usedFonts(config));
 
   // Todo sale del panel: las secciones sin contenido no se muestran.
-  const hero = photos.filter((p) => p.kind === "HERO").map((p) => p.url);
-  const gallery = photos.filter((p) => p.kind === "GALLERY").map((p) => p.url);
+  const hero = photos.filter((p) => p.kind === "HERO" && p.mediaType === "IMAGE").map((p) => p.url);
+  const gallery = photos
+    .filter((p) => p.kind === "GALLERY" && (p.mediaType === "IMAGE" || !!p.posterUrl))
+    .map((p) => ({ url: p.url, type: p.mediaType, poster: p.posterUrl }));
   const hasReviews = !!profile?.reviewsEnabled;
   const hasAbout = !!profile?.aboutText;
   const hasPolicy = !!profile?.policyText;
@@ -151,7 +158,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {hasGallery && (
             <SiteSection id="galeria" title="Galería">
-              <Gallery photos={gallery} visible={profile?.galleryVisible ?? 4} />
+              <Gallery items={gallery} visible={profile?.galleryVisible ?? 4} bookHref={accepting ? "#servicios" : undefined} />
             </SiteSection>
           )}
 

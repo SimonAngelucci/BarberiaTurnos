@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireWritable, ReadOnlyError } from "@/lib/guard";
-import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
+import { MAX_GALLERY_VIDEOS, videoProblem } from "@/lib/media";
+import { MAX_VIDEO_BYTES, deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import {
   MAX_GALLERY_PHOTOS,
   MAX_HERO_PHOTOS,
@@ -156,9 +157,92 @@ export async function removePhoto(id: string): Promise<PhotoResult> {
   const photo = await prisma.businessPhoto.findFirst({ where: { id: String(id), businessId } });
   if (!photo) return { ok: true };
   await prisma.businessPhoto.delete({ where: { id: photo.id } });
+  // Los archivos se borran después de quitar el registro: si el borrado falla, no queda un elemento roto en la página.
   await deleteImage(photo.url);
+  await deleteImage(photo.posterUrl);
   refresh();
   return { ok: true };
+}
+
+/** Muestra u oculta un elemento de la galería en la página pública (sigue guardado). */
+export async function setPhotoVisible(id: string, visible: boolean): Promise<PhotoResult> {
+  const g = await session();
+  if (!g.s) return { ok: false, error: g.error! };
+  const r = await prisma.businessPhoto.updateMany({ where: { id: String(id), businessId: g.s.businessId }, data: { visible: visible === true } });
+  if (r.count === 0) return { ok: false, error: "Ese elemento ya no existe." };
+  refresh();
+  return { ok: true };
+}
+
+const galleryFolder = (businessId: string) => `/${businessId}/gallery/`;
+const isGalleryUrl = (url: unknown, businessId: string): url is string =>
+  typeof url === "string" && url.length < 600 && isOwnBlobUrl(url, businessId) && new URL(url).pathname.startsWith(galleryFolder(businessId));
+
+const videoSchema = z.object({
+  url: z.string(),
+  posterUrl: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  durationMs: z.number().int(),
+  sizeBytes: z.number().int().min(1).max(MAX_VIDEO_BYTES),
+});
+
+/**
+ * Registra un video corto que el navegador ya subió (junto con su imagen de portada). Se vuelven a validar acá las URLs
+ * (propias, de la carpeta de esta barbería), las medidas y los límites; si algo no cumple, se borran los archivos subidos.
+ */
+export async function addVideo(input: unknown): Promise<PhotoResult> {
+  const g = await session();
+  if (!g.s) return { ok: false, error: g.error! };
+  const { businessId } = g.s;
+  const parsed = videoSchema.safeParse(input);
+  const raw = input as { url?: unknown; posterUrl?: unknown } | null;
+  const discard = async () => {
+    for (const u of [raw?.url, raw?.posterUrl]) if (isGalleryUrl(u, businessId)) await deleteImage(u);
+  };
+  if (!parsed.success || !isGalleryUrl(parsed.data.url, businessId) || !isGalleryUrl(parsed.data.posterUrl, businessId)) {
+    await discard();
+    return { ok: false, error: "Video inválido." };
+  }
+  const v = parsed.data;
+  const problem = videoProblem(v);
+  if (problem) {
+    await discard();
+    return { ok: false, error: problem };
+  }
+
+  const [total, videos, last] = await Promise.all([
+    prisma.businessPhoto.count({ where: { businessId, kind: "GALLERY" } }),
+    prisma.businessPhoto.count({ where: { businessId, kind: "GALLERY", mediaType: "VIDEO" } }),
+    prisma.businessPhoto.findFirst({ where: { businessId, kind: "GALLERY" }, orderBy: { sortOrder: "desc" }, select: { sortOrder: true } }),
+  ]);
+  if (total >= MAX_GALLERY_PHOTOS || videos >= MAX_GALLERY_VIDEOS) {
+    await discard();
+    return { ok: false, error: videos >= MAX_GALLERY_VIDEOS ? `Llegaste al máximo de ${MAX_GALLERY_VIDEOS} videos. Quitá alguno para agregar otro.` : `Llegaste al máximo de ${MAX_GALLERY_PHOTOS} elementos en la galería.` };
+  }
+  await prisma.businessPhoto.create({
+    data: {
+      businessId,
+      kind: "GALLERY",
+      mediaType: "VIDEO",
+      url: v.url,
+      posterUrl: v.posterUrl,
+      width: v.width,
+      height: v.height,
+      durationMs: v.durationMs,
+      sizeBytes: v.sizeBytes,
+      sortOrder: (last?.sortOrder ?? -1) + 1,
+    },
+  });
+  refresh();
+  return { ok: true };
+}
+
+/** Borra archivos que se subieron pero no llegaron a publicarse (por ejemplo, si falló la portada de un video). */
+export async function discardUploads(urls: unknown): Promise<void> {
+  const g = await session();
+  if (!g.s || !Array.isArray(urls)) return;
+  for (const u of urls.slice(0, 4)) if (isGalleryUrl(u, g.s.businessId)) await deleteImage(u);
 }
 
 // ------------------------------------------------------------------------------------------ reseñas
