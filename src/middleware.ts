@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
+import { SESSION_COOKIE, verifyToken } from "@/lib/session-token";
 import { SUPER_COOKIE, verifySuperToken } from "@/lib/platform-auth";
 
 export async function middleware(req: NextRequest) {

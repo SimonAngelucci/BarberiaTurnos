@@ -20,6 +20,7 @@ const links = [
   { href: "/admin/profile", label: "Mi página" },
   { href: "/admin/billing", label: "Suscripción" },
   { href: "/admin/settings", label: "Negocio" },
+  { href: "/admin/account", label: "Mi cuenta" },
 ];
 
 /** Estado de la suscripción, siempre visible en el panel. Devuelve null cuando no hay nada que avisar. */
@@ -85,7 +86,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // En solo lectura se deshabilitan todos los formularios del panel (salvo la pantalla de suscripción, que tiene que seguir
   // funcionando para poder regularizar). La defensa real está en el servidor: las acciones exigen la suscripción al día.
-  const lock =!!access?.readonly && !path.startsWith("/admin/billing");
+  // «Mi cuenta» tampoco se bloquea: cambiar la contraseña, exportar los datos o darse de baja tiene que poder hacerse siempre.
+  const lock = !!access?.readonly && !path.startsWith("/admin/billing") && !path.startsWith("/admin/account");
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">

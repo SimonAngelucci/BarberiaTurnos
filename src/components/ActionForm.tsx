@@ -10,12 +10,18 @@ export function ActionForm({
   children,
   className = "space-y-3",
   resetOnSuccess = false,
+  buttonClassName = "btn",
+  confirm,
 }: {
   action: (prev: FormState, fd: FormData) => Promise<FormState>;
   submitLabel: string;
   children: React.ReactNode;
   className?: string;
   resetOnSuccess?: boolean;
+  /** Clase del botón de envío (por defecto el botón principal). */
+  buttonClassName?: string;
+  /** Si se indica, pide confirmación al enviar. */
+  confirm?: string;
 }) {
   const [state, formAction, pending] = useActionState(async (prev: FormState, fd: FormData) => {
     const r = await action(prev, fd);
@@ -28,6 +34,7 @@ export function ActionForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        if (confirm && !window.confirm(confirm)) return;
         const fd = new FormData(e.currentTarget);
         startTransition(() => formAction(fd));
       }}
@@ -41,7 +48,7 @@ export function ActionForm({
         </p>
       )}
       {state?.ok && state.message && <p className="rounded-lg bg-green-50 p-2 text-sm text-green-800">{state.message}</p>}
-      <button className="btn" disabled={pending}>
+      <button className={buttonClassName} disabled={pending}>
         {pending ? "Guardando…" : submitLabel}
       </button>
     </form>

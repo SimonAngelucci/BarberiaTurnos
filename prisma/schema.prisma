@@ -157,8 +157,29 @@ model AdminUser {
   businessId   String
   email        String   @unique
   passwordHash String
+  /// Nombre del responsable / dueño de la cuenta.
+  name         String?
+  /// Preferencia de avisos importantes por email (suscripción, cobros, seguridad).
+  emailNotifications Boolean @default(true)
+  /// Los tokens de sesión emitidos antes de esta fecha ya no valen (cerrar todas las sesiones / cambio de contraseña).
+  tokensValidAfter DateTime?
   createdAt    DateTime @default(now())
   business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sessions     AdminSession[]
+}
+
+/// Una sesión iniciada en un dispositivo. El token de la cookie lleva este id; revocarla (revokedAt) la invalida de inmediato.
+model AdminSession {
+  id         String    @id @default(cuid())
+  adminId    String
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  userAgent  String?
+  ip         String?
+  revokedAt  DateTime?
+  admin      AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, revokedAt])
 }
 
 model Barber {
