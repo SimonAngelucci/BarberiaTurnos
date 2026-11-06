@@ -63,10 +63,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <input name="currency" required maxLength={3} className="input uppercase" defaultValue={b.currency} />
         </div>
         <div>
-          <label className="label">Intervalo de turnos (min)</label>
-          <input name="slotIntervalMin" type="number" min={5} step={5} required className="input" defaultValue={b.slotIntervalMin} />
-        </div>
-        <div>
           <label className="label">Aviso mínimo (min)</label>
           <input name="minNoticeMin" type="number" min={0} required className="input" defaultValue={b.minNoticeMin} />
         </div>

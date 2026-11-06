@@ -169,6 +169,30 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
   }
 }
 
+/**
+ * Modalidad de los horarios. Solo cambia cómo se calculan los inicios que ve el cliente: no toca reservas, duraciones de
+ * servicios, días ni horarios de atención. El intervalo manual se guarda aparte y se conserva al pasar a automático.
+ */
+export async function saveScheduleMode(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { businessId } = await requireWritable();
+  const mode = formData.get("scheduleMode");
+  if (mode !== "AUTO" && mode !== "MANUAL") return { ok: false, error: "Elegí una modalidad." };
+
+  const data: { scheduleMode: "AUTO" | "MANUAL"; slotIntervalMin?: number } = { scheduleMode: mode };
+  if (mode === "MANUAL") {
+    const n = Number(formData.get("slotIntervalMin"));
+    if (!Number.isInteger(n) || n < 5 || n > 240 || n % 5 !== 0) return { ok: false, error: "El intervalo tiene que ser un número entero de minutos, múltiplo de 5, entre 5 y 240." };
+    data.slotIntervalMin = n;
+  }
+  await prisma.business.update({ where: { id: businessId }, data });
+  revalidatePath("/admin/schedule");
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: mode === "AUTO" ? "Modo automático activado: los horarios se calculan según la duración de cada servicio." : `Modo manual activado: los turnos empiezan cada ${data.slotIntervalMin} minutos.`,
+  };
+}
+
 export async function saveSchedule(formData: FormData) {
   const { businessId } = await requireWritable();
   const barberId = z.string().min(1).parse(formData.get("barberId"));
@@ -343,7 +367,6 @@ const settingsSchema = z.object({
   bgColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   timezone: z.string().refine((tz) => DateTime.now().setZone(tz).isValid, "Zona horaria inválida"),
   currency: z.string().length(3),
-  slotIntervalMin: z.coerce.number().int().min(5).max(240),
   minNoticeMin: z.coerce.number().int().min(0).max(10080),
   maxAdvanceDays: z.coerce.number().int().min(1).max(365),
   reminders: z.string(),
@@ -387,7 +410,6 @@ export async function saveSettings(formData: FormData) {
       applyBgToAdmin: formData.get("applyBgToAdmin") === "on",
       timezone: d.timezone,
       currency: d.currency.toUpperCase(),
-      slotIntervalMin: d.slotIntervalMin,
       minNoticeMin: d.minNoticeMin,
       maxAdvanceDays: d.maxAdvanceDays,
       reminderOffsetsMin,

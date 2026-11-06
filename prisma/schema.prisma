@@ -99,6 +99,10 @@ model Business {
   pageConfig         Json?
   timezone           String   @default("America/Argentina/Buenos_Aires")
   currency           String   @default("ARS")
+  /// Cómo se arman los horarios: AUTO = según la duración de cada servicio; MANUAL = inicios cada `slotIntervalMin` minutos.
+  /// El valor por defecto es MANUAL, que es como funcionaba antes (las barberías existentes no cambian).
+  scheduleMode       ScheduleMode @default(MANUAL)
+  /// Intervalo del modo manual. Se conserva aunque se pase a AUTO. También define la grilla para bloquear horarios a mano.
   slotIntervalMin    Int      @default(30)
   minNoticeMin       Int      @default(60)
   maxAdvanceDays     Int      @default(30)
@@ -570,6 +574,11 @@ model BusinessProfile {
   updatedAt      DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+enum ScheduleMode {
+  AUTO
+  MANUAL
 }
 
 enum MediaType {
