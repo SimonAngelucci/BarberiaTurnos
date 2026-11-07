@@ -62,7 +62,10 @@ function AutoVideo({ src, poster, className = "" }: { src: string; poster: strin
  * Galería de fotos y videos cortos en fila deslizable; al tocar uno se abre ampliado y se navega con flechas, teclado o
  * deslizando. Incluye el acceso directo para reservar.
  */
-export function Gallery({ items, visible = 4, bookHref, bookLabel = "Reservar turno" }: { items: GalleryItem[]; visible?: number; bookHref?: string; bookLabel?: string }) {
+// Proporciones que se van alternando en el collage para que las piezas no sean todas iguales (altura = ancho × número).
+const COLLAGE_RATIOS = ["125%", "100%", "150%", "80%", "110%", "135%"];
+
+export function Gallery({ items, visible = 4, showAll = false, bookHref, bookLabel = "Reservar turno" }: { items: GalleryItem[]; visible?: number; showAll?: boolean; bookHref?: string; bookLabel?: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const track = useRef<HTMLUListElement>(null);
   const n = items.length;
@@ -90,6 +93,24 @@ export function Gallery({ items, visible = 4, bookHref, bookLabel = "Reservar tu
 
   return (
     <>
+      {showAll ? (
+        // Collage: todas las piezas, en columnas, con alturas distintas (masonry). Tocar una la abre ampliada.
+        <ul className="columns-2 gap-2 sm:columns-3 lg:columns-3">
+          {items.map((it, i) => (
+            <li key={it.url} className="mb-2 break-inside-avoid">
+              <button type="button" onClick={() => setOpen(i)} aria-label={it.type === "VIDEO" ? `Ampliar video ${i + 1}` : `Ampliar foto ${i + 1}`} className="group relative block w-full overflow-hidden rounded-sm bg-neutral-200">
+                <span className="block" style={{ paddingBottom: COLLAGE_RATIOS[i % COLLAGE_RATIOS.length] }} />
+                {it.type === "VIDEO" ? (
+                  <AutoVideo src={it.url} poster={it.poster} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={it.url} alt={`Foto ${i + 1} de la galería`} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
       <div className="relative">
         {/* Fila deslizable: se ven `visible` elementos (2 como máximo en celular) y el resto queda hacia el costado */}
         <ul
@@ -121,6 +142,7 @@ export function Gallery({ items, visible = 4, bookHref, bookLabel = "Reservar tu
           </>
         )}
       </div>
+      )}
 
       {bookHref && (
         <div className="mt-5 text-center">

@@ -10,6 +10,7 @@ import { getAccess } from "@/lib/billing";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
 import { remapDisabled } from "@/lib/schedule-grid";
+import { isIconKey } from "@/lib/service-icons";
 import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import { encryptSecret } from "@/lib/crypto";
 import { configSchema } from "@/lib/page-config";
@@ -60,13 +61,40 @@ export async function saveService(formData: FormData) {
     priceCents: Math.round(d.price * 100),
     durationMin: d.durationMin,
   };
+  // Ícono: una clave de la lista, o una imagen propia ya subida desde el formulario (/api/admin/upload).
+  const iconKey = isIconKey(formData.get("iconKey")?.toString()) ? formData.get("iconKey")!.toString() : null;
+  const newIcon = formData.get("iconUrl")?.toString() ?? "";
+  if (newIcon && !isOwnBlobUrl(newIcon, businessId)) throw new Error("Imagen inválida");
+  const picked = formData.get("iconPick") === "1";
+
   if (id) {
-    await prisma.service.updateMany({ where: { id, businessId }, data: { ...data, active: formData.get("active") === "on" } });
+    const current = await prisma.service.findFirst({ where: { id, businessId }, select: { iconUrl: true, iconKey: true } });
+    if (!current) throw new Error("Servicio no encontrado");
+    let iconUrl = current.iconUrl;
+    let key = current.iconKey;
+    if (newIcon && newIcon !== iconUrl) {
+      await deleteImage(iconUrl);
+      iconUrl = newIcon;
+    } else if (formData.get("removeIcon") === "on" || (picked && iconUrl)) {
+      await deleteImage(iconUrl);
+      iconUrl = null;
+    }
+    if (picked) key = iconKey;
+    await prisma.service.updateMany({ where: { id, businessId }, data: { ...data, iconKey: key, iconUrl, active: formData.get("active") === "on" } });
   } else {
-    await prisma.service.create({ data: { ...data, businessId } });
+    await prisma.service.create({ data: { ...data, businessId, iconKey: picked ? iconKey : null, iconUrl: newIcon || null } });
   }
   revalidatePath("/admin/services");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
+}
+
+/** Rubro del negocio: cambia los íconos sugeridos (los servicios con un ícono que no es del rubro siguen mostrándolo). */
+export async function saveBusinessType(formData: FormData) {
+  const { businessId } = await requireWritable();
+  const type = z.enum(["BARBER", "TATTOO", "NAILS"]).parse(formData.get("businessType"));
+  await prisma.business.update({ where: { id: businessId }, data: { businessType: type } });
+  revalidatePath("/admin/services");
+  revalidatePath("/", "layout");
 }
 
 /** Soft delete: conserva el historial de turnos. */

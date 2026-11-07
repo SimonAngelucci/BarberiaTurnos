@@ -29,10 +29,19 @@ export async function POST(req: Request) {
   const newStart = new Date(parsed.data.startAt);
   if (newStart.getTime() === appt.startAt.getTime()) return fail("Elegí un horario distinto al actual.", 400);
 
-  const available = await isSlotAvailable({ businessId: business.id, barberId: appt.barberId, serviceId: appt.serviceId, startAt: newStart, excludeAppointmentId: appt.id });
+  // El turno conserva su largo (puede ser el tiempo personalizado del cliente, no el estándar del servicio).
+  const lengthMs = appt.endAt.getTime() - appt.startAt.getTime();
+  const available = await isSlotAvailable({
+    businessId: business.id,
+    barberId: appt.barberId,
+    serviceId: appt.serviceId,
+    startAt: newStart,
+    excludeAppointmentId: appt.id,
+    durationMin: Math.round(lengthMs / 60_000),
+  });
   if (!available) return fail("Ese horario ya no está disponible. Elegí otro.", 409);
 
-  const newEnd = new Date(newStart.getTime() + appt.service.durationMin * 60_000);
+  const newEnd = new Date(newStart.getTime() + lengthMs);
   try {
     await prisma.$transaction([
       // El filtro por estado evita pisar un turno cancelado/modificado en paralelo.

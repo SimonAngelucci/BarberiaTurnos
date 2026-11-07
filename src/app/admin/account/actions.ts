@@ -148,7 +148,7 @@ export async function deleteAccount(_p: FormState, fd: FormData): Promise<FormSt
   const s = await requireAdmin();
   const business = await prisma.business.findUnique({
     where: { id: s.businessId },
-    select: { id: true, name: true, logoUrl: true, barbers: { select: { photoUrl: true } }, photos: { select: { url: true, posterUrl: true } }, subscription: { select: { mpPreapprovalId: true, mpStatus: true } } },
+    select: { id: true, name: true, logoUrl: true, barbers: { select: { photoUrl: true } }, photos: { select: { url: true, posterUrl: true } }, services: { select: { iconUrl: true } }, subscription: { select: { mpPreapprovalId: true, mpStatus: true } } },
   });
   if (!business) return fail("No encontramos la barbería.");
 
@@ -171,7 +171,7 @@ export async function deleteAccount(_p: FormState, fd: FormData): Promise<FormSt
   await prisma.$transaction([prisma.appointment.deleteMany({ where: { businessId: business.id } }), prisma.business.delete({ where: { id: business.id } })]);
 
   // Archivos subidos (mejor esfuerzo: si alguno falla, la cuenta ya está eliminada igual).
-  const urls = [business.logoUrl, ...business.barbers.map((b) => b.photoUrl), ...business.photos.flatMap((p) => [p.url, p.posterUrl])];
+  const urls = [business.logoUrl, ...business.barbers.map((b) => b.photoUrl), ...business.photos.flatMap((p) => [p.url, p.posterUrl]), ...business.services.map((s) => s.iconUrl)];
   await Promise.allSettled(urls.map((u) => deleteImage(u)));
 
   await endCurrentSession();

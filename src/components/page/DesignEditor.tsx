@@ -187,7 +187,8 @@ type BookingData = {
   currency: string;
   maxAdvanceDays: number;
   pay: PayConfig;
-  services: { id: string; name: string; description: string | null; priceCents: number; durationMin: number }[];
+  businessType?: "BARBER" | "TATTOO" | "NAILS";
+  services: { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null }[];
   barbers: { id: string; name: string; photoUrl: string | null; bio: string | null }[];
 };
 

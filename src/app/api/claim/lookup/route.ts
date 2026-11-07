@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       barberName: appt.barber?.name ?? null,
       customerFirstName: appt.customer.firstName,
       startAt: appt.startAt.toISOString(),
-      durationMin: appt.service.durationMin,
+      durationMin: Math.round((appt.endAt.getTime() - appt.startAt.getTime()) / 60_000),
       status: appt.status,
       paidCents: appt.amountPaidCents,
     },

@@ -32,7 +32,7 @@ export function ImageField({
   name: string;
   removeName: string;
   label: string;
-  kind: "logo" | "barber";
+  kind: "logo" | "barber" | "service";
   currentUrl: string | null;
   enabled: boolean;
   round?: boolean;

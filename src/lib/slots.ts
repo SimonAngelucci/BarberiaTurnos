@@ -10,6 +10,8 @@ type Params = {
   date: string;
   /** Al reprogramar: el propio turno no cuenta como ocupado (así se puede mover unos minutos). */
   excludeAppointmentId?: string;
+  /** Duración a reservar si no es la normal del servicio (tiempo aprendido del cliente, o el largo de un turno que se mueve). */
+  durationMin?: number;
 };
 
 export type ScheduleMode = "AUTO" | "MANUAL";
@@ -58,7 +60,7 @@ export function generateStarts(p: { mode: ScheduleMode; intervalMin: number; dur
  * Devuelve los inicios de turno disponibles (ISO UTC) para un día.
  * Toda la aritmética de horarios se hace en la zona horaria del negocio.
  */
-export async function getAvailableSlots({ businessId, barberId, serviceId, date, excludeAppointmentId }: Params): Promise<string[]> {
+export async function getAvailableSlots({ businessId, barberId, serviceId, date, excludeAppointmentId, durationMin }: Params): Promise<string[]> {
   const [business, service, barber] = await Promise.all([
     prisma.business.findUnique({ where: { id: businessId } }),
     prisma.service.findFirst({ where: { id: serviceId, businessId, active: true } }),
@@ -114,7 +116,7 @@ export async function getAvailableSlots({ businessId, barberId, serviceId, date,
   const starts = generateStarts({
     mode: business.scheduleMode,
     intervalMin: interval,
-    durationMin: service.durationMin,
+    durationMin: durationMin ?? service.durationMin,
     windows: hours.map((h) => [day.plus({ minutes: h.startMin }).toMillis(), day.plus({ minutes: h.endMin }).toMillis()] as const),
     blocks,
     earliestMs: now.plus({ minutes: business.minNoticeMin }).toMillis(),

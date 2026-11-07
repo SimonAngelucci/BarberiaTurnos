@@ -81,6 +81,13 @@ export default async function ProfilePage() {
               </select>
               <p className="mt-1 text-xs text-neutral-400">Las demás se desplazan hacia el costado. En celular se ven hasta 2 a la vez.</p>
             </div>
+            <label className="mt-3 flex items-start gap-2 text-sm">
+              <input type="checkbox" name="galleryShowAll" defaultChecked={profile?.galleryShowAll ?? false} className="mt-1" />
+              <span>
+                <span className="font-medium">Mostrar todas las imágenes</span>
+                <span className="block text-xs text-neutral-400">Muestra la galería completa en formato collage (fotos y videos de distintos tamaños) en lugar de la fila deslizable.</span>
+              </span>
+            </label>
           </ActionForm>
         </div>
       </Section>

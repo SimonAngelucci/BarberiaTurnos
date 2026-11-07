@@ -6,7 +6,7 @@ import { UploadError, uploadImage, uploadVideo } from "@/lib/upload";
 export const dynamic = "force-dynamic";
 
 // «video» comparte la carpeta de la galería: sus fotos de portada (poster) también van ahí.
-const FOLDERS = { logo: "logo", barber: "barbers", hero: "hero", gallery: "gallery", video: "gallery" } as const;
+const FOLDERS = { logo: "logo", barber: "barbers", hero: "hero", gallery: "gallery", video: "gallery", service: "services" } as const;
 
 /**
  * Subida inmediata de logo / foto de barbero. Responde SIEMPRE con JSON y un mensaje claro

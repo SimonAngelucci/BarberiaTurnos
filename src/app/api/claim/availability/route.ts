@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     serviceId: appt.serviceId,
     date: parsed.data.date,
     excludeAppointmentId: appt.id,
+    durationMin: Math.round((appt.endAt.getTime() - appt.startAt.getTime()) / 60_000), // conserva el largo reservado
   });
   return NextResponse.json({ slots, timezone: business.timezone });
 }

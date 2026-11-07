@@ -19,6 +19,20 @@ async function loadAppointment(id: string) {
 
 type Appt = Awaited<ReturnType<typeof loadAppointment>>;
 
+/** Cuánto después de terminar el turno se manda la encuesta de duración. */
+const SURVEY_DELAY_MIN = 10;
+const DEFAULT_SURVEY_TEMPLATE = "Hola {{nombre}}, gracias por venir a {{negocio}} 🙌. ¿Cuánto tiempo te llevó aproximadamente tu {{servicio}}? Contanos en 10 segundos para ajustar tus próximos turnos: {{encuesta}}";
+
+function surveyLink(a: Appt) {
+  const site = process.env.SITE_URL?.replace(/\/$/, "");
+  return site && a.surveyToken ? `${site}/b/${a.business.slug}/encuesta?t=${a.surveyToken}` : "";
+}
+
+/** La encuesta solo se manda si el negocio aprende tiempos, el turno tiene su enlace y se puede armar el link (SITE_URL). */
+function surveyRow(a: Appt) {
+  return a.business.learnDurations && a.surveyToken && surveyLink(a) ? row(a, "SURVEY", new Date(a.endAt.getTime() + SURVEY_DELAY_MIN * 60_000)) : null;
+}
+
 function buildVars(a: Appt, paidCents = 0, prevStart?: Date) {
   const tz = a.business.timezone;
   const local = DateTime.fromJSDate(a.startAt).setZone(tz).setLocale("es");
@@ -31,6 +45,7 @@ function buildVars(a: Appt, paidCents = 0, prevStart?: Date) {
     hora: local.toFormat("HH:mm"),
     monto: money(paidCents, a.business.currency),
     codigo: a.claimCode ?? "",
+    encuesta: surveyLink(a),
     fecha_anterior: prev?.toFormat("cccc d 'de' LLLL") ?? "",
     hora_anterior: prev?.toFormat("HH:mm") ?? "",
   };
@@ -43,6 +58,7 @@ const TEMPLATE_ENV: Record<MessageKind, string> = {
   PAYMENT: "WA_TPL_PAYMENT",
   RESCHEDULE: "WA_TPL_RESCHEDULE",
   SELF_CANCEL: "WA_TPL_SELFCANCEL",
+  SURVEY: "WA_TPL_SURVEY",
 };
 
 /** Mensajes que llevan el código de reclamo para que el cliente pueda reprogramar o cancelar. */
@@ -55,6 +71,7 @@ function templateFor(b: Appt["business"], kind: MessageKind) {
     case "PAYMENT": return b.paymentTemplate;
     case "RESCHEDULE": return b.rescheduleTemplate;
     case "SELF_CANCEL": return b.selfCancelTemplate;
+    case "SURVEY": return DEFAULT_SURVEY_TEMPLATE;
     default: return b.cancelTemplate;
   }
 }
@@ -79,6 +96,7 @@ function row(a: Appt, kind: MessageKind, sendAt: Date, paidCents = 0, prevStart?
   const params = [vars.nombre, vars.servicio, vars.fecha, vars.hora, vars.negocio];
   if (kind === "PAYMENT") params.push(vars.monto);
   if (kind === "RESCHEDULE") params.push(vars.fecha_anterior, vars.hora_anterior);
+  if (kind === "SURVEY") params.push(vars.encuesta);
   if (WITH_CODE.includes(kind) && process.env.WA_TEMPLATE_CODE_PARAM === "true") params.push(vars.codigo);
   return {
     businessId: a.businessId,
@@ -104,6 +122,8 @@ export async function enqueueBookingMessages(appointmentId: string, paidCents = 
     const at = a.startAt.getTime() - offset * 60_000;
     if (at > now + 60_000) data.push(row(a, "REMINDER", new Date(at)));
   }
+  const survey = surveyRow(a);
+  if (survey) data.push(survey);
   await prisma.message.createMany({ data });
 }
 
@@ -111,7 +131,7 @@ export async function enqueueCancellation(appointmentId: string) {
   const a = await loadAppointment(appointmentId);
   await prisma.$transaction([
     prisma.message.updateMany({
-      where: { appointmentId, kind: "REMINDER", status: "PENDING" },
+      where: { appointmentId, kind: { in: ["REMINDER", "SURVEY"] }, status: "PENDING" },
       data: { status: "SKIPPED" },
     }),
     prisma.message.create({ data: row(a, "CANCELLATION", new Date()) }),
@@ -131,7 +151,7 @@ export async function buildCancellationOps(appointmentIds: string[]) {
   });
   return [
     prisma.message.updateMany({
-      where: { appointmentId: { in: appointmentIds }, kind: "REMINDER", status: "PENDING" },
+      where: { appointmentId: { in: appointmentIds }, kind: { in: ["REMINDER", "SURVEY"] }, status: "PENDING" },
       data: { status: "SKIPPED" },
     }),
     prisma.message.createMany({ data: appts.map((a) => row(a, "CANCELLATION", new Date())) }),
@@ -151,8 +171,10 @@ export async function buildRescheduleOps(appointmentId: string, newStart: Date, 
     const at = newStart.getTime() - offset * 60_000;
     if (at > now + 60_000) data.push(row(moved, "REMINDER", new Date(at)));
   }
+  const survey = surveyRow(moved); // la encuesta pasa al nuevo horario
+  if (survey) data.push(survey);
   return [
-    prisma.message.updateMany({ where: { appointmentId, kind: "REMINDER", status: "PENDING" }, data: { status: "SKIPPED" } }),
+    prisma.message.updateMany({ where: { appointmentId, kind: { in: ["REMINDER", "SURVEY"] }, status: "PENDING" }, data: { status: "SKIPPED" } }),
     prisma.message.createMany({ data }),
   ];
 }
@@ -161,7 +183,7 @@ export async function buildRescheduleOps(appointmentId: string, newStart: Date, 
 export async function buildSelfCancelOps(appointmentId: string) {
   const a = await loadAppointment(appointmentId);
   return [
-    prisma.message.updateMany({ where: { appointmentId, kind: "REMINDER", status: "PENDING" }, data: { status: "SKIPPED" } }),
+    prisma.message.updateMany({ where: { appointmentId, kind: { in: ["REMINDER", "SURVEY"] }, status: "PENDING" }, data: { status: "SKIPPED" } }),
     prisma.message.createMany({ data: [row(a, "SELF_CANCEL", new Date())] }),
   ];
 }
@@ -172,7 +194,7 @@ export async function dispatchDue(limit = 25) {
     where: { status: "PENDING", sendAt: { lte: new Date() } },
     orderBy: { sendAt: "asc" },
     take: limit,
-    include: { appointment: { select: { status: true } } },
+    include: { appointment: { select: { status: true, actualDurationMin: true } } },
   });
 
   let sent = 0;
@@ -185,6 +207,12 @@ export async function dispatchDue(limit = 25) {
     if (claim.count === 0) continue;
 
     if (m.kind === "REMINDER" && m.appointment?.status === "CANCELLED") {
+      await prisma.message.update({ where: { id: m.id }, data: { status: "SKIPPED" } });
+      continue;
+    }
+
+    // Encuesta: solo si el turno se hizo (no cancelado, ausente ni sin pagar) y todavía no se respondió.
+    if (m.kind === "SURVEY" && (m.appointment?.actualDurationMin != null || !["CONFIRMED", "COMPLETED"].includes(m.appointment?.status ?? ""))) {
       await prisma.message.update({ where: { id: m.id }, data: { status: "SKIPPED" } });
       continue;
     }

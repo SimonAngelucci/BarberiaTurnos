@@ -14,6 +14,7 @@ const links = [
   { href: "/admin", label: "Turnos" },
   { href: "/admin/services", label: "Servicios" },
   { href: "/admin/barbers", label: "Barberos" },
+  { href: "/admin/customers", label: "Clientes" },
   { href: "/admin/schedule", label: "Horarios" },
   { href: "/admin/payments", label: "Pagos" },
   { href: "/admin/design", label: "Diseño" },

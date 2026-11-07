@@ -25,6 +25,8 @@ enum MessageKind {
   PAYMENT
   /// El cliente reprogramó su turno con el código de reclamo.
   RESCHEDULE
+  /// Encuesta posterior al turno: «¿cuánto tiempo te llevó?» (aprendizaje de tiempos por cliente).
+  SURVEY
   /// El cliente canceló su turno con el código de reclamo.
   SELF_CANCEL
 }
@@ -95,6 +97,10 @@ model Business {
   /// Guía de bienvenida: 0 = bienvenida, 1 = servicios, 2 = barberos, 3 = mi página, 4 o más = terminada u omitida.
   /// El valor por defecto (4) es para las barberías que ya existían: solo las nuevas la ven (createBusiness la deja en 0).
   onboardingStep     Int      @default(4)
+  /// Rubro: define los íconos sugeridos para los servicios (BARBER, TATTOO o NAILS). Ver src/lib/service-icons.ts.
+  businessType       String   @default("BARBER")
+  /// Aprendizaje de tiempos por cliente (encuesta posterior al turno + duración personalizada). Opcional: apagado por defecto.
+  learnDurations     Boolean  @default(false)
   /// Diseño de la página pública (editor visual). null = diseño por defecto. Ver src/lib/page-config.ts.
   pageConfig         Json?
   timezone           String   @default("America/Argentina/Buenos_Aires")
@@ -249,6 +255,10 @@ model Service {
   durationMin Int
   active      Boolean  @default(true)
   sortOrder   Int      @default(0)
+  /// Ícono elegido de la lista del rubro (clave de src/lib/service-icons.ts); null = el predeterminado del rubro.
+  iconKey     String?
+  /// Ícono propio subido por el negocio (tiene prioridad sobre iconKey).
+  iconUrl     String?
   business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
@@ -265,8 +275,27 @@ model Customer {
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
+  times        CustomerServiceTime[]
 
   @@unique([businessId, phone])
+}
+
+/// Ajustes del tiempo aprendido de un cliente para un servicio. Los datos salen de Appointment.actualDurationMin;
+/// acá solo se guarda lo que decide el administrador: un tiempo fijo (overrideMin) o «empezar de cero» (resetAt).
+model CustomerServiceTime {
+  id          String    @id @default(cuid())
+  businessId  String
+  customerId  String
+  serviceId   String
+  /// Tiempo fijado a mano; tiene prioridad sobre lo aprendido.
+  overrideMin Int?
+  /// Las respuestas de turnos anteriores a esta fecha no cuentan (reseteo sin borrar el historial).
+  resetAt     DateTime?
+  updatedAt   DateTime  @updatedAt
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, serviceId])
+  @@index([businessId])
 }
 
 /// startAt/endAt en UTC. La restricción anti-overbooking vive en prisma/constraints.sql.
@@ -285,9 +314,13 @@ model Appointment {
   amountPaidCents Int           @default(0)
   /// Código para que el cliente reprograme o cancele (ej. REC-8F3K9A). null en turnos anteriores a esta función.
   claimCode  String?           @unique
+  /// Enlace secreto de la encuesta de duración (solo si el negocio aprende tiempos).
+  surveyToken String?
+  /// Minutos que el cliente dijo que le llevó (o que cargó el administrador). null = sin dato.
+  actualDurationMin Int?
   createdAt  DateTime          @default(now())
 
-  events   AppointmentEvent[]
+  events  AppointmentEvent[]
   payments Payment[]
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   barber   Barber?  @relation(fields: [barberId], references: [id], onDelete: SetNull)
@@ -297,6 +330,7 @@ model Appointment {
 
   @@index([businessId, startAt])
   @@index([barberId, startAt])
+  @@index([surveyToken])
 }
 
 /// Historial de cambios de un turno (creación, reprogramaciones, cancelaciones) y quién los hizo.
@@ -571,7 +605,9 @@ model BusinessProfile {
   reviewsEnabled Boolean @default(false)
   /// Cuántas fotos de la galería se ven a la vez en la página pública; el resto se desliza hacia el costado.
   galleryVisible Int     @default(4)
-  updatedAt      DateTime @updatedAt
+  /// Si está activo, la galería pública muestra todo junto en formato collage en lugar de la fila deslizable.
+  galleryShowAll Boolean @default(false)
+  updatedAt     DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }

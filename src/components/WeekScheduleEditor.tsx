@@ -2,17 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { minToHHMM, hhmmToMin } from "@/lib/format";
-import { cellsInRange, gridCells } from "@/lib/schedule-grid";
+import { gridCells } from "@/lib/schedule-grid";
 
 export type DayState = { wd: number; label: string; open: boolean; start: string; end: string; off: number[] };
 
 /**
  * Editor semanal de horarios. Cada celda de la grilla se puede activar o desactivar con un toque, o pasando el dedo/mouse por
- * encima de varias seguidas («pintar»). Además hay herramientas para actuar sobre todo el día o sobre un rango de horas.
+ * encima de varias seguidas («pintar»). Además hay herramientas para actuar sobre todo el día.
  */
 export function WeekScheduleEditor({ initial, interval }: { initial: DayState[]; interval: number }) {
   const [days, setDays] = useState(initial);
-  const [range, setRange] = useState<Record<number, { from: string; to: string }>>({});
   // Pintando: el valor que se aplica a las celdas que se vayan tocando (true = desactivar) y el día en que empezó.
   const paint = useRef<{ wd: number; off: boolean } | null>(null);
 
@@ -20,15 +19,6 @@ export function WeekScheduleEditor({ initial, interval }: { initial: DayState[];
 
   const setCell = (wd: number, m: number, off: boolean) =>
     setDays((ds) => ds.map((d) => (d.wd !== wd || d.off.includes(m) === off ? d : { ...d, off: off ? [...d.off, m] : d.off.filter((x) => x !== m) })));
-
-  const setMany = (wd: number, cells: number[], off: boolean) =>
-    setDays((ds) =>
-      ds.map((d) => {
-        if (d.wd !== wd) return d;
-        const rest = d.off.filter((x) => !cells.includes(x));
-        return { ...d, off: off ? [...rest, ...cells] : rest };
-      }),
-    );
 
   function copyToAll(src: DayState) {
     setDays((ds) => ds.map((d) => (d.wd === src.wd ? d : { ...d, open: src.open, start: src.start, end: src.end, off: [...src.off] })));
@@ -62,13 +52,6 @@ export function WeekScheduleEditor({ initial, interval }: { initial: DayState[];
         const grid = gridCells(hhmmToMin(d.start), hhmmToMin(d.end), interval);
         const offVisible = d.off.filter((m) => grid.includes(m));
         const enabledCount = grid.length - offVisible.length;
-        const r = range[d.wd] ?? { from: d.start, to: d.end };
-        const applyRange = (off: boolean) => {
-          const from = hhmmToMin(r.from);
-          const to = hhmmToMin(r.to);
-          if (!(to > from)) return;
-          setMany(d.wd, cellsInRange(grid, interval, from, to), off);
-        };
         return (
           <div key={d.wd} className="rounded-xl border border-neutral-200 p-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -132,20 +115,6 @@ export function WeekScheduleEditor({ initial, interval }: { initial: DayState[];
                   </button>
                   <button type="button" className="btn-ghost !px-2 !py-1" onClick={() => copyToAll(d)}>
                     Copiar a los demás días
-                  </button>
-                </div>
-
-                {/* Rango: activar o desactivar de una vez todos los horarios entre dos horas (ej: la pausa de 13:00 a 14:00) */}
-                <div className="flex flex-wrap items-center gap-2 rounded-lg bg-neutral-50 p-2 text-xs">
-                  <span className="font-medium text-neutral-600">Rango:</span>
-                  <input type="time" aria-label="Desde" value={r.from} onChange={(e) => setRange((x) => ({ ...x, [d.wd]: { ...r, from: e.target.value || r.from } }))} className="input !w-28 !py-1 !text-sm" />
-                  <span>a</span>
-                  <input type="time" aria-label="Hasta" value={r.to} onChange={(e) => setRange((x) => ({ ...x, [d.wd]: { ...r, to: e.target.value || r.to } }))} className="input !w-28 !py-1 !text-sm" />
-                  <button type="button" className="btn-ghost !px-2 !py-1" onClick={() => applyRange(true)}>
-                    Desactivar rango
-                  </button>
-                  <button type="button" className="btn-ghost !px-2 !py-1" onClick={() => applyRange(false)}>
-                    Activar rango
                   </button>
                 </div>
               </div>

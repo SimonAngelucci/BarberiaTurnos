@@ -99,7 +99,12 @@ export async function saveGallerySettings(_p: FormState, fd: FormData): Promise<
   const n = Number(fd.get("galleryVisible"));
   if (!Number.isInteger(n) || n < 1 || n > 8) return fail("Elegí un número entre 1 y 8.");
   const { businessId } = g.s;
-  await prisma.businessProfile.upsert({ where: { businessId }, create: { businessId, galleryVisible: n }, update: { galleryVisible: n } });
+  const galleryShowAll = fd.get("galleryShowAll") === "on";
+  await prisma.businessProfile.upsert({
+    where: { businessId },
+    create: { businessId, galleryVisible: n, galleryShowAll },
+    update: { galleryVisible: n, galleryShowAll },
+  });
   revalidatePath("/admin/profile");
   return { ok: true, message: "Guardado." };
 }

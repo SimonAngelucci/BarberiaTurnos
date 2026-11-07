@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { payConfig } from "@/lib/payments";
 import { resolveConfig } from "@/lib/page-config";
 import { DesignEditor } from "@/components/page/DesignEditor";
+import { asBusinessType } from "@/lib/service-icons";
 
 export default async function DesignPage() {
   const { businessId } = await requireAdmin();
@@ -33,7 +34,8 @@ export default async function DesignPage() {
           currency: b.currency,
           maxAdvanceDays: Math.min(b.maxAdvanceDays, 60),
           pay: payConfig(b),
-          services: services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents, durationMin: s.durationMin })),
+          businessType: asBusinessType(b.businessType),
+          services: services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents, durationMin: s.durationMin, iconKey: s.iconKey, iconUrl: s.iconUrl })),
           barbers: barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, bio: x.bio })),
         }}
       />

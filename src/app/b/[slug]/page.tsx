@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { BookingFlow } from "@/components/BookingFlow";
 import { payConfig } from "@/lib/payments";
+import { asBusinessType } from "@/lib/service-icons";
 import { getAccess } from "@/lib/billing";
 import { FONTS, fontsHref, resolveConfig, usedFonts } from "@/lib/page-config";
 import { telHref, whatsappHref, prettyPhone } from "@/lib/profile";
@@ -89,12 +90,16 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       pay={payConfig(b)}
       allowChanges={b.allowClientChanges}
       logoUrl={b.logoUrl}
+      businessType={asBusinessType(b.businessType)}
+      learnDurations={b.learnDurations}
       services={services.map((s) => ({
         id: s.id,
         name: s.name,
         description: s.description,
         priceCents: s.priceCents,
         durationMin: s.durationMin,
+        iconKey: s.iconKey,
+        iconUrl: s.iconUrl,
       }))}
       barbers={barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, bio: x.bio }))}
     />
@@ -158,7 +163,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {hasGallery && (
             <SiteSection id="galeria" title="Galería">
-              <Gallery items={gallery} visible={profile?.galleryVisible ?? 4} bookHref={accepting ? "#servicios" : undefined} />
+              <Gallery items={gallery} visible={profile?.galleryVisible ?? 4} showAll={profile?.galleryShowAll ?? false}bookHref={accepting ? "#servicios" : undefined} />
             </SiteSection>
           )}
 

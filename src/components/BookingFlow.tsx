@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { money } from "@/lib/format";
 import { DayPicker, type DayItem } from "./DayPicker";
 import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
-type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number };
+import { ServiceIcon } from "./ServiceIcon";
+import type { BusinessType } from "@/lib/service-icons";
+
+type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null };
 type Barber = { id: string; name: string; photoUrl: string | null; bio: string | null };
 
 type Props = {
@@ -22,6 +25,10 @@ type Props = {
   allowChanges?: boolean;
   /** Logo de la barbería: se muestra al lado del título «Servicios». */
   logoUrl?: string | null;
+  /** Rubro: elige el ícono predeterminado de los servicios que no tienen uno propio. */
+  businessType?: BusinessType;
+  /** El negocio aprende tiempos por cliente: se pide el WhatsApp antes de mostrar horarios para ajustar la duración. */
+  learnDurations?: boolean;
 };
 
 function Avatar({ b, size }: { b: Barber; size: number }) {
@@ -36,7 +43,7 @@ function Avatar({ b, size }: { b: Barber; size: number }) {
   );
 }
 
-export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false, logoUrl = null }: Props) {
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false, logoUrl = null, businessType = "BARBER", learnDurations = false }: Props) {
   const [claim, setClaim] = useState<string | null>(null);
   const [service, setService] = useState<Service | null>(null);
   const [choice, setChoice] = useState<PayChoice>("NONE");
@@ -70,19 +77,35 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     [days],
   );
 
+  // WhatsApp válido (solo si el negocio aprende tiempos): los horarios se calculan con el tiempo personalizado de ese cliente.
+  const lookupPhone = useMemo(() => (learnDurations && parsePhoneNumberFromString(form.phone)?.isValid() ? form.phone.trim() : ""), [learnDurations, form.phone]);
+  const [timing, setTiming] = useState<{ durationMin: number; adjusted: boolean } | null>(null);
+  const lastCore = useRef("");
+
   useEffect(() => {
     if (!service || !barberId || !date) return;
     let cancelled = false;
+    // Si cambia el servicio, barbero o día se descarta el horario elegido; si solo cambia el teléfono, se conserva si sigue disponible.
+    const core = `${service.id}|${barberId}|${date}|${reload}`;
+    const coreChanged = core !== lastCore.current;
+    lastCore.current = core;
     setSlots(null);
-    setSlot(null);
-    fetch(`/api/availability?slug=${encodeURIComponent(slug)}&serviceId=${service.id}&barberId=${barberId}&date=${date}`)
+    if (coreChanged) setSlot(null);
+    const q = `slug=${encodeURIComponent(slug)}&serviceId=${service.id}&barberId=${barberId}&date=${date}${lookupPhone ? `&phone=${encodeURIComponent(lookupPhone)}` : ""}`;
+    fetch(`/api/availability?${q}`)
       .then((r) => r.json())
-      .then((j) => !cancelled && setSlots(j.slots ?? []))
+      .then((j) => {
+        if (cancelled) return;
+        const list: string[] = j.slots ?? [];
+        setSlots(list);
+        setSlot((prev) => (prev && list.includes(prev) ? prev : null));
+        setTiming(j.adjusted && typeof j.durationMin === "number" ? { durationMin: j.durationMin, adjusted: true } : null);
+      })
       .catch(() => !cancelled && setSlots([]));
     return () => {
       cancelled = true;
     };
-  }, [slug, service, barberId, date, reload]);
+  }, [slug, service, barberId, date, reload, lookupPhone]);
 
   // Opciones de pago para el servicio elegido (el servidor las vuelve a validar y calcula el monto real).
   const options = useMemo(() => (service ? payOptions(service.priceCents, pay) : []), [service, pay]);
@@ -168,13 +191,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               className={`card group w-full !p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${service?.id === s.id ? "!border-brand ring-2 ring-brand/30" : ""}`}
             >
               <div className="flex items-center gap-3.5">
-                <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition group-hover:bg-brand group-hover:text-brand-fg">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="6" cy="6" r="3" />
-                    <circle cx="6" cy="18" r="3" />
-                    <path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12" />
-                  </svg>
-                </span>
+                <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className="transition group-hover:bg-brand group-hover:text-brand-fg" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{s.name}</div>
                   {s.description && <div className="line-clamp-2 text-sm text-neutral-500">{s.description}</div>}
@@ -227,8 +244,23 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {service && barberId && (
         <section>
+          {learnDurations && (
+            <div className="card mb-4 space-y-1">
+              <label className="label" htmlFor="early-phone">
+                Tu WhatsApp
+              </label>
+              <input id="early-phone" className="input" inputMode="tel" autoComplete="tel" placeholder="+54 9 11 1234 5678" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <p className="text-xs text-neutral-500">Si ya viniste antes, ajustamos la duración del turno a lo que a vos te lleva. Es el mismo número que te vamos a pedir al confirmar.</p>
+              {form.phone && !phoneOk && <p className="text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
+            </div>
+          )}
           <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí el día</h2>
           <DayPicker days={dayItems} value={date} onChange={setDate} />
+          {timing && date && (
+            <p className="mt-3 rounded-xl bg-green-50 p-2.5 text-sm text-green-900">
+              ⏱️ Ajustamos tu turno a <strong>{timing.durationMin} min</strong> (lo que habitualmente te lleva) en lugar de {service.durationMin} min.
+            </p>
+          )}
 
           {date && (
             <div className="mt-3" aria-live="polite">

@@ -6,7 +6,9 @@ import { prisma, getBusinessForCheckout } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
 import { getAccess } from "@/lib/billing";
+import { randomBytes } from "node:crypto";
 import { generateClaimCode } from "@/lib/claim";
+import { effectiveDuration } from "@/lib/learned-duration";
 import { payOptions } from "@/lib/payment-math";
 import { payConfig, createCheckout, expirePendingPayments, siteOrigin } from "@/lib/payments";
 
@@ -49,7 +51,9 @@ export async function POST(req: Request) {
   if (!service) return NextResponse.json({ error: "Servicio no disponible" }, { status: 400 });
 
   const startAt = new Date(d.startAt);
-  const endAt = DateTime.fromJSDate(startAt).plus({ minutes: service.durationMin }).toJSDate();
+  // Duración a reservar: la normal del servicio o, si el negocio aprende tiempos y ya conocemos a este cliente, la suya.
+  const eff = await effectiveDuration({ businessId: business.id, serviceId: service.id, standardMin: service.durationMin, phone: phone.number, learn: business.learnDurations });
+  const endAt = DateTime.fromJSDate(startAt).plus({ minutes: eff.minutes }).toJSDate();
 
   // Opción de pago: se valida contra la configuración de la barbería. El monto lo calcula el servidor.
   const options = payOptions(service.priceCents, payConfig(business));
@@ -67,7 +71,7 @@ export async function POST(req: Request) {
   await expirePendingPayments(business.id);
 
   // 1ª defensa: el horario está dentro de la agenda y libre.
-  const ok = await isSlotAvailable({ businessId: business.id, barberId: d.barberId, serviceId: d.serviceId, startAt });
+  const ok = await isSlotAvailable({ businessId: business.id, barberId: d.barberId, serviceId: d.serviceId, startAt, durationMin: eff.minutes });
   if (!ok) return NextResponse.json({ error: "Ese horario ya no está disponible. Elegí otro." }, { status: 409 });
 
   try {
@@ -91,6 +95,7 @@ export async function POST(req: Request) {
           status: online ? "PENDING_PAYMENT" : "CONFIRMED",
           // Código para reprogramar/cancelar (único por restricción de la base) + primer evento del historial.
           claimCode: generateClaimCode(),
+          surveyToken: business.learnDurations ? randomBytes(16).toString("hex") : null,
           events: { create: { businessId: business.id, kind: "CREATED", actor: "CLIENT", toStartAt: startAt } },
           // Pudo pagar online y eligió el local: queda "Pago pendiente en el local". Sin pagos online, no se marca nada.
           ...(!online && options.some((o) => o.choice !== "NONE") ? { paymentStatus: "PENDING_AT_STORE" as const } : {}),
