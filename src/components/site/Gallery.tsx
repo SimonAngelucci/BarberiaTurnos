@@ -65,7 +65,7 @@ function AutoVideo({ src, poster, className = "" }: { src: string; poster: strin
 // Proporciones que se van alternando en el collage para que las piezas no sean todas iguales (altura = ancho × número).
 const COLLAGE_RATIOS = ["125%", "100%", "150%", "80%", "110%", "135%"];
 
-export function Gallery({ items, visible = 4, showAll = false, bookHref, bookLabel = "Reservar turno" }: { items: GalleryItem[]; visible?: number; showAll?: boolean; bookHref?: string; bookLabel?: string }) {
+export function Gallery({ items, visible = 4, showAll = false, allHref, bookHref, bookLabel = "Reservar turno" }: { items: GalleryItem[]; visible?: number; showAll?: boolean; allHref?: string; bookHref?: string; bookLabel?: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const track = useRef<HTMLUListElement>(null);
   const n = items.length;
@@ -142,6 +142,14 @@ export function Gallery({ items, visible = 4, showAll = false, bookHref, bookLab
           </>
         )}
       </div>
+      )}
+
+      {allHref && (
+        <div className="mt-5 text-center">
+          <a href={allHref} className="btn-ghost !rounded-full !px-7 !py-3 font-semibold">
+            Mostrar galería
+          </a>
+        </div>
       )}
 
       {bookHref && (

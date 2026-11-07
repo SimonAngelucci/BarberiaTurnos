@@ -84,8 +84,8 @@ export default async function ProfilePage() {
             <label className="mt-3 flex items-start gap-2 text-sm">
               <input type="checkbox" name="galleryShowAll" defaultChecked={profile?.galleryShowAll ?? false} className="mt-1" />
               <span>
-                <span className="font-medium">Mostrar todas las imágenes</span>
-                <span className="block text-xs text-neutral-400">Muestra la galería completa en formato collage (fotos y videos de distintos tamaños) en lugar de la fila deslizable.</span>
+                <span className="font-medium">Mostrar botón «Mostrar galería»</span>
+                <span className="block text-xs text-neutral-400">Agrega un botón «Mostrar galería» en tu página que abre todas las fotos y videos en formato collage, en una página aparte.</span>
               </span>
             </label>
           </ActionForm>

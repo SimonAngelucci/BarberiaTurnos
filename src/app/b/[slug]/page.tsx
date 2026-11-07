@@ -163,7 +163,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {hasGallery && (
             <SiteSection id="galeria" title="Galería">
-              <Gallery items={gallery} visible={profile?.galleryVisible ?? 4} showAll={profile?.galleryShowAll ?? false}bookHref={accepting ? "#servicios" : undefined} />
+              <Gallery items={gallery} visible={profile?.galleryVisible ?? 4} allHref={profile?.galleryShowAll ? `/b/${b.slug}/galeria` : undefined} bookHref={accepting ? "#servicios" : undefined} />
             </SiteSection>
           )}
 
