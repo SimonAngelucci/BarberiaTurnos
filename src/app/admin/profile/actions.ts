@@ -25,7 +25,7 @@ import type { FormState } from "../actions";
 
 const firstError = (e: z.ZodError) => e.issues[0]?.message ?? "Datos inválidos";
 const fail = (error: string): FormState => ({ ok: false, error });
-const refresh = () => revalidatePath("/admin/profile");
+const refresh = () => revalidatePath("/admin/personalizacion");
 
 async function session() {
   try {
@@ -105,7 +105,7 @@ export async function saveGallerySettings(_p: FormState, fd: FormData): Promise<
     create: { businessId, galleryVisible: n, galleryShowAll },
     update: { galleryVisible: n, galleryShowAll },
   });
-  revalidatePath("/admin/profile");
+  revalidatePath("/admin/personalizacion");
   return { ok: true, message: "Guardado." };
 }
 

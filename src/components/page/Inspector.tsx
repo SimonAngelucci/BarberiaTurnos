@@ -167,7 +167,7 @@ export function Inspector({ cfg, block, patch, setGlobal, add, remove, duplicate
         </div>
         <p className="rounded-lg bg-neutral-50 p-2.5 text-xs text-neutral-500">
           El <strong>color de fondo</strong>, el <strong>color de botones</strong> y el <strong>logo</strong> se cambian en{" "}
-          <Link href="/admin/settings" className="underline">
+          <Link href="/admin/personalizacion#negocio" className="underline">
             Negocio
           </Link>
           .

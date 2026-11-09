@@ -24,7 +24,7 @@ const STEPS: StepInfo[] = [
     next: "Siguiente: Mi página",
   },
   {
-    path: "/admin/profile",
+    path: "/admin/personalizacion",
     emoji: "🖼️",
     title: "Armá tu página pública",
     short: "Mi página",

@@ -28,7 +28,7 @@ export default function RegisterPage() {
     });
     const j = await res.json().catch(() => ({}));
     if (res.ok) {
-      router.replace("/admin/settings?welcome=1");
+      router.replace("/admin/personalizacion?welcome=1");
       router.refresh();
     } else {
       setBusy(false);
