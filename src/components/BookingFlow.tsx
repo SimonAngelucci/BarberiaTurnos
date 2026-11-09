@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { money } from "@/lib/format";
@@ -29,6 +30,12 @@ type Props = {
   businessType?: BusinessType;
   /** El negocio aprende tiempos por cliente: se pide el WhatsApp antes de mostrar horarios para ajustar la duración. */
   learnDurations?: boolean;
+  /**
+   * full = todo en una pantalla (como antes). list = solo la lista de servicios: al elegir uno se pasa a la página de reserva.
+   * book = la página de reserva (barbero, día y horario, datos y pago) para el servicio `initialServiceId`.
+   */
+  mode?: "full" | "list" | "book";
+  initialServiceId?: string;
 };
 
 function Avatar({ b, size }: { b: Barber; size: number }) {
@@ -43,9 +50,10 @@ function Avatar({ b, size }: { b: Barber; size: number }) {
   );
 }
 
-export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false, logoUrl = null, businessType = "BARBER", learnDurations = false }: Props) {
+export function BookingFlow({ slug, services, barbers, timezone, currency, maxAdvanceDays, pay, allowChanges = false, logoUrl = null, businessType = "BARBER", learnDurations = false, mode = "full", initialServiceId }: Props) {
+  const router = useRouter();
   const [claim, setClaim] = useState<string | null>(null);
-  const [service, setService] = useState<Service | null>(null);
+  const [service, setService] = useState<Service | null>(() => (mode === "book" ? (services.find((s) => s.id === initialServiceId && !s.comingSoon) ?? null) : null));
   const [choice, setChoice] = useState<PayChoice>("NONE");
   const [barberId, setBarberId] = useState<string | null>(barbers.length === 1 ? barbers[0].id : null);
   const [date, setDate] = useState<string | null>(null);
@@ -189,6 +197,24 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
   return (
     <div className="space-y-6">
+      {mode === "book" && service && (
+        // Página de reserva: en lugar de la lista, el servicio elegido (con salida para cambiarlo).
+        <section className="card flex items-center gap-3.5 !p-4" aria-label="Servicio elegido">
+          <ServiceIcon iconKey={service.iconKey} iconUrl={service.iconUrl} type={businessType} />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">Servicio elegido</div>
+            <div className="font-semibold">{service.name}</div>
+            <div className="text-sm text-neutral-500">
+              {service.durationMin} min · <span className="font-semibold text-neutral-900">{money(service.priceCents, currency)}</span>
+            </div>
+          </div>
+          <a href={`/b/${slug}#servicios`} className="btn-ghost !px-3 !py-1.5 text-sm">
+            Cambiar
+          </a>
+        </section>
+      )}
+
+      {mode !== "book" && (
       <section>
         <div className="mb-3 flex items-center gap-3">
           {logoUrl && (
@@ -204,6 +230,10 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               disabled={s.comingSoon}
               onClick={() => {
                 if (s.comingSoon) return;
+                if (mode === "list") {
+                  router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(s.id)}`); // la reserva sigue en otra página
+                  return;
+                }
                 setService(s);
                 setSlot(null);
               }}
@@ -233,6 +263,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           ))}
         </div>
       </section>
+      )}
 
       {service && barbers.length > 1 && (
         <section>

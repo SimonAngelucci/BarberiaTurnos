@@ -5,10 +5,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fmtDate, getAccess, type Access } from "@/lib/billing";
 import { themeCss } from "@/lib/format";
-import { LogoutButton } from "@/components/LogoutButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
-import { NotificationBell } from "@/components/NotificationBell";
+import { AdminNav, type NavLink } from "@/components/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { icons: { icon: [{ url: href }], shortcut: [{ url: href }], apple: [{ url: href }] } };
 }
 
-const links = [
+const links: NavLink[] = [
   { href: "/admin", label: "Turnos" },
   { href: "/admin/turnos", label: "En vivo" },
   { href: "/admin/services", label: "Servicios" },
@@ -33,7 +32,8 @@ const links = [
   { href: "/admin/customers", label: "Clientes" },
   { href: "/admin/schedule", label: "Horarios" },
   { href: "/admin/payments", label: "Pagos" },
-  { href: "/admin/personalizacion", label: "Personalización", group: true },
+  // Personalización reúne Negocio, Diseño y Mi página: las rutas viejas también la dejan marcada.
+  { href: "/admin/personalizacion", label: "Personalización", also: ["/admin/settings", "/admin/design", "/admin/profile"], badge: true },
   { href: "/admin/billing", label: "Suscripción" },
   { href: "/admin/account", label: "Mi cuenta" },
 ];
@@ -113,28 +113,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <style dangerouslySetInnerHTML={{ __html: themeCss(business.primaryColor, business.applyBgToAdmin ? business.bgColor : "#fafafa") }} />
       )}
       {business && (
-        <nav className="card mb-3 flex items-center gap-1 overflow-x-auto !p-2">
-          {business.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={business.logoUrl} alt="" className="mr-2 h-8 w-8 shrink-0 rounded-full object-cover" />}
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              aria-current={l.group ? (path === l.href ? "page" : undefined) : path === l.href ? "page" : undefined}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${path === l.href ? "bg-neutral-100" : ""}`}
-            >
-              {l.label}
-              {l.group && pendingReviews > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold text-white" title="Reseñas por aprobar">
-                  {pendingReviews}
-                </span>
-              )}
-            </Link>
-          ))}
-          <div className="ml-auto flex items-center gap-1">
-            <NotificationBell />
-            <LogoutButton />
-          </div>
-        </nav>
+        <AdminNav links={links} logoUrl={business.logoUrl} pendingReviews={pendingReviews} />
       )}
       {access && <BillingBanner a={access} />}
       {business && (

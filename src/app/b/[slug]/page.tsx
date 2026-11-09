@@ -92,6 +92,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       logoUrl={b.logoUrl}
       businessType={asBusinessType(b.businessType)}
       learnDurations={b.learnDurations}
+      mode="list"
       services={services.map((s) => ({
         id: s.id,
         name: s.name,

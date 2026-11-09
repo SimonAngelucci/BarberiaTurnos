@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { money } from "@/lib/format";
 import { blocked, recordFailure } from "@/lib/rate-limit";
+import { ReviewCta } from "@/components/site/ReviewCta";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
       : null;
   if (code && !appt) recordFailure(key, 10 * 60_000);
 
-  const profile = appt ? await prisma.businessProfile.findUnique({ where: { businessId: b.id }, select: { address: true } }) : null;
+  const profile = appt ? await prisma.businessProfile.findUnique({ where: { businessId: b.id }, select: { address: true, reviewsEnabled: true } }) : null;
   const home = `/b/${b.slug}`;
 
   return (
@@ -99,6 +100,7 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
               )}
 
               <p className="text-center text-sm text-neutral-500">Te enviamos la confirmación por WhatsApp y te vamos a recordar antes del turno.</p>
+              {profile?.reviewsEnabled && <ReviewCta slug={b.slug} after />}
               <Link href={home} className="btn-ghost w-full">
                 Volver a la página
               </Link>
