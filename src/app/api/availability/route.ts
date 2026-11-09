@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   let adjusted = false;
   const e164 = business.learnDurations && phone ? parsePhoneNumberFromString(phone) : null;
   if (e164?.isValid()) {
-    const service = await prisma.service.findFirst({ where: { id: q.serviceId, businessId: business.id, active: true }, select: { durationMin: true } });
+    const service = await prisma.service.findFirst({ where: { id: q.serviceId, businessId: business.id, active: true, comingSoon: false }, select: { durationMin: true } });
     if (service) {
       const eff = await effectiveDuration({ businessId: business.id, serviceId: q.serviceId, standardMin: service.durationMin, phone: e164.number, learn: true });
       durationMin = eff.minutes;

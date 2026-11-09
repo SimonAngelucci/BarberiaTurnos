@@ -24,7 +24,7 @@ function History({ a, tz }: { a: Appt; tz: string }) {
         {a.events.map((e) => (
           <li key={e.id}>
             {fmtDateTime(e.createdAt, tz)} ·{" "}
-            {e.kind === "CREATED" && "Turno creado"}
+            {e.kind === "CREATED" && (e.note ? `Turno confirmado (${e.note.toLowerCase()})` : "Turno creado")}
             {e.kind === "RESCHEDULED" && `${ACTOR[e.actor]} reprogramó: ${e.fromStartAt ? fmtDateTime(e.fromStartAt, tz) : "?"} → ${e.toStartAt ? fmtDateTime(e.toStartAt, tz) : "?"}`}
             {e.kind === "CANCELLED" && `${ACTOR[e.actor]} canceló el turno${e.note ? ` (${e.note})` : ""}`}
           </li>

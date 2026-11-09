@@ -1,3 +1,4 @@
+import { FEATURES } from "@/lib/features";
 import { BusinessSection } from "./_sections/Business";
 import { DesignSection } from "./_sections/Design";
 import { ProfileSection } from "./_sections/Profile";
@@ -6,11 +7,12 @@ export const dynamic = "force-dynamic";
 
 const NAV = [
   { id: "negocio", label: "Negocio" },
-  { id: "diseno", label: "Diseño" },
+  // «Diseño» se oculta mientras FEATURES.DESIGN_EDITOR esté apagado (src/lib/features.ts).
+  ...(FEATURES.DESIGN_EDITOR ? [{ id: "diseno", label: "Diseño" }] : []),
   { id: "mi-pagina", label: "Mi página" },
 ];
 
-/** Personalización: Negocio, Diseño y Mi página en una sola pantalla, una sección debajo de la otra. */
+/** Personalización: Negocio, Diseño (si está activo) y Mi página en una sola pantalla, una sección debajo de la otra. */
 export default async function CustomizePage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const { welcome } = await searchParams;
   return (
@@ -28,9 +30,11 @@ export default async function CustomizePage({ searchParams }: { searchParams: Pr
       <section id="negocio" className="scroll-mt-16">
         <BusinessSection welcome={welcome} />
       </section>
-      <section id="diseno" className="scroll-mt-16">
-        <DesignSection />
-      </section>
+      {FEATURES.DESIGN_EDITOR && (
+        <section id="diseno" className="scroll-mt-16">
+          <DesignSection />
+        </section>
+      )}
       <section id="mi-pagina" className="scroll-mt-16">
         <ProfileSection />
       </section>

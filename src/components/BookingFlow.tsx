@@ -10,7 +10,7 @@ import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 import { ServiceIcon } from "./ServiceIcon";
 import type { BusinessType } from "@/lib/service-icons";
 
-type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null };
+type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null; comingSoon?: boolean };
 type Barber = { id: string; name: string; photoUrl: string | null; bio: string | null };
 
 type Props = {
@@ -201,25 +201,33 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           {services.map((s) => (
             <button
               key={s.id}
+              disabled={s.comingSoon}
               onClick={() => {
+                if (s.comingSoon) return;
                 setService(s);
                 setSlot(null);
               }}
               aria-pressed={service?.id === s.id}
-              className={`card group w-full !p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${service?.id === s.id ? "!border-brand ring-2 ring-brand/30" : ""}`}
+              aria-disabled={s.comingSoon}
+              className={`card group w-full !p-4 text-left transition ${s.comingSoon ? "cursor-not-allowed !border-dashed opacity-60" : "hover:-translate-y-0.5 hover:shadow-md"} ${service?.id === s.id ? "!border-brand ring-2 ring-brand/30" : ""}`}
             >
               <div className="flex items-center gap-3.5">
                 <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className="transition group-hover:bg-brand group-hover:text-brand-fg" />
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{s.name}</div>
+                  <div className="flex flex-wrap items-center gap-2 font-semibold">
+                    {s.name}
+                    {s.comingSoon && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800">Próximamente</span>}
+                  </div>
                   {s.description && <div className="line-clamp-2 text-sm text-neutral-500">{s.description}</div>}
                   <div className="mt-0.5 text-sm text-neutral-500">
                     {s.durationMin} min · <span className="font-semibold text-neutral-900">{money(s.priceCents, currency)}</span>
                   </div>
                 </div>
-                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
+                {!s.comingSoon && (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                )}
               </div>
             </button>
           ))}

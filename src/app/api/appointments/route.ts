@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   if (!(await getAccess(business.id)).bookable) {
     return NextResponse.json({ error: "Esta barbería no está aceptando reservas en este momento. Probá más tarde o comunicate con ella." }, { status: 403 });
   }
-  const service = await prisma.service.findFirst({ where: { id: d.serviceId, businessId: business.id, active: true } });
+  const service = await prisma.service.findFirst({ where: { id: d.serviceId, businessId: business.id, active: true, comingSoon: false } });
   if (!service) return NextResponse.json({ error: "Servicio no disponible" }, { status: 400 });
 
   const startAt = new Date(d.startAt);

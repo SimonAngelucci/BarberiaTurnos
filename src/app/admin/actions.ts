@@ -11,6 +11,7 @@ import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/ou
 import { hhmmToMin } from "@/lib/format";
 import { remapDisabled } from "@/lib/schedule-grid";
 import { isIconKey } from "@/lib/service-icons";
+import { FEATURES } from "@/lib/features";
 import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import { encryptSecret } from "@/lib/crypto";
 import { configSchema } from "@/lib/page-config";
@@ -60,6 +61,7 @@ export async function saveService(formData: FormData) {
     description: d.description || null,
     priceCents: Math.round(d.price * 100),
     durationMin: d.durationMin,
+    comingSoon: formData.get("comingSoon") === "on",
   };
   // Ícono: una clave de la lista, o una imagen propia ya subida desde el formulario (/api/admin/upload).
   const iconKey = isIconKey(formData.get("iconKey")?.toString()) ? formData.get("iconKey")!.toString() : null;
@@ -97,11 +99,21 @@ export async function saveBusinessType(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
-/** Soft delete: conserva el historial de turnos. */
+/**
+ * Elimina un servicio: si nunca tuvo turnos se borra de verdad (y su ícono propio); si tiene historial se marca como
+ * eliminado (archived) para conservar los turnos pasados. En los dos casos desaparece de la lista y de la página pública.
+ */
 export async function archiveService(formData: FormData) {
   const { businessId } = await requireWritable();
   const id = z.string().min(1).parse(formData.get("id"));
-  await prisma.service.updateMany({ where: { id, businessId }, data: { active: false } });
+  const s = await prisma.service.findFirst({ where: { id, businessId }, select: { iconUrl: true, _count: { select: { appointments: true } } } });
+  if (!s) return;
+  if (s._count.appointments === 0) {
+    await prisma.service.deleteMany({ where: { id, businessId } });
+    await deleteImage(s.iconUrl);
+  } else {
+    await prisma.service.updateMany({ where: { id, businessId }, data: { archived: true, active: false } });
+  }
   revalidatePath("/admin/services");
   revalidatePath("/", "layout");
 }
@@ -396,6 +408,8 @@ export async function savePaymentSettings(_prev: FormState, formData: FormData):
 /** Publica el diseño de la página pública. Se valida TODO en el servidor (rangos, fuentes, colores, estructura). */
 export async function saveDesign(input: unknown): Promise<FormState> {
   const { businessId } = await requireWritable();
+  // Defensa real: aunque alguien llame a la acción directamente, con el editor apagado no se guarda nada.
+  if (!FEATURES.DESIGN_EDITOR) return { ok: false, error: "El editor de diseño no está disponible por ahora." };
   const parsed = configSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: `Diseño inválido: ${parsed.error.issues[0]?.message ?? "valores fuera de rango"}` };
   try {

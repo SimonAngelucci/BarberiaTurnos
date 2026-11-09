@@ -63,7 +63,7 @@ export function generateStarts(p: { mode: ScheduleMode; intervalMin: number; dur
 export async function getAvailableSlots({ businessId, barberId, serviceId, date, excludeAppointmentId, durationMin }: Params): Promise<string[]> {
   const [business, service, barber] = await Promise.all([
     prisma.business.findUnique({ where: { id: businessId } }),
-    prisma.service.findFirst({ where: { id: serviceId, businessId, active: true } }),
+    prisma.service.findFirst({ where: { id: serviceId, businessId, active: true, comingSoon: false } }),
     prisma.barber.findFirst({ where: { id: barberId, businessId, active: true } }),
   ]);
   if (!business || !service || !barber) return [];

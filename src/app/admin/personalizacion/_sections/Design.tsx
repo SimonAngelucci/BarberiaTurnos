@@ -35,7 +35,7 @@ export async function DesignSection() {
           maxAdvanceDays: Math.min(b.maxAdvanceDays, 60),
           pay: payConfig(b),
           businessType: asBusinessType(b.businessType),
-          services: services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents, durationMin: s.durationMin, iconKey: s.iconKey, iconUrl: s.iconUrl })),
+          services: services.map((s) => ({ id: s.id, name: s.name, description: s.description, priceCents: s.priceCents, durationMin: s.durationMin, iconKey: s.iconKey, iconUrl: s.iconUrl, comingSoon: s.comingSoon })),
           barbers: barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, bio: x.bio })),
         }}
       />

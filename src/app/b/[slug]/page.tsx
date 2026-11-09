@@ -98,6 +98,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         description: s.description,
         priceCents: s.priceCents,
         durationMin: s.durationMin,
+        comingSoon: s.comingSoon,
         iconKey: s.iconKey,
         iconUrl: s.iconUrl,
       }))}

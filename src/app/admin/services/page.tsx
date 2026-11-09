@@ -7,7 +7,7 @@ import { ServiceIcon } from "@/components/ServiceIcon";
 import { BUSINESS_TYPES, asBusinessType, type BusinessType } from "@/lib/service-icons";
 import { saveService, archiveService, saveBusinessType } from "../actions";
 
-type S = { name: string; description: string | null; priceCents: number; durationMin: number; iconKey: string | null; iconUrl: string | null };
+type S = { name: string; description: string | null; priceCents: number; durationMin: number; iconKey: string | null; iconUrl: string | null; comingSoon: boolean };
 
 function Fields({ s, type }: { s?: S; type: BusinessType }) {
   return (
@@ -28,6 +28,13 @@ function Fields({ s, type }: { s?: S; type: BusinessType }) {
         <label className="label">Descripción</label>
         <input name="description" className="input" defaultValue={s?.description ?? ""} />
       </div>
+      <label className="flex items-start gap-2 text-sm sm:col-span-4">
+        <input type="checkbox" name="comingSoon" defaultChecked={s?.comingSoon ?? false} className="mt-1" />
+        <span>
+          <span className="font-medium">Próximamente</span>
+          <span className="block text-xs text-neutral-500">Se muestra en tu página con la etiqueta «Próximamente», pero los clientes todavía no pueden reservarlo.</span>
+        </span>
+      </label>
       <div className="sm:col-span-4">
         <IconPicker type={type} iconKey={s?.iconKey ?? null} iconUrl={s?.iconUrl ?? null} enabled={uploadsEnabled()} />
       </div>
@@ -38,7 +45,7 @@ function Fields({ s, type }: { s?: S; type: BusinessType }) {
 export default async function ServicesPage() {
   const { businessId } = await requireAdmin();
   const [services, biz] = await Promise.all([
-    prisma.service.findMany({ where: { businessId }, orderBy: [{ active: "desc" }, { sortOrder: "asc" }] }),
+    prisma.service.findMany({ where: { businessId, archived: false }, orderBy: [{ active: "desc" }, { sortOrder: "asc" }] }),
     prisma.business.findUnique({ where: { id: businessId }, select: { businessType: true } }),
   ]);
   const type = asBusinessType(biz?.businessType);
@@ -86,8 +93,8 @@ export default async function ServicesPage() {
               <button className="btn">Guardar</button>
             </div>
           </SaveForm>
-          {s.active && (
-            <SaveForm action={archiveService} className="mt-2" successText="Servicio eliminado ✓">
+          {(
+            <SaveForm action={archiveService} className="mt-2" successText="Servicio eliminado ✓" confirm="¿Eliminar este servicio? Los turnos ya agendados no se tocan.">
               <input type="hidden" name="id" value={s.id} />
               <button className="text-sm text-red-600 underline">Eliminar</button>
             </SaveForm>

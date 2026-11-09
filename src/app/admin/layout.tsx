@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { getSession } from "@/lib/auth";
@@ -7,11 +8,26 @@ import { themeCss } from "@/lib/format";
 import { LogoutButton } from "@/components/LogoutButton";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Ícono de la pestaña del panel: el logo del negocio teñido de rojo (lo genera /admin/favicon). Sin sesión (login) queda el
+ * ícono por defecto. La versión (?v) cambia con el logo para que el navegador no use uno viejo.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSession();
+  if (!session) return {};
+  const biz = await prisma.business.findUnique({ where: { id: session.businessId }, select: { logoUrl: true } });
+  const v = (biz?.logoUrl ?? "none").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+  const href = `/admin/favicon?v=${v}`;
+  return { icons: { icon: [{ url: href }], shortcut: [{ url: href }], apple: [{ url: href }] } };
+}
+
 const links = [
   { href: "/admin", label: "Turnos" },
+  { href: "/admin/turnos", label: "En vivo" },
   { href: "/admin/services", label: "Servicios" },
   { href: "/admin/barbers", label: "Barberos" },
   { href: "/admin/customers", label: "Clientes" },
@@ -68,6 +84,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // El login vive dentro de /admin pero no es parte del panel: sin menú, sin aviso de suscripción ni barra del link público,
   // aunque ya haya una sesión iniciada. (Tampoco se consulta la base: no hace falta para mostrar el formulario.)
   const path = (await headers()).get("x-pathname") ?? "";
+  // La vista de Turnos tiene su propia pantalla completa (sin menú), con su propio encabezado y campanita.
+  if (path === "/admin/turnos") return <div className="mx-auto min-h-screen max-w-5xl px-4 py-4">{children}</div>;
   if (path === "/admin/login") return <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">{children}</div>;
 
   const session = await getSession();
@@ -112,7 +130,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               )}
             </Link>
           ))}
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <LogoutButton />
           </div>
         </nav>

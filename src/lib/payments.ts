@@ -159,6 +159,10 @@ export async function applyMpPayment(businessId: string, mp: MpInfo): Promise<Ap
           },
         });
       }
+      // El turno recién queda firme al cobrarse: ese es el momento en que se avisa en el panel («nuevo turno»).
+      if (moved.count === 1) {
+        await tx.appointmentEvent.create({ data: { businessId: pay.businessId, appointmentId: pay.appointmentId, kind: "CREATED", actor: "SYSTEM", note: "Pago confirmado" } });
+      }
       return { applied: true, confirmedNow: moved.count === 1 };
     },
     { timeout: 20_000, maxWait: 10_000 },

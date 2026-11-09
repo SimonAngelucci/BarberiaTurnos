@@ -173,6 +173,8 @@ model AdminUser {
   emailNotifications Boolean @default(true)
   /// Los tokens de sesión emitidos antes de esta fecha ya no valen (cerrar todas las sesiones / cambio de contraseña).
   tokensValidAfter DateTime?
+  /// Hasta cuándo se marcaron como leídas las notificaciones del panel.
+  notificationsSeenAt DateTime?
   createdAt    DateTime @default(now())
   business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   sessions     AdminSession[]
@@ -259,6 +261,10 @@ model Service {
   iconKey     String?
   /// Ícono propio subido por el negocio (tiene prioridad sobre iconKey).
   iconUrl     String?
+  /// «Próximamente»: se ve en la página pública pero todavía no se puede reservar.
+  comingSoon  Boolean  @default(false)
+  /// Eliminado por el administrador: ya no aparece en ninguna lista (se conserva solo si tiene turnos en el historial).
+  archived    Boolean  @default(false)
   business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
