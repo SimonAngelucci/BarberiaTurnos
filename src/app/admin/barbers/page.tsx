@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getAccess } from "@/lib/billing";
 import { uploadsEnabled } from "@/lib/upload";
 import { ImageField } from "@/components/ImageField";
+import { SaveForm } from "@/components/SaveForm";
 import { DeleteBarberButton } from "@/components/DeleteBarberButton";
 import { saveBarber } from "../actions";
 
@@ -11,7 +12,7 @@ type B = { id: string; name: string; bio: string | null; photoUrl: string | null
 
 function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
   return (
-    <form action={saveBarber} className="space-y-3">
+    <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Barbero guardado ✓" : "Barbero agregado ✓"} resetOnSuccess={!b}>
       {b && <input type="hidden" name="id" value={b.id} />}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -39,7 +40,7 @@ function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
         )}
         <button className="btn">{b ? "Guardar" : "Agregar barbero"}</button>
       </div>
-    </form>
+    </SaveForm>
   );
 }
 

@@ -63,19 +63,27 @@ export function WeekScheduleEditor({ initial, interval }: { initial: DayState[];
               <span>a</span>
               <input type="time" name={`end_${d.wd}`} value={d.end} onChange={(e) => patch(d.wd, { end: e.target.value || d.end })} className="input !w-32" />
               <input type="hidden" name={`off_${d.wd}`} value={offVisible.join(",")} />
-              {d.open && (
-                <span className="ml-auto text-xs text-neutral-500">
-                  {enabledCount} de {grid.length} horarios activos
-                </span>
-              )}
+              <span className="ml-auto text-xs text-neutral-500">
+                {d.open ? `${enabledCount} de ${grid.length} horarios activos` : "Día cerrado"}
+              </span>
             </div>
 
-            {d.open && grid.length > 0 && (
-              <div className="mt-3 space-y-2">
+            {/* Los horarios se muestran siempre (sin guardar antes); si el día está cerrado se ven atenuados hasta abrirlo. */}
+            {grid.length > 0 && (
+              <div className={`mt-3 space-y-2 ${d.open ? "" : "opacity-50"}`}>
+                {!d.open && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+                    <span>Este día no atiende. Abrilo para elegir qué horarios ofrecer.</span>
+                    <button type="button" className="btn-ghost !px-2 !py-1" onClick={() => patch(d.wd, { open: true })}>
+                      Abrir este día
+                    </button>
+                  </div>
+                )}
                 {/* Grilla: tocar alterna una celda; arrastrar pinta varias seguidas. touch-action deja el desplazamiento vertical al celular. */}
                 <div
-                  className="grid touch-pan-y select-none grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8"
+                  className={`grid touch-pan-y select-none grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 ${d.open ? "" : "pointer-events-none"}`}
                   onPointerDown={(e) => {
+                    if (!d.open) return;
                     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-cell]");
                     if (!el || e.button !== 0) return;
                     const m = Number(el.dataset.m);
@@ -106,7 +114,7 @@ export function WeekScheduleEditor({ initial, interval }: { initial: DayState[];
                   })}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs">
+                <div className={`flex flex-wrap items-center gap-2 text-xs ${d.open ? "" : "pointer-events-none"}`}>
                   <button type="button" className="btn-ghost !px-2 !py-1" onClick={() => patch(d.wd, { off: [] })}>
                     Activar todos
                   </button>

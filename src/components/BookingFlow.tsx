@@ -82,6 +82,18 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [timing, setTiming] = useState<{ durationMin: number; adjusted: boolean } | null>(null);
   const lastCore = useRef("");
 
+  // Al elegir barbero, la pantalla baja sola al área de días y horarios y la enfoca (para no tener que buscarla).
+  const daysRef = useRef<HTMLElement>(null);
+  const [focusDays, setFocusDays] = useState(0);
+  useEffect(() => {
+    if (focusDays === 0) return;
+    const el = daysRef.current;
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    el.focus({ preventScroll: true });
+  }, [focusDays]);
+
   useEffect(() => {
     if (!service || !barberId || !date) return;
     let cancelled = false;
@@ -134,7 +146,13 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     }
     setBusy(false);
     if (res.ok) {
-      setClaim(typeof j.claimCode === "string" ? j.claimCode : null);
+      // Con el código del turno se lleva al cliente a su página de confirmación (fecha, hora, servicio, barbero…).
+      if (typeof j.claimCode === "string") {
+        setBusy(true); // el botón queda ocupado hasta que cambia la página
+        window.location.assign(`/b/${slug}/confirmado?c=${encodeURIComponent(j.claimCode)}`);
+        return;
+      }
+      setClaim(null);
       return setDone(true);
     }
     setError(j.error ?? "Error inesperado");
@@ -218,6 +236,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 onClick={() => {
                   setBarberId(b.id);
                   setSlot(null);
+                  setFocusDays((n) => n + 1);
                 }}
                 className={`card flex items-start gap-3 text-left transition ${barberId === b.id ? "!border-brand ring-2 ring-neutral-300" : ""}`}
               >
@@ -243,7 +262,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
       )}
 
       {service && barberId && (
-        <section>
+        <section ref={daysRef} tabIndex={-1} className="scroll-mt-4 outline-none">
           {learnDurations && (
             <div className="card mb-4 space-y-1">
               <label className="label" htmlFor="early-phone">

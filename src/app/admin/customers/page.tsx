@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { prettyPhone } from "@/lib/profile";
+import { SaveForm } from "@/components/SaveForm";
 import { learnedMinutes, MIN_SAMPLES, WINDOW } from "@/lib/learned-duration";
 import { clearCustomerTime, resetCustomerTime, saveLearnDurations, setCustomerTime } from "./actions";
 
@@ -37,7 +38,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         <p className="text-sm text-neutral-500">El sistema aprende cuánto tarda cada cliente y reserva ese tiempo en lugar de la duración estándar.</p>
       </div>
 
-      <form action={saveLearnDurations} className="card space-y-3">
+      <SaveForm action={saveLearnDurations} className="card space-y-3">
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="learnDurations" defaultChecked={learn} className="mt-1" />
           <span>
@@ -49,7 +50,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           </span>
         </label>
         <button className="btn">Guardar</button>
-      </form>
+      </SaveForm>
 
       <form className="flex gap-2" role="search">
         <input name="q" defaultValue={q} placeholder="Buscar por nombre o WhatsApp" className="input" aria-label="Buscar cliente" />
@@ -88,25 +89,25 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                       {res.source === "standard" && samples.length > 0 && samples.length < MIN_SAMPLES && ` (faltan ${MIN_SAMPLES - samples.length} para usarlas)`}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <form action={setCustomerTime} className="flex items-center gap-1.5">
+                      <SaveForm action={setCustomerTime} className="flex items-center gap-1.5" successText="Tiempo fijado ✓">
                         <input type="hidden" name="customerId" value={hidden.customerId} />
                         <input type="hidden" name="serviceId" value={hidden.serviceId} />
                         <input name="minutes" type="number" min={5} max={480} step={5} required defaultValue={adj?.overrideMin ?? res.minutes} aria-label={`Minutos para ${s.name}`} className="input !w-20 !py-1 !text-sm" />
                         <button className="btn-ghost !px-2 !py-1 text-xs">Fijar tiempo</button>
-                      </form>
+                      </SaveForm>
                       {adj?.overrideMin ? (
-                        <form action={clearCustomerTime}>
+                        <SaveForm action={clearCustomerTime} successText="Tiempo fijo quitado ✓">
                           <input type="hidden" name="customerId" value={hidden.customerId} />
                           <input type="hidden" name="serviceId" value={hidden.serviceId} />
                           <button className="btn-ghost !px-2 !py-1 text-xs">Quitar tiempo fijo</button>
-                        </form>
+                        </SaveForm>
                       ) : null}
                       {(samples.length > 0 || adj?.overrideMin) && (
-                        <form action={resetCustomerTime}>
+                        <SaveForm action={resetCustomerTime} successText="Reseteado ✓" confirm="¿Ignorar las respuestas anteriores de este cliente y empezar de cero?">
                           <input type="hidden" name="customerId" value={hidden.customerId} />
                           <input type="hidden" name="serviceId" value={hidden.serviceId} />
                           <button className="px-2 py-1 text-xs text-red-600 underline">Resetear</button>
-                        </form>
+                        </SaveForm>
                       )}
                     </div>
                   </div>

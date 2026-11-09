@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getBusinessById } from "@/lib/db";
 import { uploadsEnabled } from "@/lib/upload";
 import { ImageField } from "@/components/ImageField";
+import { SaveForm } from "@/components/SaveForm";
 import { saveSettings } from "../actions";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
@@ -14,7 +15,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const noticeOptions = [...new Set([0, 1, 2, 3, 4, 6, 12, 24, 48, 72, 168, noticeHours])].sort((x, y) => x - y);
 
   return (
-    <form action={saveSettings} className="space-y-4">
+    <SaveForm action={saveSettings} className="space-y-4" successText="Cambios guardados ✓">
       <h1 className="text-xl font-bold">Configuración del negocio</h1>
 
       {sp.welcome && (
@@ -130,6 +131,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </section>
 
       <button className="btn">Guardar cambios</button>
-    </form>
+    </SaveForm>
   );
 }

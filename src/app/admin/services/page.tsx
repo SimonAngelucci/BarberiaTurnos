@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/upload";
 import { IconPicker } from "@/components/IconPicker";
+import { SaveForm } from "@/components/SaveForm";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { BUSINESS_TYPES, asBusinessType, type BusinessType } from "@/lib/service-icons";
 import { saveService, archiveService, saveBusinessType } from "../actions";
@@ -46,7 +47,7 @@ export default async function ServicesPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Servicios</h1>
 
-      <form action={saveBusinessType} className="card flex flex-wrap items-end gap-3">
+      <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado ✓">
         <div>
           <label className="label" htmlFor="businessType">
             Rubro del negocio
@@ -61,13 +62,13 @@ export default async function ServicesPage() {
         </div>
         <button className="btn-ghost">Cambiar rubro</button>
         <p className="w-full text-xs text-neutral-500">Define los íconos sugeridos para tus servicios. No cambia nada más.</p>
-      </form>
+      </SaveForm>
 
-      <form action={saveService} className="card space-y-3">
+      <SaveForm action={saveService} className="card space-y-3" successText="Servicio creado ✓" resetOnSuccess>
         <h2 className="font-semibold">Nuevo servicio</h2>
         <Fields type={type} />
         <button className="btn">Crear</button>
-      </form>
+      </SaveForm>
 
       {services.map((s) => (
         <div key={s.id} className={`card ${s.active ? "" : "opacity-60"}`}>
@@ -75,7 +76,7 @@ export default async function ServicesPage() {
             <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={type} size={40} />
             <span className="font-semibold">{s.name}</span>
           </div>
-          <form action={saveService} className="space-y-3">
+          <SaveForm action={saveService} className="space-y-3" successText="Servicio guardado ✓">
             <input type="hidden" name="id" value={s.id} />
             <Fields s={s} type={type} />
             <div className="flex items-center gap-4">
@@ -84,12 +85,12 @@ export default async function ServicesPage() {
               </label>
               <button className="btn">Guardar</button>
             </div>
-          </form>
+          </SaveForm>
           {s.active && (
-            <form action={archiveService} className="mt-2">
+            <SaveForm action={archiveService} className="mt-2" successText="Servicio eliminado ✓">
               <input type="hidden" name="id" value={s.id} />
               <button className="text-sm text-red-600 underline">Eliminar</button>
-            </form>
+            </SaveForm>
           )}
         </div>
       ))}

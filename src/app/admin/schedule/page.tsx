@@ -6,6 +6,7 @@ import { minToHHMM, fmtDateTime } from "@/lib/format";
 import { WeekScheduleEditor, type DayState } from "@/components/WeekScheduleEditor";
 import { ScheduleModeForm } from "@/components/ScheduleModeForm";
 import { IntervalForm } from "@/components/IntervalForm";
+import { SaveForm } from "@/components/SaveForm";
 import { saveSchedule, addTimeOff, deleteTimeOff } from "../actions";
 
 const DAYS = [
@@ -85,7 +86,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       </div>
 
       {barber && (
-        <form key={`${barber.id}-${business.slotIntervalMin}`} action={saveSchedule} className="card space-y-3">
+        // La clave incluye lo guardado: al guardar (o cambiar de barbero/intervalo) el editor se arma de nuevo con los datos reales de la base.
+        <SaveForm key={`${barber.id}-${business.slotIntervalMin}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados ✓">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Días y horarios de {barber.name}</h2>
           <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} />
@@ -96,12 +98,12 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             Zona horaria: {business.timezone}.
           </p>
           <button className="btn">Guardar horarios</button>
-        </form>
+        </SaveForm>
       )}
 
       <section className="card space-y-3">
         <h2 className="font-semibold">Bloquear fechas (vacaciones, feriados, descansos)</h2>
-        <form action={addTimeOff} className="grid gap-3 sm:grid-cols-5">
+        <SaveForm action={addTimeOff} className="grid gap-3 sm:grid-cols-5" successText="Fecha bloqueada ✓" resetOnSuccess>
           <div className="sm:col-span-1">
             <label className="label">Aplica a</label>
             <select name="barberId" className="input">
@@ -128,7 +130,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <div className="flex items-end">
             <button className="btn w-full">Bloquear</button>
           </div>
-        </form>
+        </SaveForm>
 
         <ul className="divide-y divide-neutral-100">
           {timeOffs.map((t) => (
@@ -137,10 +139,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
                 {fmtDateTime(t.startAt, business.timezone)} → {fmtDateTime(t.endAt, business.timezone)} · {t.barber?.name ?? "Todo el negocio"}
                 {t.reason ? ` · ${t.reason}` : ""}
               </span>
-              <form action={deleteTimeOff}>
+              <SaveForm action={deleteTimeOff} successText="Bloqueo quitado ✓">
                 <input type="hidden" name="id" value={t.id} />
                 <button className="text-red-600 underline">Quitar</button>
-              </form>
+              </SaveForm>
             </li>
           ))}
           {timeOffs.length === 0 && <li className="py-2 text-sm text-neutral-500">Sin bloqueos activos.</li>}

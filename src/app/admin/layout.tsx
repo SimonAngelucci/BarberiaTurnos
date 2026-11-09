@@ -17,11 +17,16 @@ const links = [
   { href: "/admin/customers", label: "Clientes" },
   { href: "/admin/schedule", label: "Horarios" },
   { href: "/admin/payments", label: "Pagos" },
+  { href: "/admin/settings", label: "Personalización", group: true },
+  { href: "/admin/billing", label: "Suscripción" },
+  { href: "/admin/account", label: "Mi cuenta" },
+];
+
+/** «Personalización» agrupa tres pantallas; al estar en una de ellas se muestran como pestañas. */
+const CUSTOMIZE = [
+  { href: "/admin/settings", label: "Negocio" },
   { href: "/admin/design", label: "Diseño" },
   { href: "/admin/profile", label: "Mi página" },
-  { href: "/admin/billing", label: "Suscripción" },
-  { href: "/admin/settings", label: "Negocio" },
-  { href: "/admin/account", label: "Mi cuenta" },
 ];
 
 /** Estado de la suscripción, siempre visible en el panel. Devuelve null cuando no hay nada que avisar. */
@@ -71,6 +76,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const path = (await headers()).get("x-pathname") ?? "";
   if (path === "/admin/login") return <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">{children}</div>;
 
+  const inCustomize = CUSTOMIZE.some((t) => path === t.href || path.startsWith(`${t.href}/`));
   const session = await getSession();
   const business = session ? await prisma.business.findUnique({ where: { id: session.businessId }, omit: { mpAccessToken: true } }) : null;
   const access = business ? await getAccess(business.id) : null;
@@ -99,9 +105,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav className="card mb-3 flex items-center gap-1 overflow-x-auto !p-2">
           {business.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={business.logoUrl} alt="" className="mr-2 h-8 w-8 shrink-0 rounded-full object-cover" />}
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100">
+            <Link
+              key={l.href}
+              href={l.href}
+              aria-current={l.group ? (inCustomize ? "page" : undefined) : path === l.href ? "page" : undefined}
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${l.group && inCustomize ? "bg-neutral-100" : ""}`}
+            >
               {l.label}
-              {l.href === "/admin/profile" && pendingReviews > 0 && (
+              {l.group && pendingReviews > 0 && (
                 <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold text-white" title="Reseñas por aprobar">
                   {pendingReviews}
                 </span>
@@ -112,6 +123,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <LogoutButton />
           </div>
         </nav>
+      )}
+      {business && inCustomize && (
+        <div role="tablist" aria-label="Personalización" className="mb-3 flex gap-1 overflow-x-auto rounded-xl bg-neutral-100 p-1">
+          {CUSTOMIZE.map((t) => {
+            const on = path === t.href || path.startsWith(`${t.href}/`);
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                role="tab"
+                aria-selected={on}
+                className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-center text-sm font-medium transition ${on ? "bg-white shadow-sm" : "text-neutral-600 hover:bg-white/60"}`}
+              >
+                {t.label}
+                {t.href === "/admin/profile" && pendingReviews > 0 && (
+                  <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold text-white" title="Reseñas por aprobar">
+                    {pendingReviews}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       )}
       {access && <BillingBanner a={access} />}
       {business && (
