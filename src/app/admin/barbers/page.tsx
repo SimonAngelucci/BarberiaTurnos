@@ -12,7 +12,7 @@ type B = { id: string; name: string; bio: string | null; photoUrl: string | null
 
 function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
   return (
-    <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Barbero guardado ✓" : "Barbero agregado ✓"} resetOnSuccess={!b}>
+    <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Profesional guardado ✓" : "Profesional agregado ✓"} resetOnSuccess={!b}>
       {b && <input type="hidden" name="id" value={b.id} />}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -38,7 +38,7 @@ function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
             <input type="checkbox" name="active" defaultChecked={b.active} /> Visible para clientes
           </label>
         )}
-        <button className="btn">{b ? "Guardar" : "Agregar barbero"}</button>
+        <button className="btn">{b ? "Guardar" : "Agregar profesional"}</button>
       </div>
     </SaveForm>
   );
@@ -63,14 +63,14 @@ export default async function BarbersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Barberos</h1>
+      <h1 className="text-xl font-bold">Profesionales</h1>
       <p className="text-sm opacity-70">La foto y la descripción se muestran en tu página de reservas para que el cliente elija.</p>
 
       <div className="card space-y-3">
-        <h2 className="font-semibold">Nuevo barbero</h2>
+        <h2 className="font-semibold">Nuevo profesional</h2>
         {atLimit && (
           <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-            Tu plan permite hasta {access.barberLimit} {access.barberLimit === 1 ? "barbero" : "barberos"} y ya llegaste al tope.{" "}
+            Tu plan permite hasta {access.barberLimit} {access.barberLimit === 1 ? "profesional" : "profesionales"} y ya llegaste al tope.{" "}
             <Link href="/admin/billing" className="font-semibold underline">
               Cambiar de plan
             </Link>

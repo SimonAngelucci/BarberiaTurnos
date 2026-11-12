@@ -10,7 +10,7 @@ import { getAccess } from "@/lib/billing";
 import { enqueueCancellation, buildCancellationOps, dispatchDue } from "@/lib/outbox";
 import { hhmmToMin } from "@/lib/format";
 import { remapDisabled } from "@/lib/schedule-grid";
-import { isIconKey } from "@/lib/service-icons";
+import { isIconKey, BUSINESS_TYPES } from "@/lib/service-icons";
 import { FEATURES } from "@/lib/features";
 import { deleteImage, isOwnBlobUrl } from "@/lib/upload";
 import { encryptSecret } from "@/lib/crypto";
@@ -93,7 +93,7 @@ export async function saveService(formData: FormData) {
 /** Rubro del negocio: cambia los íconos sugeridos (los servicios con un ícono que no es del rubro siguen mostrándolo). */
 export async function saveBusinessType(formData: FormData) {
   const { businessId } = await requireWritable();
-  const type = z.enum(["BARBER", "TATTOO", "NAILS"]).parse(formData.get("businessType"));
+  const type = z.enum(Object.keys(BUSINESS_TYPES) as [keyof typeof BUSINESS_TYPES, ...(keyof typeof BUSINESS_TYPES)[]]).parse(formData.get("businessType"));
   await prisma.business.update({ where: { id: businessId }, data: { businessType: type } });
   revalidatePath("/admin/services");
   revalidatePath("/", "layout");
@@ -130,7 +130,7 @@ export async function saveBarber(formData: FormData) {
   const d = barberSchema.parse({ name: formData.get("name"), bio: formData.get("bio") ?? "" });
 
   const existing = id ? await prisma.barber.findFirst({ where: { id, businessId } }) : null;
-  if (id && !existing) throw new Error("Barbero inexistente");
+  if (id && !existing) throw new Error("Profesional inexistente");
 
   // La foto ya se subió desde el formulario (/api/admin/upload); acá solo se acepta una URL propia de esta barbería.
   let photoUrl = existing?.photoUrl ?? null;
@@ -151,7 +151,7 @@ export async function saveBarber(formData: FormData) {
     // Tope de barberos del plan contratado (durante la prueba no hay tope).
     const { barberLimit } = await getAccess(businessId);
     if (barberLimit !== null && (await prisma.barber.count({ where: { businessId, active: true } })) >= barberLimit) {
-      throw new Error(`Tu plan permite hasta ${barberLimit} barberos. Cambiá de plan para agregar más.`);
+      throw new Error(`Tu plan permite hasta ${barberLimit} profesionales. Cambiá de plan para agregar más.`);
     }
     await prisma.barber.create({ data: { ...data, businessId } });
   }
@@ -177,7 +177,7 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
 
   try {
     const barber = await prisma.barber.findFirst({ where: { id, businessId } });
-    if (!barber) return { ok: false, error: "Ese barbero ya no existe." };
+    if (!barber) return { ok: false, error: "Ese profesional ya no existe." };
 
     const futureWhere = { barberId: id, businessId, status: "CONFIRMED" as const, startAt: { gt: new Date() } };
     const preview = await prisma.appointment.count({ where: futureWhere });
@@ -193,7 +193,7 @@ export async function deleteBarber(formData: FormData): Promise<DeleteBarberResu
       prisma.appointment.updateMany({ where: { id: { in: ids }, status: "CONFIRMED" }, data: { status: "CANCELLED" } }),
       ...(await buildCancellationOps(ids)),
       ...(ids.length > 0
-        ? [prisma.appointmentEvent.createMany({ data: ids.map((appointmentId) => ({ businessId, appointmentId, kind: "CANCELLED" as const, actor: "ADMIN" as const, note: "Barbero eliminado" })) })]
+        ? [prisma.appointmentEvent.createMany({ data: ids.map((appointmentId) => ({ businessId, appointmentId, kind: "CANCELLED" as const, actor: "ADMIN" as const, note: "Profesional eliminado" })) })]
         : []),
       prisma.barber.delete({ where: { id } }),
     ]);
@@ -267,7 +267,7 @@ export async function saveSchedule(formData: FormData) {
   const { businessId } = await requireWritable();
   const barberId = z.string().min(1).parse(formData.get("barberId"));
   const barber = await prisma.barber.findFirst({ where: { id: barberId, businessId } });
-  if (!barber) throw new Error("Barbero inexistente");
+  if (!barber) throw new Error("Profesional inexistente");
 
   const hhmm = z.string().regex(/^\d{2}:\d{2}$/);
   const rows: { barberId: string; weekday: number; startMin: number; endMin: number }[] = [];

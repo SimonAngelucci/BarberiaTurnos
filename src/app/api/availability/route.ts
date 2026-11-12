@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   const { slug, phone, ...q } = parsed.data;
   const business = await getBusinessBySlug(slug);
-  if (!business) return NextResponse.json({ error: "Barbería inexistente" }, { status: 404 });
+  if (!business) return NextResponse.json({ error: "Negocio inexistente" }, { status: 404 });
 
   // Tiempo del cliente (solo si el negocio lo activó y el número es válido). Si no, la duración normal del servicio.
   let durationMin: number | undefined;

@@ -120,14 +120,14 @@ export async function ProfileSection() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Teléfono" name="phone" value={profile?.phone} placeholder="+54 9 11 1234 5678" max={30} />
             <Field label="WhatsApp" name="whatsapp" value={profile?.whatsapp} placeholder="+54 9 11 1234 5678" max={30} hint="Con este número se arma el botón «Escribinos»." />
-            <Field label="Email" name="email" type="email" value={profile?.email} placeholder="hola@mibarberia.com" max={120} />
-            <Field label="Sitio web" name="website" value={profile?.website} placeholder="https://mibarberia.com" />
+            <Field label="Email" name="email" type="email" value={profile?.email} placeholder="hola@minegocio.com" max={120} />
+            <Field label="Sitio web" name="website" value={profile?.website} placeholder="https://minegocio.com" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Instagram" name="instagram" value={profile?.instagram} placeholder="@mibarberia" />
-            <Field label="Facebook" name="facebook" value={profile?.facebook} placeholder="https://facebook.com/mibarberia" />
-            <Field label="TikTok" name="tiktok" value={profile?.tiktok} placeholder="@mibarberia" />
-            <Field label="YouTube" name="youtube" value={profile?.youtube} placeholder="@mibarberia" />
+            <Field label="Instagram" name="instagram" value={profile?.instagram} placeholder="@minegocio" />
+            <Field label="Facebook" name="facebook" value={profile?.facebook} placeholder="https://facebook.com/minegocio" />
+            <Field label="TikTok" name="tiktok" value={profile?.tiktok} placeholder="@minegocio" />
+            <Field label="YouTube" name="youtube" value={profile?.youtube} placeholder="@minegocio" />
           </div>
           <Field label="Dirección completa" name="address" value={profile?.address} placeholder="Av. Siempre Viva 742, Springfield" />
           <Field

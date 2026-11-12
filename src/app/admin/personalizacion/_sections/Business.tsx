@@ -19,7 +19,7 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
 
       {welcome && (
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">
-          ¡Tu barbería está creada! Tu link de reservas está arriba. Personalizá el nombre, el logo y los colores, y después cargá tus horarios.
+          ¡Tu negocio está creado! Tu link de reservas está arriba. Personalizá el nombre, el logo y los colores, y después cargá tus horarios.
         </p>
       )}
 

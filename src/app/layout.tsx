@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Turnos online para barberías",
-  description: "Reservas online para tu barbería, con link propio.",
+  title: "Turnos online para tu negocio",
+  description: "Reservas online para tu negocio, con link propio.",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

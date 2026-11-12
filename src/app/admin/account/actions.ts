@@ -150,7 +150,7 @@ export async function deleteAccount(_p: FormState, fd: FormData): Promise<FormSt
     where: { id: s.businessId },
     select: { id: true, name: true, logoUrl: true, barbers: { select: { photoUrl: true } }, photos: { select: { url: true, posterUrl: true } }, services: { select: { iconUrl: true } }, subscription: { select: { mpPreapprovalId: true, mpStatus: true } } },
   });
-  if (!business) return fail("No encontramos la barbería.");
+  if (!business) return fail("No encontramos tu negocio.");
 
   if (str(fd, "confirm", 60).trim() !== "ELIMINAR") return fail("Para confirmar, escribí ELIMINAR (en mayúsculas).");
   const bad = await checkPassword(s.adminId, str(fd, "password", 100));

@@ -31,7 +31,7 @@ export type PolicyResult = { ok: true; deadline: Date } | { ok: false; status: n
  */
 export function changePolicy(b: PolicyBusiness, a: PolicyAppt, now = new Date()): PolicyResult {
   if (!b.allowClientChanges) {
-    return { ok: false, status: 403, error: "Esta barbería no permite reprogramar o cancelar por acá. Comunicate con ella directamente." };
+    return { ok: false, status: 403, error: "Este negocio no permite reprogramar o cancelar por acá. Comunicate con el negocio directamente." };
   }
   if (a.status === "CANCELLED") return { ok: false, status: 409, error: "Este turno ya fue cancelado." };
   if (a.status === "COMPLETED" || a.status === "NO_SHOW") return { ok: false, status: 409, error: "Este turno ya pasó." };
@@ -46,7 +46,7 @@ export function changePolicy(b: PolicyBusiness, a: PolicyAppt, now = new Date())
       error:
         b.changeMinNoticeMin <= 0
           ? "El turno ya comenzó, no se puede modificar."
-          : `Ya no se puede reprogramar ni cancelar este turno: el plazo es ${noticePhrase(b.changeMinNoticeMin)} (venció el ${when}). Comunicate con la barbería.`,
+          : `Ya no se puede reprogramar ni cancelar este turno: el plazo es ${noticePhrase(b.changeMinNoticeMin)} (venció el ${when}). Comunicate con el negocio.`,
     };
   }
   return { ok: true, deadline };

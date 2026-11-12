@@ -42,10 +42,10 @@ export async function POST(req: Request) {
   }
 
   const business = await getBusinessForCheckout(d.slug); // incluye el token cifrado: solo se usa acá, en el servidor
-  if (!business) return NextResponse.json({ error: "Barbería inexistente" }, { status: 404 });
+  if (!business) return NextResponse.json({ error: "Negocio inexistente" }, { status: 404 });
   // Suscripción vencida o con pago pendiente: no se aceptan reservas nuevas (las ya agendadas siguen en pie).
   if (!(await getAccess(business.id)).bookable) {
-    return NextResponse.json({ error: "Esta barbería no está aceptando reservas en este momento. Probá más tarde o comunicate con ella." }, { status: 403 });
+    return NextResponse.json({ error: "Este negocio no está aceptando reservas en este momento. Probá más tarde o comunicate con él." }, { status: 403 });
   }
   const service = await prisma.service.findFirst({ where: { id: d.serviceId, businessId: business.id, active: true, comingSoon: false } });
   if (!service) return NextResponse.json({ error: "Servicio no disponible" }, { status: 400 });
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   if (!chosen) {
     const needsPayment = !options.some((o) => o.choice === "NONE");
     return NextResponse.json(
-      { error: needsPayment ? "Esta barbería requiere pagar online para reservar." : "Esa opción de pago no está disponible." },
+      { error: needsPayment ? "Este negocio requiere pagar online para reservar." : "Esa opción de pago no está disponible." },
       { status: 400 },
     );
   }

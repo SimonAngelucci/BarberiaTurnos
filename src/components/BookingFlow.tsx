@@ -38,6 +38,9 @@ type Props = {
   initialServiceId?: string;
 };
 
+/** El WhatsApp arranca con el prefijo de Argentina ya cargado: el cliente solo completa el resto (puede cambiarlo si es de otro país). */
+const DEFAULT_PREFIX = "+54 ";
+
 function Avatar({ b, size }: { b: Barber; size: number }) {
   const style = { width: size, height: size };
   return b.photoUrl ? (
@@ -59,7 +62,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [date, setDate] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[] | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: DEFAULT_PREFIX });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -267,7 +270,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {service && barbers.length > 1 && (
         <section>
-          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí barbero</h2>
+          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí profesional</h2>
           <div className="grid gap-2 sm:grid-cols-2">
             {barbers.map((b) => (
               <button
@@ -309,7 +312,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               </label>
               <input id="early-phone" className="input" inputMode="tel" autoComplete="tel" placeholder="+54 9 11 1234 5678" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               <p className="text-xs text-neutral-500">Si ya viniste antes, ajustamos la duración del turno a lo que a vos te lleva. Es el mismo número que te vamos a pedir al confirmar.</p>
-              {form.phone && !phoneOk && <p className="text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
+              {form.phone.trim() !== DEFAULT_PREFIX.trim() && form.phone && !phoneOk && <p className="text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
             </div>
           )}
           <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí el día</h2>
@@ -373,7 +376,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
-            {form.phone && !phoneOk && <p className="mt-1 text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
+            {form.phone.trim() !== DEFAULT_PREFIX.trim() && form.phone && !phoneOk && <p className="mt-1 text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
           </div>
           {service && options.some((o) => o.choice !== "NONE") && (
             <div className="space-y-2">

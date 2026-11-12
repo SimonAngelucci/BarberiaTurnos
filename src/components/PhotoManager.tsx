@@ -100,7 +100,7 @@ export function PhotoManager({ kind, photos, max, enabled }: { kind: "HERO" | "G
           {photos.length} de {max} fotos · podés elegir varias a la vez · PNG, JPG o WebP (se achican solas) · el orden de arriba es el de la página
         </p>
         {busy && <p className="text-sm font-medium text-neutral-700">{busy}</p>}
-        {!enabled && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">La subida de imágenes no está activada (falta conectar Vercel Blob). Mirá el paso a paso en Barberos o Negocio.</p>}
+        {!enabled && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">La subida de imágenes no está activada (falta conectar Vercel Blob). Mirá el paso a paso en Profesionales o Personalización.</p>}
         {errors.map((m, i) => (
           <p key={i} role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">
             {m}

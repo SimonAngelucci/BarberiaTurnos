@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { createBusiness, EmailTakenError } from "@/lib/tenant";
 
 const schema = z.object({
-  name: z.string().trim().min(2, "Poné el nombre de tu barbería").max(60),
+  name: z.string().trim().min(2, "Poné el nombre de tu negocio").max(60),
   email: z.string().trim().email("Email inválido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(100),
   /** Código de creador/influencer (opcional). */
@@ -38,6 +38,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ese email ya tiene una cuenta" }, { status: 409 });
     }
     console.error("register", e);
-    return NextResponse.json({ error: "No pudimos crear la barbería. Intentá de nuevo." }, { status: 500 });
+    return NextResponse.json({ error: "No pudimos crear tu cuenta. Intentá de nuevo." }, { status: 500 });
   }
 }

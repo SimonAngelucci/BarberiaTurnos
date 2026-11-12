@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   const ok = ensureChangeable(business, appt);
   if ("response" in ok) return ok.response;
-  if (!appt.barberId) return fail("El barbero de este turno ya no está disponible. Comunicate con la barbería.", 409);
+  if (!appt.barberId) return fail("El profesional de este turno ya no está disponible. Comunicate con el negocio.", 409);
 
   const newStart = new Date(parsed.data.startAt);
   if (newStart.getTime() === appt.startAt.getTime()) return fail("Elegí un horario distinto al actual.", 400);

@@ -27,7 +27,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const barbers = await prisma.barber.findMany({ where: { businessId, active: true }, orderBy: { name: "asc" } });
   const barber = barbers.find((b) => b.id === sp.barber) ?? barbers[0];
 
-  const [hours, disabled, timeOffs] = await Promise.all([
+  const [hours, disabled, timeOffs, services] = await Promise.all([
     barber ? prisma.workingHour.findMany({ where: { barberId: barber.id } }) : [],
     barber ? prisma.disabledSlot.findMany({ where: { barberId: barber.id } }) : [],
     prisma.timeOff.findMany({
@@ -35,6 +35,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       orderBy: { startAt: "asc" },
       include: { barber: true },
     }),
+    // Servicios que se pueden reservar: sirven para mostrar al administrador lo que ve el cliente.
+    prisma.service.findMany({ where: { businessId, active: true, comingSoon: false, archived: false }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, durationMin: true } }),
   ]);
   const byDay = new Map(hours.map((h) => [h.weekday, h]));
   const days: DayState[] = DAYS.map(({ wd, label }) => {
@@ -81,7 +83,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           </Link>
         ))}
         <Link href="/admin/barbers" className="btn-ghost">
-          Gestionar barberos
+          Gestionar profesionales
         </Link>
       </div>
 
@@ -90,7 +92,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         <SaveForm key={`${barber.id}-${business.slotIntervalMin}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados ✓">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Días y horarios de {barber.name}</h2>
-          <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} />
+          <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} mode={business.scheduleMode} services={services} />
           <p className="text-xs text-neutral-500">
             {business.scheduleMode === "MANUAL"
               ? `Los turnos empiezan cada ${business.slotIntervalMin} min (se cambia arriba, en «Generar horarios cada»).`

@@ -12,7 +12,7 @@ export function slugify(input: string) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 40) || "barberia"
+      .slice(0, 40) || "negocio"
   );
 }
 
@@ -60,14 +60,14 @@ export async function createBusiness(input: { name: string; email: string; passw
           services: {
             createMany: {
               data: [
-                { name: "Corte", description: "Corte clásico o moderno", priceCents: 800000, durationMin: 30, sortOrder: 1 },
-                { name: "Barba", description: "Perfilado y toalla caliente", priceCents: 600000, durationMin: 30, sortOrder: 2 },
+                { name: "Servicio 1", description: "Editá este servicio de ejemplo", priceCents: 800000, durationMin: 30, sortOrder: 1 },
+                { name: "Servicio 2", description: "Editá este servicio de ejemplo", priceCents: 600000, durationMin: 30, sortOrder: 2 },
               ],
             },
           },
           barbers: {
             create: {
-              name: "Barbero 1",
+              name: "Profesional 1",
               workingHours: { createMany: { data: [1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, startMin: 540, endMin: 1140 })) } },
             },
           },

@@ -184,7 +184,7 @@ export default async function AccountPage() {
       <Section id="peligro" title="Zona de peligro" danger>
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Exportar los datos de la cuenta</h3>
-          <p className="text-sm text-neutral-500">Descargá un archivo con tu negocio, servicios, barberos, clientes, turnos y reseñas. No incluye contraseñas ni credenciales.</p>
+          <p className="text-sm text-neutral-500">Descargá un archivo con tu negocio, servicios, profesionales, clientes, turnos y reseñas. No incluye contraseñas ni credenciales.</p>
           <a href="/api/admin/export" download className="btn-ghost mt-1 inline-flex">
             Descargar mis datos (JSON)
           </a>
@@ -193,7 +193,7 @@ export default async function AccountPage() {
         <div className="space-y-2 border-t border-red-100 pt-4">
           <h3 className="text-sm font-semibold text-red-700">Eliminar la cuenta</h3>
           <p className="text-sm text-neutral-600">
-            Se elimina <strong>{business.name}</strong> de forma permanente: página de reservas, servicios, barberos, clientes, turnos, reseñas y fotos. Si tenés una suscripción activa, se cancela. <strong>No se puede deshacer</strong>; si querés
+            Se elimina <strong>{business.name}</strong> de forma permanente: página de reservas, servicios, profesionales, clientes, turnos, reseñas y fotos. Si tenés una suscripción activa, se cancela. <strong>No se puede deshacer</strong>; si querés
             conservar tu información, exportala antes.
           </p>
           <details className="rounded-xl border border-red-200 p-3">

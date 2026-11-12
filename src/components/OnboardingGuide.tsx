@@ -12,15 +12,15 @@ const STEPS: StepInfo[] = [
     emoji: "✂️",
     title: "Tus servicios y precios",
     short: "Servicios",
-    tips: ["Editá los servicios de ejemplo (Corte y Barba) o creá los tuyos.", "Poné el precio y cuánto dura cada uno: así se arma la agenda.", "Podés ocultar los que no uses."],
-    next: "Siguiente: Barberos",
+    tips: ["Editá los servicios de ejemplo o creá los tuyos.", "Poné el precio y cuánto dura cada uno: así se arma la agenda.", "Podés ocultar los que no uses."],
+    next: "Siguiente: Profesionales",
   },
   {
     path: "/admin/barbers",
     emoji: "💈",
-    title: "Tu equipo de barberos",
-    short: "Barberos",
-    tips: ["Cambiá «Barbero 1» por el nombre real y sumá a los demás.", "Subí una foto y una breve descripción de cada uno.", "Ajustá los días y horarios en que atiende cada barbero."],
+    title: "Tu equipo de profesionales",
+    short: "Profesionales",
+    tips: ["Cambiá «Profesional 1» por el nombre real y sumá a los demás.", "Subí una foto y una breve descripción de cada uno.", "Ajustá los días y horarios en que atiende cada profesional."],
     next: "Siguiente: Mi página",
   },
   {
@@ -79,7 +79,7 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
         </div>
         <div className="card ob-pop relative w-full max-w-sm !p-8 text-center">
           <div className="ob-float text-6xl">🎉</div>
-          <h2 className="mt-3 text-2xl font-bold">¡Tu barbería está lista!</h2>
+          <h2 className="mt-3 text-2xl font-bold">¡Tu negocio está listo!</h2>
           <p className="mt-2 text-sm text-neutral-600">Ya podés recibir reservas. Mirá cómo quedó tu página y compartí el link con tus clientes.</p>
           <div className="mt-5 flex flex-col gap-2">
             <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="btn !py-3" onClick={() => setCelebrate(false)}>

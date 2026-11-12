@@ -47,7 +47,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
         <div className="card space-y-1 text-center">
           <div className="text-3xl">🛠️</div>
           <h2 className="text-lg font-bold">Reservas no disponibles por ahora</h2>
-          <p className="text-sm text-neutral-600">Esta barbería no está aceptando reservas online en este momento. Probá más tarde o comunicate con ella directamente.</p>
+          <p className="text-sm text-neutral-600">Este negocio no está aceptando reservas online en este momento. Probá más tarde o comunicate con el negocio directamente.</p>
         </div>
       ) : (
         <BookingFlow

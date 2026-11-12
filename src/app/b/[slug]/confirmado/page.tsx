@@ -77,7 +77,7 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
                     {local.toFormat("HH:mm")} hs <span className="font-normal text-neutral-500">({mins} min)</span>
                   </Row>
                   <Row label="Servicio">{appt.service.name}</Row>
-                  {appt.barber && <Row label="Barbero">{appt.barber.name}</Row>}
+                  {appt.barber && <Row label="Profesional">{appt.barber.name}</Row>}
                   <Row label="Precio">{money(appt.priceCents, b.currency)}</Row>
                   {appt.amountPaidCents > 0 && <Row label="Pagado online">{money(appt.amountPaidCents, b.currency)}</Row>}
                   {pendingPay && <Row label="Pago">Se abona en el local</Row>}

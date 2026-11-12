@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   const ok = ensureChangeable(business, appt);
   if ("response" in ok) return ok.response;
-  if (!appt.barberId) return fail("El barbero de este turno ya no está disponible. Comunicate con la barbería.", 409);
+  if (!appt.barberId) return fail("El profesional de este turno ya no está disponible. Comunicate con el negocio.", 409);
 
   const slots = await getAvailableSlots({
     businessId: business.id,

@@ -160,6 +160,7 @@ model Business {
   profile      BusinessProfile?
   photos       BusinessPhoto[]
   reviews      Review[]
+  manualIncomes ManualIncome[]
 }
 
 model AdminUser {
@@ -284,6 +285,20 @@ model Customer {
   times        CustomerServiceTime[]
 
   @@unique([businessId, phone])
+}
+
+/// Ingreso cargado a mano en Economía (venta de productos u otros ingresos que no vienen de turnos).
+model ManualIncome {
+  id          String   @id @default(cuid())
+  businessId  String
+  amountCents Int
+  description String
+  /// Día al que corresponde el ingreso (guardado al mediodía de la zona horaria del negocio).
+  date        DateTime
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, date])
 }
 
 /// Ajustes del tiempo aprendido de un cliente para un servicio. Los datos salen de Appointment.actualDurationMin;

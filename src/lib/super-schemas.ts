@@ -45,7 +45,7 @@ export const creatorSchema = z
   });
 
 export const DEFAULT_PLANS = [
-  { slug: "basico", name: "Básico", description: "Para empezar con tu barbería", priceCents: 1_500_000, maxBarbers: 2, sortOrder: 1, features: ["Reservas online 24/7", "Recordatorios por WhatsApp", "Página propia con tu link"] },
-  { slug: "pro", name: "Pro", description: "Para barberías en crecimiento", priceCents: 2_800_000, maxBarbers: 5, sortOrder: 2, features: ["Todo lo del plan Básico", "Cobro de señas con Mercado Pago", "Editor visual de tu página", "Reprogramar y cancelar con código"] },
-  { slug: "premium", name: "Premium", description: "Para cadenas y equipos grandes", priceCents: 4_500_000, maxBarbers: null, sortOrder: 3, features: ["Todo lo del plan Pro", "Barberos ilimitados", "Soporte prioritario"] },
+  { slug: "basico", name: "Básico", description: "Para empezar con tu negocio", priceCents: 1_500_000, maxBarbers: 2, sortOrder: 1, features: ["Reservas online 24/7", "Recordatorios por WhatsApp", "Página propia con tu link"] },
+  { slug: "pro", name: "Pro", description: "Para negocios en crecimiento", priceCents: 2_800_000, maxBarbers: 5, sortOrder: 2, features: ["Todo lo del plan Básico", "Cobro de señas con Mercado Pago", "Editor visual de tu página", "Reprogramar y cancelar con código"] },
+  { slug: "premium", name: "Premium", description: "Para cadenas y equipos grandes", priceCents: 4_500_000, maxBarbers: null, sortOrder: 3, features: ["Todo lo del plan Pro", "Profesionales ilimitados", "Soporte prioritario"] },
 ] as const;

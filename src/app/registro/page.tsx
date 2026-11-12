@@ -39,14 +39,14 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto mt-12 max-w-sm px-4">
       <form onSubmit={onSubmit} className="card space-y-4">
-        <h1 className="text-xl font-bold">Crear mi barbería</h1>
+        <h1 className="text-xl font-bold">Comenzar mis turnos</h1>
         <p className="text-sm text-neutral-500">Vas a recibir un link propio para que tus clientes reserven.</p>
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">
           🎁 <strong>1 mes de prueba gratis</strong>, sin tarjeta. No se cobra nada durante la prueba.
         </p>
         <div>
-          <label className="label">Nombre de la barbería</label>
-          <input name="name" required minLength={2} maxLength={60} className="input" placeholder="Barbería Don Pepe" />
+          <label className="label">Nombre de tu negocio</label>
+          <input name="name" required minLength={2} maxLength={60} className="input" placeholder="Ej: Estudio Luna" />
         </div>
         <div>
           <label className="label">Email</label>
@@ -72,7 +72,7 @@ export default function RegisterPage() {
         </div>
         {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
         <button className="btn w-full" disabled={busy}>
-          {busy ? "Creando…" : "Crear barbería"}
+          {busy ? "Creando…" : "Comenzar mis turnos"}
         </button>
         <p className="text-center text-sm text-neutral-500">
           ¿Ya tenés cuenta?{" "}

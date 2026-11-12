@@ -6,6 +6,9 @@ export const BUSINESS_TYPES = {
   BARBER: "Barbería",
   TATTOO: "Tatuajes",
   NAILS: "Uñas",
+  BEAUTY: "Estética",
+  CLINIC: "Consultorio",
+  OTHER: "Otro",
 } as const;
 export type BusinessType = keyof typeof BUSINESS_TYPES;
 
@@ -43,6 +46,9 @@ const ICONS: Record<string, Def> = {
   star: { label: "Estrella", paths: ["M12 3l2.800 5.800 6.200.9-4.500 4.400 1.100 6.200L12 17.300 6.400 20.300l1.100-6.200L3 9.700l6.200-.9z"] },
   heart: { label: "Corazón", paths: ["M12 20s-8-5-8-11a4.500 4.500 0 0 1 8-2.800A4.500 4.500 0 0 1 20 9c0 6-8 11-8 11Z"] },
   gift: { label: "Combo / promo", paths: ["M4 9h16v4H4z", "M5 13h14v8H5z", "M12 9v12", "M12 9C9 9 8 4 11 4c2 0 1 5 1 5Zm0 0c3 0 4-5 1-5-2 0-1 5-1 5Z"] },
+  health: { label: "Consulta", paths: ["M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"] },
+  facial: { label: "Facial", paths: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z", "M9 10v1", "M15 10v1", "M8.500 14.500c1 1.500 2.200 2 3.500 2s2.500-.5 3.500-2"] },
+  calendar: { label: "Turno", paths: ["M4 6h16v14H4z", "M4 10h16", "M8 3v4", "M16 3v4"] },
   clock: { label: "Rápido", paths: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z", "M12 7v5l3 2"] },
 };
 
@@ -51,10 +57,13 @@ const BY_TYPE: Record<BusinessType, string[]> = {
   BARBER: ["scissors", "beard", "razor", "comb", "shampoo", "eyebrow", "clipper", "mustache"],
   TATTOO: ["tattoo-machine", "tattoo-design", "ink", "needle", "skull", "rose"],
   NAILS: ["nail-polish", "manicure", "pedicure", "nail-file", "gem"],
+  BEAUTY: ["facial", "eyebrow", "comb", "scissors", "gem", "nail-polish"],
+  CLINIC: ["health", "calendar", "clock", "heart"],
+  OTHER: ["calendar", "clock", "star", "gift"],
 };
 const GENERAL = ["sparkles", "star", "heart", "gift", "clock"];
 
-export const DEFAULT_ICON: Record<BusinessType, string> = { BARBER: "scissors", TATTOO: "tattoo-machine", NAILS: "nail-polish" };
+export const DEFAULT_ICON: Record<BusinessType, string> = { BARBER: "scissors", TATTOO: "tattoo-machine", NAILS: "nail-polish", BEAUTY: "facial", CLINIC: "health", OTHER: "calendar" };
 
 export function iconChoices(type: BusinessType) {
   return [...BY_TYPE[type], ...GENERAL].map((key) => ({ key, label: ICONS[key].label }));

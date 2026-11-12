@@ -46,7 +46,7 @@ export default function LoginPage() {
         <p className="text-center text-sm text-neutral-500">
           ¿No tenés cuenta?{" "}
           <a href="/registro" className="underline">
-            Crear mi barbería
+            Comenzar mis turnos
           </a>
         </p>
       </form>

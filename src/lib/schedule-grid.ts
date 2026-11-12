@@ -1,10 +1,14 @@
 // Grilla de horarios del panel: las celdas que el administrador activa o desactiva. Funciones puras (sin base de datos).
 
-/** Celdas de la grilla: desde `start` cada `interval` min mientras la celda entre completa (minutos desde las 00:00). */
+/**
+ * Celdas de la grilla: desde `start` (la hora de apertura exacta, sea cual sea) cada `interval` min, mientras la celda empiece
+ * antes del cierre (minutos desde las 00:00). Incluye la última aunque no entre completa: si un servicio corto sí entra, ese
+ * horario lo ve el cliente y el administrador tiene que poder verlo y desactivarlo.
+ */
 export function gridCells(startMin: number, endMin: number, interval: number): number[] {
   const out: number[] = [];
   if (!(endMin > startMin) || !(interval >= 5)) return out;
-  for (let m = startMin; m + interval <= endMin; m += interval) out.push(m);
+  for (let m = startMin; m < endMin; m += interval) out.push(m);
   return out;
 }
 

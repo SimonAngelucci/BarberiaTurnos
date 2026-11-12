@@ -165,7 +165,7 @@ export function BillingPanel(p: Props) {
                       {plan.description && <p className="mt-1 text-sm text-neutral-500">{plan.description}</p>}
                     </div>
                     <ul className="flex-1 space-y-1 text-sm">
-                      <li>✓ {plan.maxBarbers === null ? "Barberos ilimitados" : `Hasta ${plan.maxBarbers} ${plan.maxBarbers === 1 ? "barbero" : "barberos"}`}</li>
+                      <li>✓ {plan.maxBarbers === null ? "Profesionales ilimitados" : `Hasta ${plan.maxBarbers} ${plan.maxBarbers === 1 ? "profesional" : "profesionales"}`}</li>
                       {plan.features.map((f) => (
                         <li key={f}>✓ {f}</li>
                       ))}

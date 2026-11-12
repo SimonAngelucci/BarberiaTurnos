@@ -9,7 +9,7 @@ type Props = { children: React.ReactNode; params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Pick<Props, "params">): Promise<Metadata> {
   const b = await getBusinessBySlug((await params).slug);
-  if (!b) return { title: "Barbería no encontrada" };
+  if (!b) return { title: "Negocio no encontrado" };
   return {
     title: `${b.name} · Turnos`,
     description: b.tagline,

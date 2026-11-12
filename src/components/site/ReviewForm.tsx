@@ -35,7 +35,7 @@ export function ReviewForm({ slug }: { slug: string }) {
   if (sent) {
     return (
       <p role="status" className="card text-center text-sm">
-        ¡Gracias por tu reseña! Va a aparecer en la página cuando la barbería la apruebe.
+        ¡Gracias por tu reseña! Va a aparecer en la página cuando el negocio la apruebe.
       </p>
     );
   }
@@ -103,7 +103,7 @@ export function ReviewForm({ slug }: { slug: string }) {
           Cancelar
         </button>
       </div>
-      <p className="text-xs text-neutral-400">Tu reseña se publica después de que la barbería la revise.</p>
+      <p className="text-xs text-neutral-400">Tu reseña se publica después de que el negocio la revise.</p>
     </form>
   );
 }

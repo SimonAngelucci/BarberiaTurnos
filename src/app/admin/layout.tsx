@@ -28,9 +28,10 @@ const links: NavLink[] = [
   { href: "/admin", label: "Turnos" },
   { href: "/admin/turnos", label: "En vivo" },
   { href: "/admin/services", label: "Servicios" },
-  { href: "/admin/barbers", label: "Barberos" },
+  { href: "/admin/barbers", label: "Profesionales" },
   { href: "/admin/customers", label: "Clientes" },
   { href: "/admin/schedule", label: "Horarios" },
+  { href: "/admin/economia", label: "Economía" },
   { href: "/admin/payments", label: "Pagos" },
   // Personalización reúne Negocio, Diseño y Mi página: las rutas viejas también la dejan marcada.
   { href: "/admin/personalizacion", label: "Personalización", also: ["/admin/settings", "/admin/design", "/admin/profile"], badge: true },

@@ -112,7 +112,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
     return (
       <div className="card space-y-2 text-center">
         <h2 className="text-lg font-bold">Reprogramar o cancelar</h2>
-        <p className="text-sm text-neutral-600">Esta barbería no permite modificar turnos por acá. Comunicate con ella directamente.</p>
+        <p className="text-sm text-neutral-600">Este negocio no permite modificar turnos por acá. Comunicate con el negocio directamente.</p>
         <Link href={`/b/${slug}`} className="btn-ghost w-full">
           Volver a la página de reservas
         </Link>
@@ -150,7 +150,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
         <div className="text-4xl">🗑️</div>
         <h2 className="text-xl font-bold">Turno cancelado</h2>
         <p className="text-sm text-neutral-500">Liberamos el horario y te avisamos por WhatsApp.</p>
-        {result?.hadPayment && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Tenías un pago registrado: comunicate con la barbería para coordinar la devolución.</p>}
+        {result?.hadPayment && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Tenías un pago registrado: comunicate con el negocio para coordinar la devolución.</p>}
         <Link href={`/b/${slug}`} className="btn w-full">
           Reservar un nuevo turno
         </Link>
@@ -250,7 +250,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
         <Modal open={confirmCancel} onClose={() => !busy && setConfirmCancel(false)} title="¿Cancelar tu turno?" locked={busy}>
           <p className="text-sm">
             Vas a cancelar <strong>{a.serviceName}</strong> del {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}. Se libera el horario y no se puede deshacer.
-            {a.paidCents > 0 && " Como tenés un pago registrado, vas a tener que coordinar la devolución con la barbería."}
+            {a.paidCents > 0 && " Como tenés un pago registrado, vas a tener que coordinar la devolución con el negocio."}
           </p>
           <Err />
           <div className="flex justify-end gap-2">

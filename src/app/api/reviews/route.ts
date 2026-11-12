@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   if (blocked(key, 3, HOUR)) return NextResponse.json({ error: "Enviaste varias reseñas hace poco. Probá de nuevo más tarde." }, { status: 429 });
 
   const business = await prisma.business.findUnique({ where: { slug: d.slug.toLowerCase() }, select: { id: true, profile: { select: { reviewsEnabled: true } } } });
-  if (!business?.profile?.reviewsEnabled) return NextResponse.json({ error: "Esta barbería no está recibiendo reseñas." }, { status: 403 });
+  if (!business?.profile?.reviewsEnabled) return NextResponse.json({ error: "Este negocio no está recibiendo reseñas." }, { status: 403 });
 
   const pending = await prisma.review.count({ where: { businessId: business.id, status: "PENDING" } });
   if (pending >= MAX_PENDING_REVIEWS) return NextResponse.json({ error: "Hay muchas reseñas esperando aprobación. Probá de nuevo más adelante." }, { status: 429 });

@@ -250,7 +250,7 @@ export function MediaManager({ items, max, enabled }: { items: Item[]; max: numb
           Se reproducen solos, en bucle y sin sonido.
         </p>
         {reading && <p className="text-sm font-medium text-neutral-700">Revisando archivos…</p>}
-        {!enabled && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">La subida de archivos no está activada (falta conectar Vercel Blob). Mirá el paso a paso en Barberos o Negocio.</p>}
+        {!enabled && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">La subida de archivos no está activada (falta conectar Vercel Blob). Mirá el paso a paso en Profesionales o Personalización.</p>}
         {errors.map((m, i) => (
           <p key={i} role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">
             {m}

@@ -35,12 +35,12 @@ export function DeleteBarberButton({ id, name, futureCount }: { id: string; name
   return (
     <>
       <button type="button" className="text-sm text-red-600 underline" onClick={() => setOpen(true)}>
-        Eliminar barbero
+        Eliminar profesional
       </button>
 
       <Modal open={open} onClose={close} title={`¿Eliminar a ${name}?`} locked={busy}>
         <div className="space-y-3 text-sm">
-          <p>Esta acción es <strong>permanente</strong>: se borran el barbero, su foto y sus horarios. Los turnos pasados quedan en el historial.</p>
+          <p>Esta acción es <strong>permanente</strong>: se borran el profesional, su foto y sus horarios. Los turnos pasados quedan en el historial.</p>
 
           {needsAck && (
             <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">

@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (!appt) return fail("Turno no encontrado", 404);
 
   const business = await prisma.business.findUnique({ where: { id: appt.businessId } }); // con token: solo se usa acá
-  if (!business || !payConfig(business).enabled) return fail("Esta barbería ya no acepta pagos online.", 400);
+  if (!business || !payConfig(business).enabled) return fail("Este negocio ya no acepta pagos online.", 400);
 
   if (appt.status !== "PENDING_PAYMENT" && appt.status !== "CANCELLED") return fail("Este turno ya está confirmado.", 409);
   if (appt.payments.some((p) => p.state === "APPROVED")) return fail("Este turno ya tiene un pago aprobado.", 409);
