@@ -40,7 +40,7 @@ export function IntervalForm({ interval, mode }: { interval: number; mode: "AUTO
       </div>
       <p className="text-xs text-neutral-500">
         {mode === "MANUAL"
-          ? "Los turnos empiezan cada ese intervalo desde la hora de apertura (ej: cada 20 min: 09:00, 09:20, 09:40…), y cada reserva ocupa la duración real del servicio."
+          ? "Los turnos empiezan cada ese intervalo desde la hora de apertura (ej: cada 20 min: 09:00, 09:20, 09:40…) y cada reserva ocupa la duración real del servicio. Si una reserva termina a las 16:55, los siguientes arrancan a las 16:55 y siguen cada ese intervalo: no quedan huecos sin usar."
           : "En modo automático los turnos siguen la duración del servicio; este intervalo define el tamaño de los bloques que activás o desactivás en la grilla."}{" "}
         Los horarios que ya tenías desactivados se mantienen. Guardá los cambios de la grilla antes de aplicarlo.
       </p>

@@ -188,7 +188,7 @@ export function WeekScheduleEditor({ initial, interval, mode, services }: { init
 
             {(d.open || master) && (
               <p className="rounded-lg bg-neutral-50 p-2 text-xs text-neutral-600" aria-live="polite">
-                <span className="font-medium">Así lo ve el cliente{svc ? ` (${svc.name}, ${svc.durationMin} min)` : ""}:</span>{" "}
+                <span className="font-medium">Así lo ve el cliente con el día libre{svc ? ` (${svc.name}, ${svc.durationMin} min)` : ""}:</span>{" "}
                 {starts.length === 0 ? (
                   <span>ningún horario.</span>
                 ) : (
@@ -252,7 +252,7 @@ export function WeekScheduleEditor({ initial, interval, mode, services }: { init
 
       <p className="text-xs text-neutral-500">
         El primer turno es a la hora exacta de apertura que elijas (por ejemplo 04:00) y los demás van cada {interval} min desde ahí. Tocá un horario para activarlo o desactivarlo, o arrastrá sobre varios seguidos.
-        Los grises no se muestran a los clientes. Acordate de guardar.
+        Los grises no se muestran a los clientes. Cuando entran reservas, los horarios siguientes se realinean solos desde donde termina cada una. Acordate de guardar.
       </p>
     </div>
   );

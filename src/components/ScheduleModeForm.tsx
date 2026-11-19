@@ -25,7 +25,7 @@ export function ScheduleModeForm({ mode: initialMode }: { mode: "AUTO" | "MANUAL
     <ActionForm action={saveScheduleMode} submitLabel="Guardar modalidad">
       <div className="grid gap-2 sm:grid-cols-2">
         {card("AUTO", "Automático", "Los horarios se calculan según la duración del servicio que elige el cliente (45 min: 09:00, 09:45, 10:30…).")}
-        {card("MANUAL", "Manual", "Los turnos empiezan cada cierto intervalo fijo, sin importar la duración del servicio (ej: 09:00, 09:30, 10:00…).")}
+        {card("MANUAL", "Manual", "Los turnos empiezan cada cierto intervalo fijo (ej: 09:00, 09:30, 10:00…). Después de una reserva más larga, el resto del día se realinea desde donde termina.")}
       </div>
     </ActionForm>
   );
