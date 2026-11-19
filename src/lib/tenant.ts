@@ -68,7 +68,10 @@ export async function createBusiness(input: { name: string; email: string; passw
           barbers: {
             create: {
               name: "Profesional 1",
-              workingHours: { createMany: { data: [1, 2, 3, 4, 5, 6].map((weekday) => ({ weekday, startMin: 540, endMin: 1140 })) } },
+              // Horarios de arranque (editables en Horarios): lunes a sábado, de 09:00 a 18:30 cada 30 minutos.
+              timeSlots: {
+                createMany: { data: [1, 2, 3, 4, 5, 6].flatMap((weekday) => Array.from({ length: 20 }, (_, i) => ({ weekday, startMin: 540 + i * 30 }))) },
+              },
             },
           },
         },

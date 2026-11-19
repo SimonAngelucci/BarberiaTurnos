@@ -35,6 +35,6 @@ export async function GET(req: Request) {
     }
   }
 
-  const slots = await getAvailableSlots({ businessId: business.id, ...q, durationMin });
+  const slots = await getAvailableSlots({ businessId: business.id, ...q });
   return NextResponse.json({ slots, timezone: business.timezone, durationMin: durationMin ?? null, adjusted });
 }

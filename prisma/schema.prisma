@@ -204,12 +204,28 @@ model Barber {
   active     Boolean  @default(true)
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  timeSlots     TimeSlot[]
   workingHours  WorkingHour[]
   disabledSlots DisabledSlot[]
   appointments  Appointment[]
   timeOffs      TimeOff[]
 }
 
+/// Horario que el administrador cargó a mano: es exactamente la hora que ve el cliente para reservar (recurrente por día de semana).
+/// weekday: 0=domingo ... 6=sábado. startMin = minutos desde 00:00 locales. Sin límite de cantidad ni relación con la duración
+/// de los servicios: lo que se carga, se ofrece (salvo que ya esté reservado, bloqueado o ya haya pasado).
+model TimeSlot {
+  id       String @id @default(cuid())
+  barberId String
+  weekday  Int
+  startMin Int
+  barber   Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@unique([barberId, weekday, startMin])
+  @@index([barberId, weekday])
+}
+
+/// LEGADO (ya no se usa): reemplazado por TimeSlot. Se conserva para no borrar datos.
 /// Slot individual desactivado dentro de la franja laboral (recurrente por día de semana).
 /// startMin = minutos desde 00:00 locales del inicio de la celda (alineada al slotIntervalMin).
 model DisabledSlot {
@@ -222,6 +238,7 @@ model DisabledSlot {
   @@unique([barberId, weekday, startMin])
 }
 
+/// LEGADO (ya no se usa): reemplazado por TimeSlot. Se conserva para no borrar datos.
 /// Franja laboral. weekday: 0=domingo ... 6=sábado. Minutos desde 00:00 locales.
 /// Varias filas por día = horario cortado (mañana/tarde).
 model WorkingHour {

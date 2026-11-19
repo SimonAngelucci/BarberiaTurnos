@@ -7,7 +7,7 @@ import { isSlotAvailable } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
 
-const isOverlap = (e: unknown) => /appointment_no_overlap|23P01/.test(String((e as Error)?.message ?? e));
+const isOverlap = (e: unknown) => /appointment_one_per_start|appointment_no_overlap|23505|23P01|Unique constraint/i.test(String((e as Error)?.message ?? e));
 
 /**
  * Reprograma el turno con el código de reclamo. Mantiene barbero y servicio.
@@ -37,7 +37,6 @@ export async function POST(req: Request) {
     serviceId: appt.serviceId,
     startAt: newStart,
     excludeAppointmentId: appt.id,
-    durationMin: Math.round(lengthMs / 60_000),
   });
   if (!available) return fail("Ese horario ya no está disponible. Elegí otro.", 409);
 

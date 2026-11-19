@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** Máximo de cobros que se pueden generar para un mismo turno (evita retener un horario indefinidamente). */
 const MAX_ATTEMPTS = 5;
 
-const isOverlap = (e: unknown) => /appointment_no_overlap|23P01/.test(String((e as Error)?.message ?? e));
+const isOverlap = (e: unknown) => /appointment_one_per_start|appointment_no_overlap|23505|23P01|Unique constraint/i.test(String((e as Error)?.message ?? e));
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 /**

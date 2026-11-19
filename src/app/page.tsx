@@ -3,14 +3,14 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { money } from "@/lib/format";
 import { CtaLink } from "@/components/landing/CtaLink";
-import { PhoneMockup, ScheduleCompare } from "@/components/landing/Mockups";
+import { PhoneMockup, ScheduleChips } from "@/components/landing/Mockups";
 
 // Los planes salen de la base (se editan en el Super Admin); la página se regenera sola cada pocos minutos.
 export const revalidate = 300;
 
 const TITLE = "Turnos online para tu negocio: agenda llena, sin llamadas ni mensajes";
 const DESC =
-  "Creá la página de reservas de tu negocio en minutos. Tus clientes reservan solos, recibís recordatorios por WhatsApp y la agenda se acomoda sin huecos. Para barberías, estética, uñas, tatuajes y consultorios. 1 mes gratis, sin tarjeta.";
+  "Creá la página de reservas de tu negocio en minutos. Tus clientes reservan solos, recibís recordatorios por WhatsApp y vos decidís cada horario. Para barberías, estética, uñas, tatuajes y consultorios. 1 mes gratis, sin tarjeta.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -72,7 +72,7 @@ const FAQ = [
   { q: "¿Qué pasa cuando termina el mes gratis?", a: "Elegís un plan desde tu panel. Si no lo hacés, tu cuenta pasa a modo solo lectura: no perdés tus datos, pero no recibe reservas nuevas hasta que elijas un plan." },
   { q: "¿Mis clientes tienen que instalar algo o crear una cuenta?", a: "No. Entran a tu link desde el celular o la compu, eligen el turno y listo. Solo piden nombre y WhatsApp." },
   { q: "¿Sirve para algo más que barberías?", a: "Sí. Está pensado para cualquier negocio con turnos: estética, uñas, tatuajes, consultorios y más. Elegís tu rubro en el panel." },
-  { q: "¿Cómo evita los huecos y los turnos superpuestos?", a: "Nunca se pisan dos turnos del mismo profesional. Y cuando una reserva dura más que el espacio previsto, los horarios siguientes se corren a partir de donde termina, así no quedan minutos muertos." },
+  { q: "¿Puedo elegir yo los horarios?", a: "Sí. Cargás los horarios que quieras para cada día de la semana y tus clientes ven exactamente esos. Cuando alguien reserva uno, ese horario deja de estar disponible para los demás." },
   { q: "¿Puedo cobrar señas?", a: "Sí, con tu propia cuenta de Mercado Pago. Elegís si el cliente paga una seña, el total o abona en el local." },
   { q: "¿Puedo cancelar cuando quiera?", a: "Sí, desde la sección Suscripción de tu panel. Seguís con acceso hasta el fin del período pago." },
 ];
@@ -211,39 +211,38 @@ export default async function Landing() {
               <Heading
                 light
                 center={false}
-                eyebrow="Agenda inteligente"
-                title="Cada minuto de tu día, aprovechado"
-                text="Si una reserva dura más de lo previsto, los turnos siguientes se corren a partir de donde termina. Se acabaron los huecos de 20 minutos que nadie puede usar."
+                eyebrow="Vos mandás"
+                title="Tus horarios, exactamente como los querés"
+                text="Cargá la hora que quieras, el día que quieras, tantas veces como necesites. Tus clientes ven justo esos horarios: la app no los recalcula ni los esconde."
               />
               <ul className="space-y-3 text-neutral-200">
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
                   <span>
-                    <strong className="text-white">Dos modalidades:</strong> turnos cada X minutos, o uno a continuación del otro según la duración de cada servicio.
+                    <strong className="text-white">Sin límites:</strong> 07:30, 09:10, 10:45… los horarios que se te ocurran, distintos para cada día de la semana.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
                   <span>
-                    <strong className="text-white">Nunca se superponen:</strong> el sistema respeta tu horario, descansos, bloqueos de fechas y aviso mínimo.
+                    <strong className="text-white">Editás uno por uno:</strong> cambiás, quitás o copiás los horarios de un día a toda la semana.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
                   <span>
-                    <strong className="text-white">Vos controlás la grilla:</strong> activá o desactivá horarios a tu medida, día por día o para toda la semana.
+                    <strong className="text-white">Nunca se reserva dos veces el mismo horario:</strong> cuando alguien lo toma, desaparece para los demás. También podés bloquear fechas completas.
                   </span>
                 </li>
-              </ul>
-              <div className="mt-8">
+              </ul>              <div className="mt-8">
                 <CtaLink where="efficiency" className={BTN_LIGHT}>
                   Probarlo gratis
                 </CtaLink>
               </div>
             </div>
             <div className="rounded-3xl bg-white p-5 text-neutral-900 shadow-2xl sm:p-7">
-              <ScheduleCompare />
-              <p className="mt-5 text-xs text-neutral-400">Ejemplo ilustrativo: servicio de 55 minutos reservado a las 16:00, intervalo de 40 minutos.</p>
+              <ScheduleChips />
+              <p className="mt-5 text-xs text-neutral-400">Ejemplo ilustrativo de los horarios que podés cargar en un día.</p>
             </div>
           </div>
         </Section>

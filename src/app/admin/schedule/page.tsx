@@ -3,9 +3,7 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { minToHHMM, fmtDateTime } from "@/lib/format";
-import { WeekScheduleEditor, type DayState } from "@/components/WeekScheduleEditor";
-import { ScheduleModeForm } from "@/components/ScheduleModeForm";
-import { IntervalForm } from "@/components/IntervalForm";
+import { ScheduleEditor, type DayTimes } from "@/components/ScheduleEditor";
 import { SaveForm } from "@/components/SaveForm";
 import { saveSchedule, addTimeOff, deleteTimeOff } from "../actions";
 
@@ -27,50 +25,23 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const barbers = await prisma.barber.findMany({ where: { businessId, active: true }, orderBy: { name: "asc" } });
   const barber = barbers.find((b) => b.id === sp.barber) ?? barbers[0];
 
-  const [hours, disabled, timeOffs, services] = await Promise.all([
-    barber ? prisma.workingHour.findMany({ where: { barberId: barber.id } }) : [],
-    barber ? prisma.disabledSlot.findMany({ where: { barberId: barber.id } }) : [],
+  const [slots, timeOffs] = await Promise.all([
+    barber ? prisma.timeSlot.findMany({ where: { barberId: barber.id }, orderBy: { startMin: "asc" }, select: { weekday: true, startMin: true } }) : [],
     prisma.timeOff.findMany({
       where: { businessId, endAt: { gte: new Date() } },
       orderBy: { startAt: "asc" },
       include: { barber: true },
     }),
-    // Servicios que se pueden reservar: sirven para mostrar al administrador lo que ve el cliente.
-    prisma.service.findMany({ where: { businessId, active: true, comingSoon: false, archived: false }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, durationMin: true } }),
   ]);
-  const byDay = new Map(hours.map((h) => [h.weekday, h]));
-  const days: DayState[] = DAYS.map(({ wd, label }) => {
-    const h = byDay.get(wd);
-    return {
-      wd,
-      label,
-      open: !!h,
-      start: minToHHMM(h?.startMin ?? 540),
-      end: minToHHMM(h?.endMin ?? 1140),
-      off: disabled.filter((d) => d.weekday === wd).map((d) => d.startMin),
-    };
-  });
+  const days: DayTimes[] = DAYS.map(({ wd, label }) => ({ wd, label, times: slots.filter((s) => s.weekday === wd).map((s) => minToHHMM(s.startMin)) }));
   const nowLocal = DateTime.now().setZone(business.timezone).toFormat("yyyy-MM-dd'T'HH:mm");
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold">Horarios</h1>
-        <p className="text-sm opacity-70">
-          Modo activo: <strong>{business.scheduleMode === "AUTO" ? "Automático (según la duración del servicio)" : `Manual (turnos cada ${business.slotIntervalMin} min)`}</strong>
-        </p>
+        <p className="text-sm opacity-70">Cargá vos los horarios que querés ofrecer, día por día. Tus clientes ven exactamente esos.</p>
       </div>
-
-      <section className="card space-y-3">
-        <div>
-          <h2 className="font-semibold">Modalidad de horarios</h2>
-          <p className="text-sm text-neutral-500">Cambiarla no afecta las reservas ya hechas ni la duración de tus servicios: solo cambia los horarios que ven tus clientes.</p>
-        </div>
-        <ScheduleModeForm mode={business.scheduleMode} />
-        <div className="border-t border-neutral-100 pt-3">
-          <IntervalForm interval={business.slotIntervalMin} mode={business.scheduleMode} />
-        </div>
-      </section>
 
       <div className="flex flex-wrap items-center gap-2">
         {barbers.map((b) => (
@@ -88,21 +59,15 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       </div>
 
       {barber && (
-        // La clave incluye lo guardado: al guardar (o cambiar de barbero/intervalo) el editor se arma de nuevo con los datos reales de la base.
-        <SaveForm key={`${barber.id}-${business.slotIntervalMin}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados ✓">
+        // La clave incluye lo guardado: al guardar (o cambiar de profesional) el editor se arma de nuevo con los datos reales de la base.
+        <SaveForm key={`${barber.id}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados ✓">
           <input type="hidden" name="barberId" value={barber.id} />
-          <h2 className="font-semibold">Días y horarios de {barber.name}</h2>
-          <WeekScheduleEditor initial={days} interval={business.slotIntervalMin} mode={business.scheduleMode} services={services} />
-          <p className="text-xs text-neutral-500">
-            {business.scheduleMode === "MANUAL"
-              ? `Los turnos empiezan cada ${business.slotIntervalMin} min (se cambia arriba, en «Generar horarios cada»).`
-              : `En modo automático los inicios los calcula el sistema; los bloques de ${business.slotIntervalMin} min sirven para dejar sin turnos una franja puntual (ej: una pausa).`}{" "}
-            Zona horaria: {business.timezone}.
-          </p>
+          <h2 className="font-semibold">Horarios de {barber.name}</h2>
+          <ScheduleEditor initial={days} />
+          <p className="text-xs text-neutral-500">Zona horaria: {business.timezone}.</p>
           <button className="btn">Guardar horarios</button>
         </SaveForm>
       )}
-
       <section className="card space-y-3">
         <h2 className="font-semibold">Bloquear fechas (vacaciones, feriados, descansos)</h2>
         <SaveForm action={addTimeOff} className="grid gap-3 sm:grid-cols-5" successText="Fecha bloqueada ✓" resetOnSuccess>

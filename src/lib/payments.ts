@@ -98,7 +98,7 @@ export async function expirePendingPayments(businessId?: string) {
 export type MpInfo = { id: string; status: string; amount: number; externalRef: string };
 export type ApplyResult = { appointmentId: string | null; confirmedNow: boolean; state: PaymentState | null };
 
-const isOverlap = (e: unknown) => /appointment_no_overlap|23P01/.test(String((e as Error)?.message ?? e));
+const isOverlap = (e: unknown) => /appointment_one_per_start|appointment_no_overlap|23505|23P01|Unique constraint/i.test(String((e as Error)?.message ?? e));
 
 /**
  * Aplica el resultado de un pago de Mercado Pago a nuestra base. Idempotente: se puede llamar

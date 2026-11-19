@@ -22,7 +22,7 @@ Cliente (móvil/PWA)            Admin
 
 Decisiones clave:
 - **Monolito Next.js**: un deploy, server actions para el admin, sin API separada.
-- **Anti-overbooking en dos capas**: (1) `isSlotAvailable` valida contra la agenda; (2) la constraint `EXCLUDE USING gist` de Postgres (`prisma/constraints.sql`) rechaza solapamientos aun con requests simultáneos. El API traduce el error a `409`.
+- **Horarios cargados a mano + anti doble reserva en dos capas**: el administrador carga los horarios de cada profesional y día (`TimeSlot`) y la página pública muestra exactamente esos. (1) `isSlotAvailable` valida que el inicio sea uno de los cargados y siga libre; (2) un índice único de Postgres (`prisma/constraints.sql`: profesional + hora de inicio) impide dos reservas a la misma hora aun con requests simultáneos. El API traduce el error a `409`. La duración del servicio no filtra horarios.
 - **Outbox pattern**: el mensaje se inserta en `Message` junto al turno; `dispatchDue()` lo envía con claim atómico (`PENDING→SENDING`), 3 reintentos con backoff. Si WhatsApp cae, no se pierde nada. Los recordatorios de turnos cancelados se descartan.
 - **Zona horaria**: todo en UTC en la base; horarios de agenda en minutos locales; conversiones con Luxon usando `Business.timezone`.
 - **Multi-tenant ready**: todo cuelga de `businessId`. Hoy `getBusiness()` devuelve el primero; luego se resuelve por subdominio.

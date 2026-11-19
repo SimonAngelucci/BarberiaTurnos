@@ -26,7 +26,7 @@ const schema = z.object({
 
 const isOverlapError = (e: unknown) => {
   const msg = String((e as Error)?.message ?? e);
-  return msg.includes("appointment_no_overlap") || msg.includes("23P01");
+  return /appointment_one_per_start|appointment_no_overlap|23505|23P01|Unique constraint/i.test(msg);
 };
 
 export async function POST(req: Request) {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   await expirePendingPayments(business.id);
 
   // 1ª defensa: el horario está dentro de la agenda y libre.
-  const ok = await isSlotAvailable({ businessId: business.id, barberId: d.barberId, serviceId: d.serviceId, startAt, durationMin: eff.minutes });
+  const ok = await isSlotAvailable({ businessId: business.id, barberId: d.barberId, serviceId: d.serviceId, startAt });
   if (!ok) return NextResponse.json({ error: "Ese horario ya no está disponible. Elegí otro." }, { status: 409 });
 
   try {

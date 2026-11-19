@@ -48,39 +48,34 @@ export function PhoneMockup() {
   );
 }
 
-/** Comparación visual: grilla fija (con hueco muerto) vs. horarios que se realinean tras una reserva de 55 min. */
-export function ScheduleCompare() {
-  const total = 180; // 16:00 → 19:00
-  const pct = (m: number) => `${(m / total) * 100}%`;
-  const Bar = ({ from, len, tone, label }: { from: number; len: number; tone: string; label: string }) => (
-    <div className={`absolute inset-y-0 flex items-center justify-center overflow-hidden rounded-md px-1 text-[10px] font-semibold sm:text-xs ${tone}`} style={{ left: pct(from), width: pct(len) }}>
-      <span className="truncate">{label}</span>
-    </div>
-  );
+/** Ejemplo de un día con horarios cargados a mano (cualquier hora, sin intervalos fijos); uno ya reservado. */
+export function ScheduleChips() {
+  const times = ["07:30", "09:00", "09:40", "10:15", "11:50", "13:05", "15:00", "16:10", "17:25", "18:45", "19:20", "20:00"];
+  const taken = new Set(["09:40", "16:10"]);
   return (
-    <div className="space-y-6" role="img" aria-label="Ejemplo: con una reserva de 55 minutos a las 16:00, el sistema ofrece el siguiente turno a las 16:55 y no deja un hueco sin usar.">
-      <div>
-        <p className="mb-2 text-sm font-semibold text-neutral-500">Agenda con horarios fijos</p>
-        <div className="relative h-11 rounded-lg bg-neutral-100">
-          <Bar from={0} len={55} tone="bg-neutral-800 text-white" label="Reserva 55 min" />
-          <Bar from={55} len={25} tone="bg-red-100 text-red-700 [background-image:repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(220,38,38,.18)_4px,rgba(220,38,38,.18)_8px)]" label="25 min perdidos" />
-          <Bar from={80} len={55} tone="bg-emerald-100 text-emerald-800" label="Próximo 17:20" />
-        </div>
+    <div className="space-y-4" role="img" aria-label="Ejemplo de un día con horarios cargados a mano, como 07:30, 09:00 o 19:20; los reservados dejan de estar disponibles.">
+      <div className="flex items-center justify-between">
+        <p className="font-bold">Viernes</p>
+        <p className="text-xs text-neutral-500">12 horarios cargados</p>
       </div>
-      <div>
-        <p className="mb-2 text-sm font-semibold text-emerald-700">Con Turnos: el día se realinea</p>
-        <div className="relative h-11 rounded-lg bg-neutral-100">
-          <Bar from={0} len={55} tone="bg-neutral-800 text-white" label="Reserva 55 min" />
-          <Bar from={55} len={55} tone="bg-emerald-200 text-emerald-900" label="Próximo 16:55" />
-          <Bar from={110} len={55} tone="bg-emerald-100 text-emerald-800" label="17:50" />
-        </div>
-        <div className="mt-1 flex justify-between text-[10px] text-neutral-400">
-          <span>16:00</span>
-          <span>17:00</span>
-          <span>18:00</span>
-          <span>19:00</span>
-        </div>
-      </div>
+      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {times.map((t) => (
+          <li
+            key={t}
+            className={`rounded-lg border py-2 text-center text-sm font-semibold tabular-nums ${taken.has(t) ? "border-neutral-200 bg-neutral-100 text-neutral-400 line-through" : "border-emerald-300 bg-emerald-50 text-emerald-900"}`}
+          >
+            {t}
+          </li>
+        ))}
+      </ul>
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500">
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-300" /> Disponible para reservar
+        </span>
+        <span className="flex items-center gap-1.5">
+          <i className="inline-block h-2.5 w-2.5 rounded-sm bg-neutral-300" /> Ya reservado
+        </span>
+      </p>
     </div>
   );
 }

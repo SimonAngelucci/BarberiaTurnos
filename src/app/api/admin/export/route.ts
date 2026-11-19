@@ -16,7 +16,7 @@ export async function GET() {
     prisma.businessProfile.findUnique({ where: { businessId } }),
     prisma.businessPhoto.findMany({ where: { businessId }, orderBy: { sortOrder: "asc" } }),
     prisma.service.findMany({ where: { businessId }, orderBy: { sortOrder: "asc" } }),
-    prisma.barber.findMany({ where: { businessId }, include: { workingHours: true } }),
+    prisma.barber.findMany({ where: { businessId }, include: { timeSlots: true } }),
     prisma.customer.findMany({ where: { businessId } }),
     prisma.appointment.findMany({ where: { businessId }, orderBy: { startAt: "asc" }, include: { payments: true } }),
     prisma.review.findMany({ where: { businessId }, orderBy: { createdAt: "asc" } }),

@@ -1,9 +1,9 @@
--- Protección anti-overbooking a nivel base de datos.
--- Dos turnos activos del mismo barbero no pueden solaparse, ni con requests concurrentes.
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-
+-- Protección contra doble reserva a nivel base de datos.
+-- Dos turnos activos del mismo profesional no pueden empezar a la MISMA hora, ni con requests simultáneos.
+-- (Antes se rechazaba cualquier solapamiento de horarios; ahora el administrador decide qué horarios ofrece, aunque un
+-- turno largo se cruce con el horario siguiente, así que lo único que se impide es repetir la misma hora de inicio.)
 ALTER TABLE "Appointment" DROP CONSTRAINT IF EXISTS appointment_no_overlap;
-ALTER TABLE "Appointment"
-  ADD CONSTRAINT appointment_no_overlap
-  EXCLUDE USING gist ("barberId" WITH =, tsrange("startAt", "endAt") WITH &&)
-  WHERE ("status" <> 'CANCELLED');
+
+CREATE UNIQUE INDEX IF NOT EXISTS appointment_one_per_start
+  ON "Appointment" ("barberId", "startAt")
+  WHERE "status" <> 'CANCELLED';
