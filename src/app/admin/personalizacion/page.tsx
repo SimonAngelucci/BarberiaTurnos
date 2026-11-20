@@ -1,31 +1,39 @@
+import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 import { FEATURES } from "@/lib/features";
+import { PersonalizationFlow, type FlowStep } from "@/components/PersonalizationFlow";
 import { BusinessSection } from "./_sections/Business";
 import { DesignSection } from "./_sections/Design";
-import { ProfileSection } from "./_sections/Profile";
+import { AboutStep, ContactStep, MediaStep, ReviewsStep } from "./_sections/Profile";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Personalización: Negocio, Diseño (si está activo, ver src/lib/features.ts) y Mi página en una sola pantalla, una sección
- * debajo de la otra. Las secciones conservan su id (#negocio, #diseno, #mi-pagina) para los links directos; ya no hay barra
- * flotante de atajos.
+ * Personalización por pasos: Negocio → (Diseño, si está activo: src/lib/features.ts) → Portada y galería → Acerca de →
+ * Contacto → Reseñas. Cada paso conserva su propio formulario y su botón de guardar; el flujo agrega el acceso rápido
+ * de arriba, el progreso y «Anterior / Siguiente». Los links viejos (#mi-pagina, #contacto…) siguen llevando al paso que corresponde.
  */
 export default async function CustomizePage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const { welcome } = await searchParams;
+  const { businessId } = await requireAdmin();
+  const pending = await prisma.review.count({ where: { businessId, status: "PENDING" } }).catch(() => 0);
+
+  const steps: FlowStep[] = [
+    { id: "negocio", label: "Negocio", node: <BusinessSection welcome={welcome} /> },
+    ...(FEATURES.DESIGN_EDITOR ? [{ id: "diseno", label: "Diseño", node: <DesignSection /> } satisfies FlowStep] : []),
+    { id: "portada", label: "Portada y galería", anchors: ["mi-pagina", "galeria"], node: <MediaStep /> },
+    { id: "acerca", label: "Acerca de", node: <AboutStep /> },
+    { id: "contacto", label: "Contacto", node: <ContactStep /> },
+    { id: "resenas", label: "Reseñas", badge: pending, node: <ReviewsStep /> },
+  ];
+
   return (
-    <div className="space-y-10">
-      <h1 className="text-2xl font-bold">Personalización</h1>
-      <section id="negocio" className="scroll-mt-4">
-        <BusinessSection welcome={welcome} />
-      </section>
-      {FEATURES.DESIGN_EDITOR && (
-        <section id="diseno" className="scroll-mt-4">
-          <DesignSection />
-        </section>
-      )}
-      <section id="mi-pagina" className="scroll-mt-4">
-        <ProfileSection />
-      </section>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold">Personalización</h1>
+        <p className="text-sm opacity-70">Recorré las secciones con «Siguiente» o saltá directo a la que quieras desde arriba. Todo lo que cargues se ve en tu página de reservas.</p>
+      </div>
+      <PersonalizationFlow steps={steps} />
     </div>
   );
 }

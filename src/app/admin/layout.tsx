@@ -8,6 +8,7 @@ import { themeCss } from "@/lib/format";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { AdminNav, type NavLink } from "@/components/AdminNav";
+import { PanelShell } from "@/components/PanelShell";
 
 export const dynamic = "force-dynamic";
 
@@ -82,17 +83,12 @@ function BillingBanner({ a }: { a: Access }) {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // El login vive dentro de /admin pero no es parte del panel: sin menú, sin aviso de suscripción ni barra del link público,
-  // aunque ya haya una sesión iniciada. (Tampoco se consulta la base: no hace falta para mostrar el formulario.)
-  const path = (await headers()).get("x-pathname") ?? "";
-  // La vista de Turnos tiene su propia pantalla completa (sin menú), con su propio encabezado y campanita.
-  if (path === "/admin/turnos") return <div className="mx-auto min-h-screen max-w-5xl px-4 py-4">{children}</div>;
-  if (path === "/admin/login") return <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">{children}</div>;
-
+  // Todo lo que depende de la ruta (menú visible, pantallas sin menú, solo lectura) lo resuelve <PanelShell> en el navegador:
+  // este layout se conserva al navegar y no puede decidirlo por la ruta con la que se cargó la página.
   const session = await getSession();
   const business = session ? await prisma.business.findUnique({ where: { id: session.businessId }, omit: { mpAccessToken: true } }) : null;
   const access = business ? await getAccess(business.id) : null;
-  // Reseñas de clientes esperando aprobación (se muestra como globito en «Mi página»). Si falla, el panel igual carga.
+  // Reseñas de clientes esperando aprobación (se muestra como globito en «Personalización»). Si falla, el panel igual carga.
   const pendingReviews = business ? await prisma.review.count({ where: { businessId: business.id, status: "PENDING" } }).catch(() => 0) : 0;
 
   let publicUrl = "";
@@ -103,19 +99,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     publicUrl = `${proto}://${host}/b/${business.slug}`;
   }
 
-  // En solo lectura se deshabilitan todos los formularios del panel (salvo la pantalla de suscripción, que tiene que seguir
-  // funcionando para poder regularizar). La defensa real está en el servidor: las acciones exigen la suscripción al día.
-  // «Mi cuenta» tampoco se bloquea: cambiar la contraseña, exportar los datos o darse de baja tiene que poder hacerse siempre.
-  const lock = !!access?.readonly && !path.startsWith("/admin/billing") && !path.startsWith("/admin/account");
-
-  return (
-    <div className="mx-auto min-h-screen max-w-4xl px-4 py-4">
-      {business && (
-        <style dangerouslySetInnerHTML={{ __html: themeCss(business.primaryColor, business.applyBgToAdmin ? business.bgColor : "#fafafa") }} />
-      )}
-      {business && (
-        <AdminNav links={links} logoUrl={business.logoUrl} pendingReviews={pendingReviews} />
-      )}
+  const chrome = (
+    <>
+      {business && <AdminNav links={links} logoUrl={business.logoUrl} pendingReviews={pendingReviews} />}
       {access && <BillingBanner a={access} />}
       {business && (
         <div className="card mb-6 !py-2">
@@ -123,10 +109,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <CopyLink url={publicUrl} />
         </div>
       )}
-      <fieldset disabled={lock} className="m-0 min-w-0 border-0 p-0">
+    </>
+  );
+
+  return (
+    <>
+      {business && <style dangerouslySetInnerHTML={{ __html: themeCss(business.primaryColor, business.applyBgToAdmin ? business.bgColor : "#fafafa") }} />}
+      {/* En solo lectura se deshabilitan los formularios del panel (salvo Suscripción y Mi cuenta). La defensa real está en el
+          servidor: las acciones exigen la suscripción al día. */}
+      <PanelShell chrome={chrome} readonly={!!access?.readonly}>
         {children}
-      </fieldset>
+      </PanelShell>
       {business && business.onboardingStep < 4 && <OnboardingGuide initialStep={business.onboardingStep} publicUrl={publicUrl} />}
-    </div>
+    </>
   );
 }

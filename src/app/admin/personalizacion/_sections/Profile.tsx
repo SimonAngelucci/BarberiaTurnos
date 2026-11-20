@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/upload";
@@ -37,7 +38,8 @@ const Field = ({ label, name, value, placeholder, type = "text", max = 200, hint
   </div>
 );
 
-export async function ProfileSection() {
+/** Los datos se leen una sola vez por pedido aunque los usen varios pasos. */
+const load = cache(async () => {
   const { businessId } = await requireAdmin();
   const b = await getBusinessById(businessId);
   const [profile, photos, reviews] = await Promise.all([
@@ -45,21 +47,14 @@ export async function ProfileSection() {
     prisma.businessPhoto.findMany({ where: { businessId }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], select: { id: true, url: true, kind: true, mediaType: true, posterUrl: true, visible: true } }),
     prisma.review.findMany({ where: { businessId }, orderBy: { createdAt: "desc" }, take: 100 }),
   ]);
-  const enabled = uploadsEnabled();
-  const hero = photos.filter((p) => p.kind === "HERO");
-  const gallery = photos.filter((p) => p.kind === "GALLERY");
-  const sortedReviews = [...reviews].sort((a, z) => Number(z.status === "PENDING") - Number(a.status === "PENDING")); // las pendientes primero
-  const pending = reviews.filter((r) => r.status === "PENDING").length;
+  return { b, profile, reviews, enabled: uploadsEnabled(), hero: photos.filter((p) => p.kind === "HERO"), gallery: photos.filter((p) => p.kind === "GALLERY") };
+});
 
+/** Paso «Portada y galería». */
+export async function MediaStep() {
+  const { profile, enabled, hero, gallery } = await load();
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Mi página</h1>
-        <p className="text-sm opacity-70">
-          Todo lo que cargues acá aparece en tu página de reservas. Las secciones sin contenido no se muestran, y el diseño (colores y tipografías) es el que ya configuraste.
-        </p>
-      </div>
-
       <Section id="portada" title="Portada" hint={`Fotos grandes que pasan solas arriba de tu página. Conviene que sean horizontales. Hasta ${MAX_HERO_PHOTOS}. Sin fotos, la portada es una franja con el color de tu marca.`}>
         <PhotoManager kind="HERO" photos={hero} max={MAX_HERO_PHOTOS} enabled={enabled} />
       </Section>
@@ -91,7 +86,15 @@ export async function ProfileSection() {
           </ActionForm>
         </div>
       </Section>
+    </div>
+  );
+}
 
+/** Paso «Acerca de y política». */
+export async function AboutStep() {
+  const { profile } = await load();
+  return (
+    <div className="space-y-4">
       <Section id="acerca" title="Acerca de y política de reserva" hint="Dejá un campo vacío y esa parte no se muestra.">
         <ActionForm action={saveAbout} submitLabel="Guardar textos">
           <div>
@@ -114,7 +117,15 @@ export async function ProfileSection() {
           </div>
         </ActionForm>
       </Section>
+    </div>
+  );
+}
 
+/** Paso «Contacto y ubicación». */
+export async function ContactStep() {
+  const { profile } = await load();
+  return (
+    <div className="space-y-4">
       <Section id="contacto" title="Contacto, redes y ubicación" hint="Podés pegar el link completo o solo tu @usuario en las redes.">
         <ActionForm action={saveContact} submitLabel="Guardar contacto">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -140,7 +151,17 @@ export async function ProfileSection() {
           />
         </ActionForm>
       </Section>
+    </div>
+  );
+}
 
+/** Paso «Reseñas». */
+export async function ReviewsStep() {
+  const { b, profile, reviews } = await load();
+  const sortedReviews = [...reviews].sort((a, z) => Number(z.status === "PENDING") - Number(a.status === "PENDING")); // las pendientes primero
+  const pending = reviews.filter((r) => r.status === "PENDING").length;
+  return (
+    <div className="space-y-4">
       <Section id="resenas" title="Reseñas" hint="Las que envían los clientes quedan pendientes hasta que las apruebes. Las que cargues vos se publican directo.">
         <ActionForm action={saveReviewSettings} submitLabel="Guardar">
           <label className="flex items-start gap-2 text-sm">

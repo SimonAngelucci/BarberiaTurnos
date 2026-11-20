@@ -68,6 +68,9 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
     [celebrate],
   );
 
+  // La guía no se muestra en las pantallas sin menú (login y la vista de Turnos en vivo).
+  if (pathname === "/admin/turnos" || pathname === "/admin/login") return null;
+
   // Pantalla final de festejo (después de terminar los tres pasos)
   if (celebrate) {
     return (
