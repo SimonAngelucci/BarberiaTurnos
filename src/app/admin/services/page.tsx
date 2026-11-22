@@ -1,3 +1,4 @@
+import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { IconButton } from "@/components/ui/IconButton";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -58,6 +59,7 @@ export default async function ServicesPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Servicios</h1>
+      <QuickLinks items={[GO.horarios]} />
 
       <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado">
         <div>

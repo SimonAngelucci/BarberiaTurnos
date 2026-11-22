@@ -1,15 +1,13 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { CopyLink } from "@/components/CopyLink";
-import { NotificationBell } from "@/components/NotificationBell";
 import { TurnosBoard, type BoardAppt } from "@/components/TurnosBoard";
 
 export const dynamic = "force-dynamic";
 
-/** Vista de Turnos con link propio (/admin/turnos): solo los prÃ³ximos turnos, con color de alerta segÃºn la cercanÃ­a. */
+/** Vista de Turnos con link propio (/admin/turnos): solo los próximos turnos, con color de alerta según la cercanía. */
 export default async function TurnosPage() {
   const { businessId } = await requireAdmin();
   const b = await getBusinessById(businessId);
@@ -34,7 +32,7 @@ export default async function TurnosPage() {
       a.paymentStatus === "PAID"
         ? "Pagado"
         : a.paymentStatus === "DEPOSIT_PAID"
-          ? `SeÃ±a ${money(a.amountPaidCents, b.currency)} Â· falta ${money(a.priceCents - a.amountPaidCents, b.currency)}`
+          ? `Seña ${money(a.amountPaidCents, b.currency)} · falta ${money(a.priceCents - a.amountPaidCents, b.currency)}`
           : "Cobrar en el local",
   }));
 
@@ -44,18 +42,7 @@ export default async function TurnosPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />}
-          <div>
-            <h1 className="text-xl font-extrabold leading-tight">Turnos Â· {b.name}</h1>
-            <Link href="/admin" className="text-xs underline">
-              â† Volver al panel
-            </Link>
-          </div>
-        </div>
-        <NotificationBell />
-      </div>
+      <h1 className="text-xl font-bold">Turnos</h1>
       <TurnosBoard appts={appts} tz={b.timezone} />
       <div className="card !py-2">
         <div className="text-xs text-neutral-500">Link directo a esta vista (te pide ingresar con tu cuenta)</div>

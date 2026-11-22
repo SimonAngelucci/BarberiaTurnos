@@ -242,12 +242,29 @@ html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .borde
 /* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
 .hero-block { background: var(--primary); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
 
-/* Menú flotante inferior (se rediseña en la fase de navegación): superficie clara, la sección activa en el color de acento. */
-.dock { background: var(--surface); box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.35); }
-.dock-item { color: var(--text-muted); }
+/* Barra inferior: superficie de tarjeta; la sección activa va en un círculo de acento elevado, con un anillo del color de la barra
+   que dibuja el hueco curvo alrededor (se ve bien sobre cualquier fondo, claro, negro o de color). */
+.dock { background: var(--surface); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 16px 34px -10px rgba(0, 0, 0, 0.4); }
+html[data-theme="dark"] .app-themed .dock { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 34px -10px rgba(0, 0, 0, 0.8); }
+.dock-item { color: var(--text-muted); transition: color 0.2s; }
 .dock-item:hover { color: inherit; }
-.dock-item[aria-current="page"] { background: var(--primary); color: var(--on-primary); }
-
+.dock-bubble {
+  position: absolute;
+  top: -1.4rem;
+  width: 3.75rem;
+  height: 3.75rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 0 0 0.4rem var(--surface);
+  pointer-events: none;
+  transition: left 0.38s cubic-bezier(0.3, 0.9, 0.3, 1.1);
+}
+@media (prefers-reduced-motion: reduce) { .dock-bubble { transition: none; } }
 /* Barras de los gráficos: crecen desde abajo al aparecer. */
 @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .animate-grow { animation: grow 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }

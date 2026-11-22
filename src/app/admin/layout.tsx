@@ -26,18 +26,20 @@ export async function generateMetadata(): Promise<Metadata> {
   return { icons: { icon: [{ url: href }], shortcut: [{ url: href }], apple: [{ url: href }] } };
 }
 
+// Las 5 pestañas de la barra inferior (también el orden del swipe). Las demás secciones (Clientes, Profesionales, Pagos,
+// Personalización, Horarios) cuelgan de Inicio, Servicios o Cuenta: siguen marcando su pestaña y tienen accesos en esas pantallas.
 const links: NavLink[] = [
-  { href: "/admin", label: "Turnos" },
-  { href: "/admin/turnos", label: "En vivo" },
-  { href: "/admin/services", label: "Servicios" },
-  { href: "/admin/barbers", label: "Profesionales" },
-  { href: "/admin/customers", label: "Clientes" },
-  { href: "/admin/schedule", label: "Horarios" },
-  { href: "/admin/economia", label: "Economía" },
-  { href: "/admin/payments", label: "Pagos" },
-  // Personalización reúne Negocio, Diseño y Mi página: las rutas viejas también la dejan marcada.
-  { href: "/admin/personalizacion", label: "Personalización", also: ["/admin/settings", "/admin/design", "/admin/profile"], badge: true },
-  { href: "/admin/account", label: "Mi cuenta", also: ["/admin/billing"] },
+  {
+    href: "/admin",
+    label: "Inicio",
+    icon: "home",
+    badge: true,
+    also: ["/admin/customers", "/admin/barbers", "/admin/payments", "/admin/personalizacion", "/admin/settings", "/admin/design", "/admin/profile"],
+  },
+  { href: "/admin/turnos", label: "Turnos", icon: "calendar" },
+  { href: "/admin/services", label: "Servicios", icon: "scissors", also: ["/admin/schedule"] },
+  { href: "/admin/economia", label: "Economía", icon: "wallet" },
+  { href: "/admin/account", label: "Cuenta", icon: "user", also: ["/admin/billing"] },
 ];
 
 
@@ -117,7 +119,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {business && <style dangerouslySetInnerHTML={{ __html: panelThemeCss(business.primaryColor) }} />}
       {/* En solo lectura se deshabilitan los formularios del panel (salvo Suscripción y Mi cuenta). La defensa real está en el
           servidor: las acciones exigen la suscripción al día. */}
-      <PanelShell chrome={chrome} readonly={!!access?.readonly}>
+      <PanelShell chrome={chrome} readonly={!!access?.readonly} tabs={links.map((l) => l.href)}>
         {children}
       </PanelShell>
       {business && business.onboardingStep < 4 && <OnboardingGuide initialStep={business.onboardingStep} publicUrl={publicUrl} />}

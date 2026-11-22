@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { fmtDateTime, fmtTime, money } from "@/lib/format";
+import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { cancelAppointment, setAppointmentStatus, markAppointmentPaid } from "./actions";
 
 type Appt = Prisma.AppointmentGetPayload<{ include: { customer: true; service: true; barber: true; events: true } }>;
@@ -128,6 +129,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <QuickLinks items={[GO.clientes, GO.profesionales, GO.pagos, GO.personalizacion]} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="card">

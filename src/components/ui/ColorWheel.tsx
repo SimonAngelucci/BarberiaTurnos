@@ -69,6 +69,7 @@ export function ColorWheel({ name, defaultValue, label = "Color principal" }: { 
         <div
           ref={wheel}
           role="slider"
+          data-no-swipe
           tabIndex={0}
           aria-label={`${label}: tono e intensidad`}
           aria-valuetext={hex}

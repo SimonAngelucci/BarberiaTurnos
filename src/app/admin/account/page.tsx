@@ -1,3 +1,4 @@
+import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { headers } from "next/headers";
 import { prisma, getBusinessById } from "@/lib/db";
 import { getSession, requireAdmin } from "@/lib/auth";
@@ -67,6 +68,8 @@ export default async function AccountPage() {
         <h1 className="text-xl font-bold">Mi cuenta</h1>
         <p className="text-sm opacity-70">Tus datos de acceso, la seguridad y las preferencias de la cuenta. Cuenta creada el {fmtDateTime(admin.createdAt, business.timezone)}.</p>
       </div>
+
+      <QuickLinks items={[GO.personalizacion, GO.clientes, GO.profesionales, GO.pagos]} />
 
       <Section id="datos" title="Datos de la cuenta" hint="Con este email ingresás al panel.">
         <ActionForm action={saveAccount} submitLabel="Guardar datos">
