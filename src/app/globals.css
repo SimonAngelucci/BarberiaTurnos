@@ -154,6 +154,7 @@ body {
   --ink-soft: #1e1e1e;
   --ink-line: #2c2c2c;
   --text-muted: #6b6b6b;
+  --chart-alt: #111111;
   /* Los nombres de siempre (brand, color-primary…) apuntan a los tokens nuevos. */
   --brand: var(--primary);
   --brand-fg: var(--on-primary);
@@ -180,6 +181,7 @@ html[data-theme="dark"] .app-themed {
   --ink-soft: #242424;
   --ink-line: #3a3a3a;
   --text-muted: #a3a3a3;
+  --chart-alt: #f2f2f2;
   --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #fff);
   --page-fg: #f2f2f2;
   /* El bloque de color grande se atenúa un poco en oscuro para que no encandile (el texto encima sigue siendo oscuro). */
@@ -246,10 +248,11 @@ html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .borde
 /* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
 .app-themed { --hero: var(--primary); }
 html[data-theme="dark"] .app-themed { --hero: color-mix(in srgb, var(--primary) 80%, #0b0b0b); }
+.on-hero { color: var(--on-primary); }
 .hero-block { background: var(--hero); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
 
 /* Tabs tipo carpeta: la activa es de la misma superficie que la tarjeta de abajo y se une a ella con esquinas cóncavas. */
-.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem 0.7rem; white-space: nowrap; border-radius: 1.75rem 1.75rem 0 0; color: inherit; opacity: 0.7; transition: opacity 0.2s; }
+.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem 0.7rem; white-space: nowrap; border-radius: 1.75rem 1.75rem 0 0; color: var(--on-primary); opacity: 0.75; transition: opacity 0.2s; }
 .ftab:hover { opacity: 1; }
 .ftab-on { opacity: 1; background: var(--surface); color: var(--page-fg); }
 .ftab-on::after, .ftab-left::before { content: ""; position: absolute; bottom: -1px; width: 1.5rem; height: 1.5rem; pointer-events: none; }

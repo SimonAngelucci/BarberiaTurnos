@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { IconButton } from "@/components/ui/IconButton";
 import Link from "next/link";
 import { DateTime } from "luxon";
@@ -39,10 +40,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">Horarios</h1>
-        <p className="text-sm opacity-70">Cargá vos los horarios que querés ofrecer, día por día. Tus clientes ven exactamente esos.</p>
-      </div>
+      <PageHero title="Horarios" back={{ href: "/admin/services", label: "Volver a Servicios" }} subtitle="Cargá vos los horarios que querés ofrecer, día por día. Tus clientes ven exactamente esos." />
 
       <div className="flex flex-wrap items-center gap-2">
         {barbers.map((b) => (

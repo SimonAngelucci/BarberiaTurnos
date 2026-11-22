@@ -137,7 +137,7 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
   return (
     <div>
       <Hero>
-        <h1 className="pb-4 pl-0.5">Turnos</h1>
+        <h1 className="on-hero pb-4 pl-0.5">Turnos</h1>
         <FolderTabs tabs={tabs} label="Estado de los turnos" value={tab} onValueChange={setTab} />
       </Hero>
 

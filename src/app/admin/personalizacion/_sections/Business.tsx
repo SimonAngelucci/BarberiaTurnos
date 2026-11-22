@@ -18,7 +18,7 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
 
   return (
     <SaveForm action={saveSettings} className="space-y-4" successText="Cambios guardados">
-      <h1 className="text-xl font-bold">Configuración del negocio</h1>
+      <h2 className="text-xl font-light">Configuración del negocio</h2>
 
       {welcome && (
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">

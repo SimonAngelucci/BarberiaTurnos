@@ -33,11 +33,10 @@ const links: NavLink[] = [
     href: "/admin",
     label: "Inicio",
     icon: "home",
-    hero: true,
     badge: true,
     also: ["/admin/customers", "/admin/barbers", "/admin/payments", "/admin/personalizacion", "/admin/settings", "/admin/design", "/admin/profile"],
   },
-  { href: "/admin/turnos", label: "Turnos", icon: "calendar", hero: true },
+  { href: "/admin/turnos", label: "Turnos", icon: "calendar" },
   { href: "/admin/services", label: "Servicios", icon: "scissors", also: ["/admin/schedule"] },
   { href: "/admin/economia", label: "Economía", icon: "wallet" },
   { href: "/admin/account", label: "Cuenta", icon: "user", also: ["/admin/billing"] },
@@ -53,11 +52,13 @@ function BillingBanner({ a }: { a: Access }) {
     </Link>
   );
   const box = (tone: "info" | "warn" | "bad", children: React.ReactNode) => (
-    <div
-      role={tone === "bad" ? "alert" : "status"}
-      className={`mb-3 rounded-xl border p-3 text-sm ${tone === "info" ? "border-green-200 bg-green-50 text-green-900" : tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800"}`}
-    >
-      {children}
+    <div className="mb-3 rounded-2xl bg-surface">
+      <div
+        role={tone === "bad" ? "alert" : "status"}
+        className={`rounded-2xl border p-3 text-sm ${tone === "info" ? "border-green-200 bg-green-50 text-green-900" : tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800"}`}
+      >
+        {children}
+      </div>
     </div>
   );
 

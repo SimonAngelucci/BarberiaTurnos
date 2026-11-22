@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -63,8 +64,7 @@ export default async function BarbersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Profesionales</h1>
-      <p className="text-sm opacity-70">La foto y la descripción se muestran en tu página de reservas para que el cliente elija.</p>
+      <PageHero title="Profesionales" back={{ href: "/admin", label: "Volver a Inicio" }} subtitle="La foto y la descripción se muestran en tu página de reservas para que el cliente elija." />
 
       <div className="card space-y-3">
         <h2 className="font-semibold">Nuevo profesional</h2>

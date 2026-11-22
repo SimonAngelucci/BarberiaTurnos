@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { headers } from "next/headers";
 import { prisma, getBusinessById } from "@/lib/db";
@@ -64,12 +65,9 @@ export default async function AccountPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Mi cuenta</h1>
-        <p className="text-sm opacity-70">Tus datos de acceso, la seguridad y las preferencias de la cuenta. Cuenta creada el {fmtDateTime(admin.createdAt, business.timezone)}.</p>
-      </div>
-
-      <QuickLinks items={[GO.personalizacion, GO.clientes, GO.profesionales, GO.pagos]} />
+      <PageHero title="Mi cuenta" subtitle={<>Tus datos de acceso, la seguridad y las preferencias. Cuenta creada el {fmtDateTime(admin.createdAt, business.timezone)}.</>}>
+        <QuickLinks items={[GO.personalizacion, GO.clientes, GO.profesionales, GO.pagos]} />
+      </PageHero>
 
       <Section id="datos" title="Datos de la cuenta" hint="Con este email ingresás al panel.">
         <ActionForm action={saveAccount} submitLabel="Guardar datos">

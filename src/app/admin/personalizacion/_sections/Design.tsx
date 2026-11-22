@@ -21,7 +21,7 @@ export async function DesignSection() {
   return (
     <div className="space-y-3">
       <div>
-        <h1 className="text-xl font-bold">Diseño de tu página</h1>
+        <h2 className="text-xl font-light">Diseño de tu página</h2>
         <p className="text-sm opacity-70">Editá cómo ven tus clientes la página de reservas. Los cambios se publican cuando tocás «Guardar y publicar».</p>
       </div>
       <DesignEditor

@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { FEATURES } from "@/lib/features";
@@ -29,10 +30,7 @@ export default async function CustomizePage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold">Personalización</h1>
-        <p className="text-sm opacity-70">Recorré las secciones con «Siguiente» o saltá directo a la que quieras desde arriba. Todo lo que cargues se ve en tu página de reservas.</p>
-      </div>
+      <PageHero title="Personalización" back={{ href: "/admin", label: "Volver a Inicio" }} subtitle="Recorré las secciones con «Siguiente» o saltá directo a la que quieras desde arriba. Todo lo que cargues se ve en tu página de reservas." />
       <PersonalizationFlow steps={steps} />
     </div>
   );

@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { IconButton } from "@/components/ui/IconButton";
 import { prisma } from "@/lib/db";
@@ -58,8 +59,9 @@ export default async function ServicesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Servicios</h1>
-      <QuickLinks items={[GO.horarios]} />
+      <PageHero title="Servicios" subtitle="Lo que ofrecés, con su precio y duración. Tocá un servicio para editarlo.">
+        <QuickLinks items={[GO.horarios]} />
+      </PageHero>
 
       <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado">
         <div>

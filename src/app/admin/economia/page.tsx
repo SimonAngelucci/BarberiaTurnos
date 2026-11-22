@@ -1,3 +1,6 @@
+import { PageHero } from "@/components/ui/PageHero";
+import { FolderTabs } from "@/components/ui/FolderTabs";
+import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { IconButton } from "@/components/ui/IconButton";
 import { Icon } from "@/components/ui/Icon";
@@ -24,28 +27,27 @@ function Delta({ cur, prev, what }: { cur: number; prev: number; what: string })
 
 function Summary({ p, prev, prevWhat, currency }: { p: Period; prev: Period; prevWhat: string; currency: string }) {
   return (
-    <section className="card space-y-2" aria-label={p.label}>
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">{p.label}</h2>
-      <div className="text-3xl font-extrabold tabular-nums">{money(p.totalCents, currency)}</div>
+    <div className="space-y-3" role="group" aria-label={p.label}>
+      <SectionLabel as="p">{p.label}</SectionLabel>
+      <div className="text-4xl font-light tabular-nums tracking-tight">{money(p.totalCents, currency)}</div>
       <Delta cur={p.totalCents} prev={prev.totalCents} what={prevWhat} />
-      <dl className="grid grid-cols-3 gap-2 border-t border-neutral-100 pt-2 text-sm">
+      <dl className="grid grid-cols-3 gap-2 border-t pt-3 text-sm" style={{ borderColor: "color-mix(in srgb, currentColor 12%, transparent)" }}>
         <div>
-          <dt className="text-xs text-neutral-500">Turnos ({p.count})</dt>
-          <dd className="font-semibold tabular-nums">{money(p.turnosCents, currency)}</dd>
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Turnos ({p.count})</dt>
+          <dd className="mt-0.5 font-semibold tabular-nums">{money(p.turnosCents, currency)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-neutral-500">Manuales</dt>
-          <dd className="font-semibold tabular-nums">{money(p.manualCents, currency)}</dd>
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Manuales</dt>
+          <dd className="mt-0.5 font-semibold tabular-nums">{money(p.manualCents, currency)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-neutral-500">Promedio / turno</dt>
-          <dd className="font-semibold tabular-nums">{p.count ? money(Math.round(p.turnosCents / p.count), currency) : "—"}</dd>
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Promedio</dt>
+          <dd className="mt-0.5 font-semibold tabular-nums">{p.count ? money(Math.round(p.turnosCents / p.count), currency) : "—"}</dd>
         </div>
       </dl>
-    </section>
+    </div>
   );
 }
-
 /** Monto corto para encima de las barras ($1,2M, $815k, $950): evita que los números se pisen en barras angostas. */
 function compact(cents: number) {
   const v = cents / 100;
@@ -82,8 +84,8 @@ function Bars({ items, currency, highlight }: { items: { label: string; turnosCe
                   className="animate-grow flex w-full max-w-[2.75rem] origin-bottom flex-col justify-end overflow-hidden rounded-t-2xl rounded-b-md"
                   style={{ height: `${pct}%`, animationDelay: `${n * 45}ms`, opacity: on || !highlight ? 1 : 0.55 }}
                 >
-                  <div className="bg-teal-400" style={{ height: `${i.totalCents ? (i.manualCents / i.totalCents) * 100 : 0}%` }} />
-                  <div className="flex-1 bg-brand" />
+                  <div style={{ background: "var(--chart-alt)", height: `${i.totalCents ? (i.manualCents / i.totalCents) * 100 : 0}%` }} />
+                  <div className="flex-1 bg-primary-strong" />
                 </div>
               </div>
             );
@@ -125,20 +127,21 @@ export default async function EconomyPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">Economía</h1>
-        <Collapsible className="mt-2" title="¿Cómo se calcula?" leading={<Icon name="info" size={18} className="text-neutral-500" />} headerClassName="text-sm text-neutral-600">
-          <p className="text-sm text-neutral-500">
-            Ingresos por turnos realizados (completados, o confirmados cuyo horario ya pasó) más los montos que cargues a mano. Los turnos cancelados o ausentes no suman.
-          </p>
-        </Collapsible>
-      </div>
+      <PageHero title="Economía" subtitle="Lo que ingresó por turnos y por ventas cargadas a mano.">
+        <FolderTabs
+          label="Período"
+          tabs={[
+            { id: "semana", label: "Semana", content: <Summary p={s.week} prev={s.prevWeek} prevWhat="la semana anterior" currency={c} /> },
+            { id: "mes", label: "Mes", content: <Summary p={s.month} prev={s.prevMonth} prevWhat="el mes anterior" currency={c} /> },
+          ]}
+        />
+      </PageHero>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Summary p={s.week} prev={s.prevWeek} prevWhat="la semana anterior" currency={c} />
-        <Summary p={s.month} prev={s.prevMonth} prevWhat="el mes anterior" currency={c} />
-      </div>
-
+      <Collapsible title="¿Cómo se calcula?" leading={<Icon name="info" size={18} className="text-neutral-500" />} headerClassName="text-sm text-neutral-600">
+        <p className="text-sm text-neutral-500">
+          Ingresos por turnos realizados (completados, o confirmados cuyo horario ya pasó) más los montos que cargues a mano. Los turnos cancelados o ausentes no suman.
+        </p>
+      </Collapsible>
       {s.pendingCount > 0 && (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
           <Icon name="hourglass" size={16} className="mr-1 inline -translate-y-px" />Tenés <strong>{s.pendingCount}</strong> {s.pendingCount === 1 ? "turno agendado" : "turnos agendados"} este mes que todavía no se {s.pendingCount === 1 ? "hizo" : "hicieron"}:{" "}
@@ -151,10 +154,10 @@ export default async function EconomyPage() {
           <h2 className="font-semibold">Esta semana, día por día</h2>
           <span className="flex items-center gap-3 text-xs text-neutral-500">
             <span className="flex items-center gap-1">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-brand" /> Turnos
+              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-primary-strong" /> Turnos
             </span>
             <span className="flex items-center gap-1">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-teal-400" /> Manuales
+              <i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "var(--chart-alt)" }} /> Manuales
             </span>
           </span>
         </div>

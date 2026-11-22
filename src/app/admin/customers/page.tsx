@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { Icon } from "@/components/ui/Icon";
 import { Collapsible } from "@/components/ui/Collapsible";
 import { prisma } from "@/lib/db";
@@ -35,10 +36,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Clientes y tiempos</h1>
-        <p className="text-sm text-neutral-500">El sistema aprende cuánto tarda cada cliente y reserva ese tiempo en lugar de la duración estándar.</p>
-      </div>
+      <PageHero title="Clientes" back={{ href: "/admin", label: "Volver a Inicio" }} subtitle="El sistema aprende cuánto tarda cada cliente y reserva ese tiempo en lugar de la duración estándar." />
 
       <SaveForm action={saveLearnDurations} className="card space-y-3">
         <label className="flex items-start gap-2 text-sm">

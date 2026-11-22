@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/ui/PageHero";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { STATUS_LABEL, fmtDate, getAccess } from "@/lib/billing";
@@ -21,7 +22,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Suscripción</h1>
+      <PageHero title="Suscripción" back={{ href: "/admin/account", label: "Volver a Cuenta" }} />
       <BillingPanel
         configured={billingConfigured()}
         exempt={access.exempt}
