@@ -223,12 +223,12 @@ export default async function DashboardPage() {
               return (
                 <Link key={s.id} href="/admin/services" className={`card flex flex-col !rounded-[1.75rem] ${dark ? "card-ink" : ""}`}>
                   <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={type} size={44} className={`!rounded-2xl ${dark ? "!bg-ink-soft !text-primary" : "!bg-surface-muted !text-inherit"}`} />
-                  <div className={`mt-8 break-words text-base font-semibold leading-tight ${dark ? "text-primary" : ""}`}>{s.name}</div>
+                  <div className={`mt-8 break-words text-base font-semibold leading-tight ${dark ? "text-primary" : ""}`}>{s.name.charAt(0).toUpperCase() + s.name.slice(1)}</div>
                   <span className="mt-2 inline-flex w-fit rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ borderColor: "color-mix(in srgb, currentColor 35%, transparent)" }}>
                     {s.durationMin} min
                   </span>
                   <div className="mt-4 h-1.5 overflow-hidden rounded-full" style={{ background: "color-mix(in srgb, currentColor 15%, transparent)" }} role="img" aria-label={`${count} turnos en los próximos 7 días`}>
-                    <div className="h-full rounded-full bg-primary-strong" style={{ width: `${Math.round((count / maxPerService) * 100)}%` }} />
+                    <div className={`h-full rounded-full ${dark ? "bg-primary" : "bg-primary-strong"}`} style={{ width: `${Math.max(count > 0 ? 8 : 0, Math.round((count / maxPerService) * 100))}%` }} />
                   </div>
                   <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-70">
                     {count} {count === 1 ? "turno" : "turnos"} · 7 días

@@ -14,7 +14,7 @@ export function CopyButton({ text, label = "Copiar" }: { text: string; label?: s
       <IconButton
         icon={copied ? "check" : "copy"}
         label={copied ? "Copiado" : label}
-        className={copied ? "!border-green-300 !text-green-700" : ""}
+        className={copied ? "!border-primary-strong !text-primary-strong" : ""}
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(text);

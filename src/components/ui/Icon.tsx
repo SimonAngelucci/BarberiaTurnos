@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowLeft,
+  Share2,
   ArrowRight,
   Bell,
   Brain,
@@ -75,6 +76,7 @@ const ICONS = {
   "circle": Circle,
   "clock": Clock,
   "copy": Copy,
+  "share": Share2,
   "credit-card": CreditCard,
   "eye": Eye,
   "eye-off": EyeOff,

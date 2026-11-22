@@ -47,14 +47,14 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
   }, [on, carousel]);
 
   const activeLink = links[on];
-  const bubbleLeft = carousel ? "50%" : `${((on + 0.5) / links.length) * 100}%`;
+  const bubbleLeft = carousel ? "50%" : `calc(0.5rem + (100% - 1rem) * ${(on + 0.5) / links.length})`;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="dock-wrap pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-4">
       <nav aria-label="Panel" className="dock pointer-events-auto relative w-full max-w-md rounded-[2rem]">
         <ul
           ref={track}
-          className={carousel ? "no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-[2rem] px-[40%]" : "grid rounded-[2rem]"}
+          className={carousel ? "no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-[2rem] px-[40%]" : "grid rounded-[2rem] px-2"}
           style={carousel ? undefined : { gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
         >
           {links.map((l, i) => (
@@ -74,7 +74,7 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
               >
                 <Icon name={l.icon} size={22} className={i === on ? "opacity-0" : ""} />
                 <span className="sr-only">{l.label}</span>
-                {l.badge && pendingReviews > 0 && i !== on && <span aria-hidden className="absolute right-[28%] top-4 h-2.5 w-2.5 rounded-full bg-primary-strong ring-2 ring-[var(--surface)]" />}
+                {l.badge && pendingReviews > 0 && i !== on && <span aria-hidden className="absolute right-[28%] top-4 h-2.5 w-2.5 rounded-full bg-primary-strong ring-2 ring-[var(--surface)] scale-75" />}
               </Link>
             </li>
           ))}

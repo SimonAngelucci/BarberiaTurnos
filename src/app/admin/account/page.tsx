@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/ui/PageHero";
+import { LogoutButton } from "@/components/LogoutButton";
 import { QuickLinks, PANEL_SHORTCUTS as GO } from "@/components/ui/QuickLinks";
 import { headers } from "next/headers";
 import { prisma, getBusinessById } from "@/lib/db";
@@ -216,6 +217,14 @@ export default async function AccountPage() {
           </label>
         </ActionForm>
       </Section>
+
+      <section className="card flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold">Cerrar sesión</h2>
+          <p className="text-sm text-muted">Salís de este dispositivo; tus datos quedan guardados.</p>
+        </div>
+        <LogoutButton />
+      </section>
 
       <Section id="peligro" title="Zona de peligro" danger>
         <div className="space-y-1">

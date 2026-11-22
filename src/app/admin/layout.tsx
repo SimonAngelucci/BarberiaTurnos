@@ -5,8 +5,7 @@ import { headers } from "next/headers";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fmtDate, getAccess, type Access } from "@/lib/billing";
-import { panelThemeCss } from "@/lib/format";
-import { CopyLink } from "@/components/CopyLink";
+import { ShareLink } from "@/components/ShareLink";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { AdminNav, type NavLink } from "@/components/AdminNav";
 import { PanelShell } from "@/components/PanelShell";
@@ -47,7 +46,7 @@ const links: NavLink[] = [
 function BillingBanner({ a }: { a: Access }) {
   if (a.exempt) return null;
   const cta = (label: string) => (
-    <Link href="/admin/billing" className="ml-2 font-semibold underline">
+    <Link href="/admin/billing" className="ml-2 font-semibold underline underline-offset-2">
       {label}
     </Link>
   );
@@ -55,7 +54,7 @@ function BillingBanner({ a }: { a: Access }) {
     <div className="mb-3 rounded-2xl bg-surface">
       <div
         role={tone === "bad" ? "alert" : "status"}
-        className={`rounded-2xl border p-3 text-sm ${tone === "info" ? "border-green-200 bg-green-50 text-green-900" : tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800"}`}
+        className={`rounded-2xl border p-3 text-sm ${tone === "info" ? "border-black/15 bg-primary text-on-primary" : tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800"}`}
       >
         {children}
       </div>
@@ -108,9 +107,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {business && <AdminNav links={links} logoUrl={business.logoUrl} pendingReviews={pendingReviews} />}
       {access && <BillingBanner a={access} />}
       {business && (
-        <div className="card mb-6 !py-2">
-          <div className="text-xs text-neutral-500">Link de tu página de reservas</div>
-          <CopyLink url={publicUrl} />
+        <div className="card mb-6 !py-3">
+          <div className="text-xs text-muted">Link de tu página de reservas</div>
+          <ShareLink url={publicUrl} />
         </div>
       )}
     </>
@@ -118,7 +117,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="app-themed">
-      {business && <style dangerouslySetInnerHTML={{ __html: panelThemeCss(business.primaryColor) }} />}
       {/* En solo lectura se deshabilitan los formularios del panel (salvo Suscripción y Mi cuenta). La defensa real está en el
           servidor: las acciones exigen la suscripción al día. */}
       <PanelShell chrome={chrome} readonly={!!access?.readonly} tabs={links.map((l) => l.href)}>

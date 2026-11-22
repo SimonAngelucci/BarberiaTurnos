@@ -21,7 +21,7 @@ export function PanelShell({ chrome, readonly, tabs, children }: { chrome: React
   const lock = readonly && !bare && !path.startsWith("/admin/billing") && !path.startsWith("/admin/account");
 
   return (
-    <div className={`panel mx-auto min-h-screen px-4 pt-4 ${bare ? "pb-4" : "pb-32"} ${path === "/admin/turnos" ? "max-w-5xl" : "max-w-4xl"}`}>
+    <div className={`panel mx-auto min-h-screen px-4 pt-4 ${bare ? "pb-4" : "pb-[calc(8rem+env(safe-area-inset-bottom))]"} ${path === "/admin/turnos" ? "max-w-5xl" : "max-w-4xl"}`}>
       {!bare && chrome}
       <SwipeShell tabs={bare ? [] : tabs}>
         <fieldset disabled={lock} className="m-0 min-w-0 border-0 p-0">

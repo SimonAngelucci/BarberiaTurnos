@@ -141,12 +141,12 @@ body {
             --text-muted                                  subtítulos
    ========================================================================================================================== */
 .app-themed {
-  --primary: #c2e5de;
+  --primary: #bfe3dd;
   --on-primary: #111111;
-  --primary-strong: #3fa597;
-  --primary-dark: #c2e5de;
+  --primary-strong: #389ca0;
+  --primary-dark: #bfe3dd;
   --on-primary-dark: #111111;
-  --primary-strong-dark: #c2e5de;
+  --primary-strong-dark: #bfe3dd;
   --bg: #eeeeee;
   --surface: #fafafa;
   --surface-muted: #e6e6e6;
@@ -184,8 +184,6 @@ html[data-theme="dark"] .app-themed {
   --chart-alt: #f2f2f2;
   --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #fff);
   --page-fg: #f2f2f2;
-  /* El bloque de color grande se atenúa un poco en oscuro para que no encandile (el texto encima sigue siendo oscuro). */
-  --hero: color-mix(in srgb, var(--primary) 80%, #0b0b0b);
 }
 
 /* Tipografía: títulos de pantalla grandes y livianos; la jerarquía la dan el tamaño y el contraste, no el peso. */
@@ -231,8 +229,8 @@ html[data-theme="dark"] .app-themed .text-neutral-300 { color: #626262; }
 html[data-theme="dark"] .app-themed .hover\:text-neutral-900:hover,
 html[data-theme="dark"] .app-themed .hover\:text-neutral-800:hover { color: #ffffff; }
 /* Etiquetas y avisos de estado: fondo translúcido y texto claro del mismo tono */
-html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: rgba(34, 197, 94, 0.15); }
-html[data-theme="dark"] .app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #86efac; }
+html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 18%, transparent); }
+html[data-theme="dark"] .app-themed :is(.text-green-600, .text-green-700, .text-green-800, .text-green-900, .text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: var(--primary); }
 html[data-theme="dark"] .app-themed :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100, .bg-orange-100) { background-color: rgba(245, 158, 11, 0.15); }
 html[data-theme="dark"] .app-themed :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-yellow-800, .text-orange-800) { color: #fcd34d; }
 html[data-theme="dark"] .app-themed :is(.bg-red-50, .bg-red-100) { background-color: rgba(239, 68, 68, 0.16); }
@@ -241,18 +239,25 @@ html[data-theme="dark"] .app-themed :is(.bg-blue-100, .bg-sky-50) { background-c
 html[data-theme="dark"] .app-themed :is(.text-blue-800) { color: #93c5fd; }
 html[data-theme="dark"] .app-themed :is(.bg-violet-50, .bg-violet-100) { background-color: rgba(139, 92, 246, 0.16); }
 html[data-theme="dark"] .app-themed :is(.text-violet-800) { color: #c4b5fd; }
-html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: rgba(34, 197, 94, 0.4); }
+html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
 html[data-theme="dark"] .app-themed :is(.border-amber-200, .border-amber-300, .border-yellow-300) { border-color: rgba(245, 158, 11, 0.45); }
 html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .border-red-400, .border-red-500) { border-color: rgba(239, 68, 68, 0.5); }
 
+/* Nada de verde en la app: los avisos "ok" usan el cian (en claro, fondo pastel y texto oscuro). */
+.app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 55%, var(--surface)); }
+.app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #0f3d3f; }
+.app-themed :is(.text-green-600, .text-emerald-600) { color: var(--primary-strong); }
+.app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: color-mix(in srgb, var(--primary-strong) 45%, transparent); }
+
 /* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
-.app-themed { --hero: var(--primary); }
-html[data-theme="dark"] .app-themed { --hero: color-mix(in srgb, var(--primary) 80%, #0b0b0b); }
-.on-hero { color: var(--on-primary); }
-.hero-block { background: var(--hero); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
+.app-themed { --hero: var(--primary); --on-hero: var(--on-primary); }
+/* En oscuro el bloque va en un cian profundo (menos encandilante) con texto claro; el acento pastel queda para botones, anillos y barras. */
+html[data-theme="dark"] .app-themed { --hero: #2f5f59; --on-hero: #f2f2f2; }
+.on-hero { color: var(--on-hero); }
+.hero-block { background: var(--hero); color: var(--on-hero); border-radius: 0 0 2.5rem 2.5rem; }
 
 /* Tabs tipo carpeta: la activa es de la misma superficie que la tarjeta de abajo y se une a ella con esquinas cóncavas. */
-.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem 0.7rem; white-space: nowrap; border-radius: 1.75rem 1.75rem 0 0; color: var(--on-primary); opacity: 0.75; transition: opacity 0.2s; }
+.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem 0.7rem; white-space: nowrap; border-radius: 1.75rem 1.75rem 0 0; color: var(--on-hero); opacity: 0.75; transition: opacity 0.2s; }
 .ftab:hover { opacity: 1; }
 .ftab-on { opacity: 1; background: var(--surface); color: var(--page-fg); }
 .ftab-on::after, .ftab-left::before { content: ""; position: absolute; bottom: -1px; width: 1.5rem; height: 1.5rem; pointer-events: none; }
@@ -261,15 +266,19 @@ html[data-theme="dark"] .app-themed { --hero: color-mix(in srgb, var(--primary) 
 
 /* Barra inferior: superficie de tarjeta; la sección activa va en un círculo de acento elevado, con un anillo del color de la barra
    que dibuja el hueco curvo alrededor (se ve bien sobre cualquier fondo, claro, negro o de color). */
-.dock { background: var(--surface); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 16px 34px -10px rgba(0, 0, 0, 0.4); }
-html[data-theme="dark"] .app-themed .dock { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 34px -10px rgba(0, 0, 0, 0.8); }
+/* Franja de fondo sólida detrás de la barra: el contenido nunca se ve por debajo ni por los costados. */
+.dock-wrap { background: var(--bg); box-shadow: 0 -10px 18px -12px rgba(0, 0, 0, 0.15); }
+.dock { background: #ffffff; border: 1px solid #dcdcdc; }
+html[data-theme="dark"] .app-themed .dock { background: #111111; border-color: #2c2c2c; }
+html[data-theme="dark"] .app-themed .dock-wrap { box-shadow: 0 -10px 18px -12px rgba(0, 0, 0, 0.6); }
 .dock-item { color: var(--text-muted); transition: color 0.2s; }
 .dock-item:hover { color: inherit; }
 .dock-bubble {
   position: absolute;
-  top: -1.4rem;
-  width: 3.75rem;
-  height: 3.75rem;
+  margin-left: 0;
+  top: -0.7rem;
+  width: 3.5rem;
+  height: 3.5rem;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -277,7 +286,7 @@ html[data-theme="dark"] .app-themed .dock { box-shadow: 0 0 0 1px rgba(255, 255,
   border-radius: 9999px;
   background: var(--primary);
   color: var(--on-primary);
-  box-shadow: 0 0 0 0.4rem var(--surface);
+  box-shadow: 0 0 0 0.35rem var(--bg);
   pointer-events: none;
   transition: left 0.38s cubic-bezier(0.3, 0.9, 0.3, 1.1);
 }
@@ -297,3 +306,7 @@ html[data-theme="dark"] .app-themed .light-island .text-neutral-700 { color: #40
 html[data-theme="dark"] .app-themed .light-island .text-neutral-500 { color: #737373; }
 html[data-theme="dark"] .app-themed .light-island .text-neutral-400 { color: #a3a3a3; }
 html[data-theme="dark"] .app-themed .light-island .text-neutral-300 { color: #d4d4d4; }
+
+/* Barra superior (siempre sobre el bloque de color): los botones heredan el texto oscuro, también en modo oscuro. */
+.app-themed .topbar :is(button, a, svg) { color: inherit; }
+html[data-theme="dark"] .app-themed .topbar [class*="text-"] { color: inherit; }

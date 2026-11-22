@@ -25,7 +25,7 @@ const ICONS: Record<string, Def> = {
   razor: { label: "Afeitado", paths: ["M3 8h14v5H3z", "M17 10h4", "M6 13v3", "M10 13v3", "M14 13v3"] },
   comb: { label: "Peinado", paths: ["M3 8h18v4H3z", "M5 12v4", "M8 12v4", "M11 12v4", "M14 12v4", "M17 12v4", "M20 12v4"] },
   shampoo: { label: "Lavado de cabeza", paths: ["M12 3c3 4 5 6.5 5 9.5a5 5 0 0 1-10 0C7 9.500 9 7 12 3Z", "M9.500 13.500a2.500 2.500 0 0 0 2.500 2.500"] },
-  eyebrow: { label: "Cejas", paths: ["M3 14c3-5 9-7 18-3", "M6 17c2-2 6-3 12-1"] },
+  eyebrow: { label: "Cejas", paths: ["M3 10c4-4 12-4 18 0", "M7 15c3 2 7 2 10 0"] },
   clipper: { label: "Máquina de corte", paths: ["M8 3h8v12a4 4 0 0 1-8 0z", "M8 7h8", "M12 19v2"] },
   mustache: { label: "Bigote", paths: ["M2 14c2-4 6-5 10-2 4-3 8-2 10 2-3-1-6 0-10 3-4-3-7-4-10-3Z"] },
   // Tatuajes
