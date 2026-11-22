@@ -14,9 +14,9 @@ export function Ring({ value, children, label, size = 40, stroke = 4, className 
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeOpacity={0.16} strokeWidth={stroke} />
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--primary-strong)" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: "stroke-dashoffset .6s ease" }} />
         </svg>
-        <span className="absolute text-sm font-semibold tabular-nums">{children}</span>
+        <span className="absolute text-[13px] font-semibold tabular-nums">{children}</span>
       </span>
-      {label && <span className="text-xs font-semibold uppercase tracking-[0.14em]">{label}</span>}
+      {label && <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">{label}</span>}
     </span>
   );
 }

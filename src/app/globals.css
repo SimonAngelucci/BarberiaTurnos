@@ -182,6 +182,8 @@ html[data-theme="dark"] .app-themed {
   --text-muted: #a3a3a3;
   --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #fff);
   --page-fg: #f2f2f2;
+  /* El bloque de color grande se atenúa un poco en oscuro para que no encandile (el texto encima sigue siendo oscuro). */
+  --hero: color-mix(in srgb, var(--primary) 80%, #0b0b0b);
 }
 
 /* Tipografía: títulos de pantalla grandes y livianos; la jerarquía la dan el tamaño y el contraste, no el peso. */
@@ -240,7 +242,17 @@ html[data-theme="dark"] .app-themed :is(.border-amber-200, .border-amber-300, .b
 html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .border-red-400, .border-red-500) { border-color: rgba(239, 68, 68, 0.5); }
 
 /* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
-.hero-block { background: var(--primary); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
+.app-themed { --hero: var(--primary); }
+html[data-theme="dark"] .app-themed { --hero: color-mix(in srgb, var(--primary) 80%, #0b0b0b); }
+.hero-block { background: var(--hero); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
+
+/* Tabs tipo carpeta: la activa es de la misma superficie que la tarjeta de abajo y se une a ella con esquinas cóncavas. */
+.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.6rem 0.7rem; border-radius: 1.75rem 1.75rem 0 0; color: inherit; opacity: 0.7; transition: opacity 0.2s; }
+.ftab:hover { opacity: 1; }
+.ftab-on { opacity: 1; background: var(--surface); color: var(--page-fg); }
+.ftab-on::after, .ftab-left::before { content: ""; position: absolute; bottom: -1px; width: 1.5rem; height: 1.5rem; pointer-events: none; }
+.ftab-on::after { right: -1.5rem; background: radial-gradient(circle at 100% 0, transparent 1.5rem, var(--surface) calc(1.5rem + 0.5px)); }
+.ftab-left::before { left: -1.5rem; background: radial-gradient(circle at 0 0, transparent 1.5rem, var(--surface) calc(1.5rem + 0.5px)); }
 
 /* Barra inferior: superficie de tarjeta; la sección activa va en un círculo de acento elevado, con un anillo del color de la barra
    que dibuja el hueco curvo alrededor (se ve bien sobre cualquier fondo, claro, negro o de color). */

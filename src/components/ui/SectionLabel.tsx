@@ -1,7 +1,7 @@
 /** Contador cuadrado chico con borde, al lado de un título (ej: SERVICIOS [4]). */
 export function CountBadge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={`inline-flex min-w-[1.5rem] items-center justify-center rounded-lg border border-current/25 px-1.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums opacity-80 ${className}`}>
+    <span className={`inline-flex min-w-[1.5rem] items-center justify-center rounded-lg border px-1.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums ${className}`} style={{ borderColor: "color-mix(in srgb, currentColor 35%, transparent)" }}>
       {children}
     </span>
   );

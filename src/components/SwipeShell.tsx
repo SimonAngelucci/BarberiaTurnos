@@ -179,7 +179,7 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
 
   return (
     // touch-action: el navegador sigue haciendo el scroll vertical y el zoom con dos dedos; el movimiento horizontal lo manejamos acá.
-    <div ref={root} className="min-h-[70vh] overflow-x-clip" style={{ touchAction: "pan-y pinch-zoom" }}>
+    <div ref={root} className="-mx-4 min-h-[70vh] overflow-x-clip px-4" style={{ touchAction: "pan-y pinch-zoom" }}>
       <div ref={box} className="will-change-auto">
         {children}
       </div>
