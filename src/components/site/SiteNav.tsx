@@ -52,7 +52,7 @@ export function SiteNav({ items, phoneHref, phoneLabel }: { items: NavItem[]; ph
               data-id={it.id}
               aria-current={active === it.id ? "true" : undefined}
               onClick={() => setActive(it.id)}
-              className={`whitespace-nowrap border-b-2 px-3 py-3.5 text-sm font-medium transition ${active === it.id ? "border-current opacity-100" : "border-transparent opacity-60 hover:opacity-100"}`}
+              className={`my-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${active === it.id ? "bg-[color-mix(in_srgb,var(--page-fg)_12%,transparent)] opacity-100" : "opacity-60 hover:opacity-100"}`}
             >
               {it.label}
             </a>

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function SiteSection({ id, title, center = false, children }: { id?: string; title?: string; center?: boolean; children: ReactNode }) {
   return (
     <section id={id} className={`scroll-mt-16 ${center ? "text-center" : ""}`}>
-      {title && <h2 className="mb-3 text-xl font-bold tracking-tight">{title}</h2>}
+      {title && <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] opacity-70">{title}</h2>}
       {children}
     </section>
   );

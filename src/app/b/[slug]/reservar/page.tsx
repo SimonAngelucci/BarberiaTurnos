@@ -31,18 +31,20 @@ export default async function BookPage({ params, searchParams }: { params: Promi
   const home = `/b/${b.slug}`;
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-4 py-6">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <Link href={`${home}#servicios`} className="btn-ghost !px-4 !py-2 text-sm">
-          ← Volver
-        </Link>
-        <div className="flex min-w-0 items-center gap-3">
-          {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-cover shadow-sm" />}
-          <h1 className="truncate text-lg font-bold tracking-tight">{b.name}</h1>
+    <main className="min-h-screen">
+      <header className="rounded-b-[2.5rem] px-4 pb-8 pt-5" style={{ background: "var(--brand)", color: "var(--brand-fg)" }}>
+        <div className="mx-auto flex max-w-2xl items-center gap-3">
+          <Link href={`${home}#servicios`} aria-label="Volver a los servicios" title="Volver" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#111] shadow-sm ring-4 ring-white/30 transition active:scale-95">
+            <Icon name="arrow-left" size={18} />
+          </Link>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-cover shadow-sm" />}
+            <p className="truncate text-sm font-semibold opacity-80">{b.name}</p>
+          </div>
         </div>
+        <h1 className="mx-auto mt-6 max-w-2xl text-3xl font-light tracking-tight">Reservá tu turno</h1>
       </header>
-
-      <h2 className="mb-3 text-2xl font-extrabold tracking-tight">Reservá tu turno</h2>
+      <div className="mx-auto max-w-2xl px-4 py-6">
 
       {!access.bookable ? (
         <div className="card space-y-1 text-center">
@@ -82,6 +84,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
           <ReviewCta slug={b.slug} after />
         </div>
       )}
+      </div>
     </main>
   );
 }

@@ -60,7 +60,7 @@ export function BusinessCard({
         </div>
       )}
 
-      <h1 className="mt-3 text-balance text-2xl font-bold leading-tight tracking-tight">{name}</h1>
+      <h1 className="mt-3 text-balance text-3xl font-light leading-tight tracking-tight">{name}</h1>
       {tagline && <p className="mt-1 text-balance text-sm text-neutral-500">{tagline}</p>}
 
       {showRating && (
@@ -79,7 +79,7 @@ export function BusinessCard({
         </a>
       )}
 
-      <a href={bookHref} className="btn mt-5 w-full !rounded-2xl !py-4 text-base font-semibold shadow-md transition hover:shadow-lg">
+      <a href={bookHref} className="btn mt-5 w-full !rounded-full !py-4 text-base font-semibold shadow-md transition hover:shadow-lg">
         {bookLabel}
       </a>
 

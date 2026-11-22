@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 };
 
 const BTN_PRIMARY = "inline-flex items-center justify-center rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-brand-fg shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0";
+const BTN_INK = "inline-flex items-center justify-center rounded-full bg-ink px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:bg-black active:translate-y-0";
 const BTN_LIGHT = "inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-neutral-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-neutral-100";
 const BTN_GHOST = "inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-7 py-3.5 text-base font-semibold text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50";
 
@@ -91,8 +92,8 @@ function Section({ id, className = "", children }: { id?: string; className?: st
 function Heading({ eyebrow, title, text, light = false, center = true }: { eyebrow?: string; title: string; text?: string; light?: boolean; center?: boolean }) {
   return (
     <header className={`mb-10 max-w-2xl sm:mb-14 ${center ? "mx-auto text-center" : ""}`}>
-      {eyebrow && <p className={`mb-2 text-sm font-bold uppercase tracking-widest ${light ? "text-emerald-300" : "text-emerald-600"}`}>{eyebrow}</p>}
-      <h2 className={`text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${light ? "text-white" : "text-neutral-900"}`}>{title}</h2>
+      {eyebrow && <p className={`mb-3 text-xs font-semibold uppercase tracking-[0.2em] ${light ? "text-primary" : "text-primary-strong"}`}>{eyebrow}</p>}
+      <h2 className={`text-3xl font-light leading-tight tracking-tight sm:text-4xl ${light ? "text-white" : "text-neutral-900"}`}>{title}</h2>
       {text && <p className={`mt-3 text-lg ${light ? "text-neutral-300" : "text-neutral-600"}`}>{text}</p>}
     </header>
   );
@@ -140,36 +141,35 @@ export default async function Landing() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden px-5 pb-16 pt-12 sm:pb-24 sm:pt-20">
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(63,165,151,0.22),transparent)]" />
+        <section className="hero-block relative overflow-hidden px-5 pb-16 pt-12 sm:pb-24 sm:pt-20">
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="animate-rise text-center lg:text-left">
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-sm font-semibold text-on-primary">
+              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-ink px-3.5 py-1.5 text-sm font-semibold text-white">
                 <Icon name="gift" size={16} />1 mes gratis · Sin tarjeta
               </p>
-              <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-                Llená tu agenda y dejá de coordinar turnos <span className="text-primary-strong">a mano</span>
+              <h1 className="text-4xl font-light leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+                Llená tu agenda y dejá de coordinar turnos <span className="font-extrabold underline decoration-2 underline-offset-8">a mano</span>
               </h1>
-              <p className="mx-auto mt-5 max-w-xl text-lg text-neutral-600 sm:text-xl lg:mx-0">
+              <p className="mx-auto mt-5 max-w-xl text-lg opacity-85 sm:text-xl lg:mx-0">
                 Tu propia página de reservas, lista en minutos. Tus clientes eligen su turno solos, reciben recordatorios por WhatsApp y vos ahorrás horas de mensajes y llamadas.
               </p>
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
-                <CtaLink where="hero" className={BTN_PRIMARY}>
+                <CtaLink where="hero" className={BTN_INK}>
                   Comenzar mi mes gratis
                 </CtaLink>
                 <a href="#como-funciona" className={BTN_GHOST}>
                   Ver cómo funciona
                 </a>
               </div>
-              <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-neutral-600 lg:justify-start">
-                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Listo en minutos</li>
-                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Funciona en el celular</li>
-                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Sin instalar nada</li>
+              <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm opacity-85 lg:justify-start">
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} />Listo en minutos</li>
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} />Funciona en el celular</li>
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} />Sin instalar nada</li>
               </ul>
             </div>
             <div className="animate-rise" style={{ animationDelay: "120ms" }}>
-              <PhoneMockup />
-              <p className="mt-4 text-center text-xs text-neutral-400">Vista de ejemplo de una página de reservas</p>
+              <div className="light-island"><PhoneMockup /></div>
+              <p className="mt-4 text-center text-xs opacity-70">Vista de ejemplo de una página de reservas</p>
             </div>
           </div>
         </section>
@@ -194,7 +194,7 @@ export default async function Landing() {
           <Heading eyebrow="Cómo funciona" title="De cero a recibir turnos en 4 pasos" text="Sin técnicos ni configuraciones complicadas." />
           <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s) => (
-              <li key={s.n} className="relative rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <li key={s.n} className="relative rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm">
                 <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-brand text-lg font-extrabold text-brand-fg">{s.n}</span>
                 <h3 className="text-lg font-bold">{s.title}</h3>
                 <p className="mt-1.5 text-neutral-600">{s.text}</p>
@@ -209,7 +209,7 @@ export default async function Landing() {
         </Section>
 
         {/* Eficiencia */}
-        <Section id="eficiencia" className="bg-neutral-900 text-white">
+        <Section id="eficiencia" className="rounded-[2.5rem] bg-neutral-900 text-white">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <Heading
@@ -256,8 +256,8 @@ export default async function Landing() {
           <Heading eyebrow="Todo incluido" title="Lo que tus clientes ven… y lo que vos controlás" text="Una herramienta completa para vender más turnos y trabajar con más orden." />
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
-              <li key={f.title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg">
-                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <li key={f.title} className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg">
+                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-primary">
                   <Icon name={f.icon} size={24} />
                 </span>
                 <h3 className="font-bold">{f.title}</h3>
@@ -272,8 +272,8 @@ export default async function Landing() {
           <Heading eyebrow="Tu panel" title="Controlá tu negocio desde el celular o la compu" text="Todo lo importante a la vista, sin planillas ni libretas." />
           <ul className="grid gap-5 sm:grid-cols-2">
             {OWNER.map((o) => (
-              <li key={o.title} className="flex gap-4 rounded-2xl border border-neutral-200 bg-white p-6">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white">
+              <li key={o.title} className="flex gap-4 rounded-[1.75rem] border border-neutral-200 bg-white p-6">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink text-white">
                   <Icon name={o.icon} size={24} />
                 </span>
                 <div>
@@ -336,7 +336,7 @@ export default async function Landing() {
         {/* Preguntas */}
         <Section id="preguntas" className="bg-neutral-50">
           <Heading eyebrow="Preguntas frecuentes" title="Antes de empezar" />
-          <div className="mx-auto max-w-3xl divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white">
+          <div className="mx-auto max-w-3xl divide-y divide-neutral-200 rounded-[1.75rem] border border-neutral-200 bg-white">
             {FAQ.map((f) => (
               <details key={f.q} className="group p-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold marker:hidden">

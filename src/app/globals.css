@@ -286,3 +286,14 @@ html[data-theme="dark"] .app-themed .dock { box-shadow: 0 0 0 1px rgba(255, 255,
 @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .animate-grow { animation: grow 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { .animate-grow { animation: none; } }
+
+/* Ilustraciones que deben verse siempre claras (p. ej. la maqueta del celular en la landing), también en modo oscuro. */
+html[data-theme="dark"] .app-themed .light-island { color: #171717; }
+html[data-theme="dark"] .app-themed .light-island [class*="bg-white"] { background-color: #ffffff; }
+html[data-theme="dark"] .app-themed .light-island .bg-neutral-100 { background-color: #f5f5f5; }
+html[data-theme="dark"] .app-themed .light-island .bg-neutral-300 { background-color: #d4d4d4; }
+html[data-theme="dark"] .app-themed .light-island .border-neutral-200 { border-color: #e5e5e5; }
+html[data-theme="dark"] .app-themed .light-island .text-neutral-700 { color: #404040; }
+html[data-theme="dark"] .app-themed .light-island .text-neutral-500 { color: #737373; }
+html[data-theme="dark"] .app-themed .light-island .text-neutral-400 { color: #a3a3a3; }
+html[data-theme="dark"] .app-themed .light-island .text-neutral-300 { color: #d4d4d4; }

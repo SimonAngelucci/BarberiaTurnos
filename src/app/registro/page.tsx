@@ -39,10 +39,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="app-themed mx-auto mt-12 max-w-sm px-4">
+    <main className="app-themed min-h-screen pb-10">
+      <div className="hero-block px-6 pb-14 pt-12">
+        <div className="mx-auto max-w-sm">
+          <h1 className="text-3xl font-light tracking-tight">Comenzar mis turnos</h1>
+          <p className="mt-2 text-sm opacity-80">Vas a recibir un link propio para que tus clientes reserven.</p>
+        </div>
+      </div>
+      <div className="mx-auto -mt-8 max-w-sm px-4">
       <form onSubmit={onSubmit} className="card space-y-4">
-        <h1 className="text-xl font-bold">Comenzar mis turnos</h1>
-        <p className="text-sm text-neutral-500">Vas a recibir un link propio para que tus clientes reserven.</p>
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">
           <Icon name="gift" size={16} className="mr-1.5 inline -translate-y-px" /><strong>1 mes de prueba gratis</strong>, sin tarjeta. No se cobra nada durante la prueba.
         </p>
@@ -81,6 +86,7 @@ export default function RegisterPage() {
           </Link>
         </p>
       </form>
+      </div>
     </main>
   );
 }

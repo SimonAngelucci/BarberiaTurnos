@@ -39,12 +39,12 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
   const go = (d: number) => setI((x) => (x + d + n) % n);
 
   if (n === 0) {
-    return <div aria-hidden className="h-32 w-full sm:h-44 lg:h-52" style={{ background: "linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, #ffffff))" }} />;
+    return <div aria-hidden className="h-32 w-full rounded-b-[2.5rem] sm:h-44 lg:h-52" style={{ background: "linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, #ffffff))" }} />;
   }
 
   return (
     <div
-      className="relative isolate h-[34vh] max-h-[420px] min-h-[220px] w-full overflow-hidden bg-neutral-900 lg:h-[380px]"
+      className="relative isolate h-[34vh] max-h-[420px] min-h-[220px] w-full overflow-hidden rounded-b-[2.5rem] bg-neutral-900 lg:h-[380px]"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}

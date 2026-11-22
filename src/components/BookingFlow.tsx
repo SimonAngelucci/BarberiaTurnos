@@ -69,6 +69,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [reload, setReload] = useState(0);
+  const [openId, setOpenId] = useState<string | null>(null); // tarjeta de servicio abierta en la lista
 
   // Progreso guardado en el navegador (ver lib/booking-storage.ts): se restaura al recargar o volver, y se borra al confirmar.
   // Lo restaurado que depende de datos del servidor (horario, forma de pago) se aplica recién cuando esos datos llegan.
@@ -330,45 +331,63 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           </div>
         )}
         {services.length === 0 && <p className="card text-center text-sm text-neutral-500">Este negocio todavía no cargó sus servicios. Volvé a pasar en unos días.</p>}
-        <div className="space-y-2.5">
-          {services.map((s) => (
-            <button
-              key={s.id}
-              disabled={s.comingSoon}
-              onClick={() => {
-                if (s.comingSoon) return;
-                if (mode === "list") {
-                  router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(s.id)}`); // la reserva sigue en otra página
-                  return;
-                }
-                setService(s);
-                setSlot(null);
-              }}
-              aria-pressed={service?.id === s.id}
-              aria-disabled={s.comingSoon}
-              className={`card group w-full !p-4 text-left transition ${s.comingSoon ? "cursor-not-allowed !border-dashed opacity-60" : "hover:-translate-y-0.5 hover:shadow-md"} ${service?.id === s.id ? "!border-brand ring-2 ring-brand/30" : ""}`}
-            >
-              <div className="flex items-center gap-3.5">
-                <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className="transition group-hover:bg-brand group-hover:text-brand-fg" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 font-semibold">
-                    {s.name}
-                    {s.comingSoon && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800">Próximamente</span>}
+        <div className="space-y-3">
+          {services.map((s) => {
+            const open = mode === "list" ? openId === s.id : false;
+            const picked = service?.id === s.id;
+            return (
+              <div
+                key={s.id}
+                className={`card !p-0 overflow-hidden transition ${s.comingSoon ? "!border-dashed opacity-60" : ""} ${picked ? "!border-brand ring-2 ring-brand/30" : ""} ${open ? "shadow-md" : ""}`}
+              >
+                <button
+                  type="button"
+                  disabled={s.comingSoon}
+                  onClick={() => {
+                    if (s.comingSoon) return;
+                    if (mode === "list") {
+                      setOpenId(open ? null : s.id); // la tarjeta se abre; la reserva sigue en otra página con el botón de adentro
+                      return;
+                    }
+                    setService(s);
+                    setSlot(null);
+                  }}
+                  aria-pressed={mode === "list" ? undefined : picked}
+                  aria-expanded={mode === "list" ? open : undefined}
+                  className="group flex w-full items-center gap-3.5 p-4 text-left disabled:cursor-not-allowed"
+                >
+                  <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className="transition group-hover:bg-brand group-hover:text-brand-fg" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight">
+                      {s.name}
+                      {s.comingSoon && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800">Próximamente</span>}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+                      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-medium">{s.durationMin} min</span>
+                      <span className="font-semibold text-neutral-900">{money(s.priceCents, currency)}</span>
+                    </div>
                   </div>
-                  {s.description && <div className="line-clamp-2 text-sm text-neutral-500">{s.description}</div>}
-                  <div className="mt-0.5 text-sm text-neutral-500">
-                    {s.durationMin} min · <span className="font-semibold text-neutral-900">{money(s.priceCents, currency)}</span>
+                  {!s.comingSoon && (
+                    <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-300 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  )}
+                </button>
+                {mode === "list" && (
+                  <div className={`grid transition-[grid-template-rows] duration-300 motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                    <div className="overflow-hidden">
+                      <div className="space-y-3 px-4 pb-4" inert={!open}>
+                        {s.description && <p className="text-sm text-neutral-600">{s.description}</p>}
+                        <button type="button" className="btn w-full !rounded-full" onClick={() => router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(s.id)}`)}>
+                          Reservar este servicio
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                {!s.comingSoon && (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
                 )}
               </div>
-            </button>
-          ))}
-        </div>
+            );
+          })}        </div>
       </section>
       )}
 
@@ -433,7 +452,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 // Esqueleto mientras se buscan los horarios
                 <div className="grid grid-cols-4 gap-2" aria-label="Buscando horarios">
                   {Array.from({ length: 8 }, (_, i) => (
-                    <div key={i} className="h-[38px] animate-pulse rounded-lg bg-black/10" style={{ animationDelay: `${i * 70}ms` }} />
+                    <div key={i} className="h-[42px] animate-pulse rounded-full bg-black/10" style={{ animationDelay: `${i * 70}ms` }} />
                   ))}
                 </div>
               ) : slots.length === 0 ? (
@@ -445,7 +464,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                       key={s}
                       onClick={() => setSlot(s)}
                       style={{ animationDelay: `${Math.min(i, 24) * 18}ms` }}
-                      className={`animate-rise rounded-lg border py-2 text-sm font-medium transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"}`}
+                      className={`animate-rise rounded-full border py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-white/80 bg-[#111] text-white shadow-md" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"}`}
                     >
                       {DateTime.fromISO(s).setZone(timezone).toFormat("HH:mm")}
                     </button>
