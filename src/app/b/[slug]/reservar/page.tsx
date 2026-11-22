@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma, getBusinessBySlug } from "@/lib/db";
@@ -45,7 +46,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
 
       {!access.bookable ? (
         <div className="card space-y-1 text-center">
-          <div className="text-3xl">🛠️</div>
+          <Icon name="wrench" size={32} className="mx-auto text-neutral-500" />
           <h2 className="text-lg font-bold">Reservas no disponibles por ahora</h2>
           <p className="text-sm text-neutral-600">Este negocio no está aceptando reservas online en este momento. Probá más tarde o comunicate con el negocio directamente.</p>
         </div>

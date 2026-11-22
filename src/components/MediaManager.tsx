@@ -1,5 +1,8 @@
 "use client";
 
+import { Collapsible } from "@/components/ui/Collapsible";
+import { IconButton } from "@/components/ui/IconButton";
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { addPhoto, addVideo, discardUploads, movePhoto, removePhoto, setPhotoVisible } from "@/app/admin/profile/actions";
 import { IMAGE_TYPES, MAX_SOURCE, inspectVideo, shrink, uploadFile } from "@/lib/client-image";
@@ -151,38 +154,31 @@ export function MediaManager({ items, max, enabled }: { items: Item[]; max: numb
               <div className="relative aspect-square w-full bg-neutral-200">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.mediaType === "VIDEO" ? (p.posterUrl ?? "") : p.url} alt={`Elemento ${i + 1}`} loading="lazy" className={`h-full w-full object-cover ${p.visible ? "" : "opacity-40 grayscale"}`} />
-                {p.mediaType === "VIDEO" && <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">▶ Video</span>}
+                {p.mediaType === "VIDEO" && <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white"><Icon name="play" size={11} className="mr-1 inline -translate-y-px" />Video</span>}
                 {!p.visible && <span className="absolute right-1.5 top-1.5 rounded-full bg-neutral-800/80 px-2 py-0.5 text-[11px] font-medium text-white">Oculto</span>}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-1 p-1.5">
                 <span className="pl-1 text-xs text-neutral-500">{i + 1}</span>
                 <div className="flex gap-1">
-                  <button type="button" aria-label="Mover antes" disabled={locked || i === 0} onClick={() => run(() => movePhoto(p.id, "up"))} className="btn-ghost !px-2 !py-1 disabled:opacity-40">
-                    ←
-                  </button>
-                  <button type="button" aria-label="Mover después" disabled={locked || i === items.length - 1} onClick={() => run(() => movePhoto(p.id, "down"))} className="btn-ghost !px-2 !py-1 disabled:opacity-40">
-                    →
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={p.visible ? "Ocultar de la página" : "Mostrar en la página"}
-                    title={p.visible ? "Ocultar de la página" : "Mostrar en la página"}
+                  <IconButton icon="chevron-left" label="Mover antes" size={16} disabled={locked || i === 0} onClick={() => run(() => movePhoto(p.id, "up"))} className="!h-8 !w-8" />
+                  <IconButton icon="chevron-right" label="Mover después" size={16} disabled={locked || i === items.length - 1} onClick={() => run(() => movePhoto(p.id, "down"))} className="!h-8 !w-8" />
+                  <IconButton
+                    icon={p.visible ? "eye" : "eye-off"}
+                    label={p.visible ? "Ocultar de la página" : "Mostrar en la página"}
+                    size={16}
                     disabled={locked}
                     onClick={() => run(() => setPhotoVisible(p.id, !p.visible))}
-                    className="btn-ghost !px-2 !py-1 disabled:opacity-40"
-                  >
-                    {p.visible ? "👁" : "🚫"}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Quitar"
+                    className="!h-8 !w-8"
+                  />
+                  <IconButton
+                    icon="trash"
+                    label="Quitar"
+                    variant="danger"
+                    size={16}
                     disabled={locked}
                     onClick={() => confirm(p.mediaType === "VIDEO" ? "¿Eliminar este video?" : "¿Eliminar esta foto?") && run(() => removePhoto(p.id))}
-                    className="btn-ghost !border-red-300 !px-2 !py-1 !text-red-600 disabled:opacity-40"
-                  >
-                    ✕
-                  </button>
-                </div>
+                    className="!h-8 !w-8"
+                  />                </div>
               </div>
             </li>
           ))}
@@ -206,7 +202,7 @@ export function MediaManager({ items, max, enabled }: { items: Item[]; max: numb
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={s.previewUrl} alt="" className="h-full w-full object-cover" />
                   )}
-                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">{s.type === "VIDEO" ? "▶ Video" : "Foto"}</span>
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-black/65 px-2 py-0.5 text-[11px] font-medium text-white">{s.type === "VIDEO" ? (<><Icon name="play" size={11} className="mr-1 inline -translate-y-px" />Video</>) : "Foto"}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 p-2">
                   <span className="min-w-0 truncate text-xs text-neutral-500" title={s.name}>
@@ -243,12 +239,19 @@ export function MediaManager({ items, max, enabled }: { items: Item[]; max: numb
           className="block w-full text-sm text-neutral-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-neutral-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium disabled:opacity-50"
         />
         <p className="text-xs text-neutral-400">
-          {items.length} de {max} elementos · el orden de arriba es el de la página · 👁 muestra u oculta cada uno
+          {items.length} de {max} elementos · el orden de arriba es el de la página · el ojo muestra u oculta cada uno
         </p>
-        <p className="text-xs text-neutral-400">
-          <strong>Fotos:</strong> PNG, JPG o WebP (se achican solas). <strong>Videos:</strong> MP4 (H.264), de 3 a 5 segundos (máx. {VIDEO_MAX_MS / 1000} s), vertical 9:16 o cuadrado 1:1, hasta 720p y {VIDEO_MAX_MB} MB, hasta {MAX_GALLERY_VIDEOS}.
-          Se reproducen solos, en bucle y sin sonido.
-        </p>
+        <Collapsible
+          className="rounded-xl border border-neutral-200 p-2.5 text-sm"
+          title="Formato de archivos"
+          leading={<Icon name="info" size={18} className="text-neutral-500" />}
+          headerClassName="text-sm"
+        >
+          <p className="text-xs text-neutral-600">
+            <strong>Fotos:</strong> PNG, JPG o WebP (se achican solas). <strong>Videos:</strong> MP4 (H.264), de 3 a 5 segundos (máx. {VIDEO_MAX_MS / 1000} s), vertical 9:16 o cuadrado 1:1, hasta 720p y {VIDEO_MAX_MB} MB, hasta {MAX_GALLERY_VIDEOS}.
+            Se reproducen solos, en bucle y sin sonido.
+          </p>
+        </Collapsible>
         {reading && <p className="text-sm font-medium text-neutral-700">Revisando archivos…</p>}
         {!enabled && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">La subida de archivos no está activada (falta conectar Vercel Blob). Mirá el paso a paso en Profesionales o Personalización.</p>}
         {errors.map((m, i) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
 import { hhmmToMin, minToHHMM } from "@/lib/format";
 
@@ -107,7 +108,7 @@ function DayCard({ d, onAdd, onChange, onCopyAll }: { d: DayTimes; onAdd: (t: st
                 className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm tabular-nums outline-none"
               />
               <button type="button" aria-label={`Quitar ${t || "horario"}`} onClick={() => onChange((list) => list.filter((_, j) => j !== i))} className="px-2 py-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600">
-                ✕
+                <Icon name="x" size={14} />
               </button>
             </li>
           ))}

@@ -1,10 +1,12 @@
+import { Icon } from "@/components/ui/Icon";
+
 /** Ilustraciones de la landing, hechas con HTML/CSS (livianas, sin imágenes). Son ejemplos, no datos reales. */
 
 export function PhoneMockup() {
   const services = [
-    { icon: "✂️", name: "Corte", meta: "30 min · $8.000" },
-    { icon: "💅", name: "Manicura", meta: "55 min · $12.000" },
-    { icon: "🩺", name: "Consulta", meta: "40 min · $15.000" },
+    { icon: "scissors" as const, name: "Corte", meta: "30 min · $8.000" },
+    { icon: "palette" as const, name: "Manicura", meta: "55 min · $12.000" },
+    { icon: "stethoscope" as const, name: "Consulta", meta: "40 min · $15.000" },
   ];
   return (
     <div className="relative mx-auto w-[260px] sm:w-[290px]" aria-hidden>
@@ -22,7 +24,7 @@ export function PhoneMockup() {
           <div className="space-y-2">
             {services.map((s, i) => (
               <div key={s.name} className={`flex items-center gap-2.5 rounded-xl border p-2.5 ${i === 1 ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-neutral-200"}`}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-base">{s.icon}</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"><Icon name={s.icon} size={18} /></span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold leading-tight">{s.name}</div>
                   <div className="text-[11px] text-neutral-500">{s.meta}</div>

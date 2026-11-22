@@ -8,9 +8,11 @@ const schema = z.object({
   name: z.string().trim().min(2, "Poné el nombre de tu negocio").max(60),
   email: z.string().trim().email("Email inválido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(100),
+  /** Confirmación de la contraseña (el formulario ya la valida; acá se vuelve a exigir). */
+  confirmPassword: z.string(),
   /** Código de creador/influencer (opcional). */
   creatorCode: z.string().trim().max(30).optional(),
-});
+}).refine((d) => d.password === d.confirmPassword, { message: "Las contraseñas no coinciden", path: ["confirmPassword"] });
 
 export async function POST(req: Request) {
   if (process.env.ALLOW_REGISTRATION === "false") {

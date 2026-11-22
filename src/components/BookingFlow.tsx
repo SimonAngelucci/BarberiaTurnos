@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
@@ -9,6 +10,7 @@ import { DayPicker, type DayItem } from "./DayPicker";
 import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
 import { ServiceIcon } from "./ServiceIcon";
+import { clearDraft, isMeaningful, loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-storage";
 import type { BusinessType } from "@/lib/service-icons";
 
 type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null; comingSoon?: boolean };
@@ -68,6 +70,13 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [done, setDone] = useState(false);
   const [reload, setReload] = useState(0);
 
+  // Progreso guardado en el navegador (ver lib/booking-storage.ts): se restaura al recargar o volver, y se borra al confirmar.
+  // Lo restaurado que depende de datos del servidor (horario, forma de pago) se aplica recién cuando esos datos llegan.
+  const pendingSlot = useRef<string | null>(null);
+  const pendingChoice = useRef<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [resume, setResume] = useState<BookingDraft | null>(null);
+
   const days = useMemo(() => {
     const today = DateTime.now().setZone(timezone).startOf("day");
     return Array.from({ length: Math.min(maxAdvanceDays, 30) + 1 }, (_, i) => today.plus({ days: i }).setLocale("es"));
@@ -105,6 +114,38 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     el.focus({ preventScroll: true });
   }, [focusDays]);
 
+  // Restaurar el borrador al entrar (solo en el navegador: en el servidor no hay localStorage).
+  useEffect(() => {
+    const d = loadDraft(slug);
+    if (d) {
+      if (mode === "list") {
+        // En la lista de servicios solo se ofrece retomar la reserva que quedó a medias.
+        if (d.serviceId && services.some((s) => s.id === d.serviceId && !s.comingSoon) && (d.barberId || d.date || d.slot)) setResume(d);
+      } else {
+        // Los datos que escribió se recuperan siempre; lo elegido (profesional, día, horario) solo si es el mismo servicio.
+        setForm((f) => ({ firstName: d.form.firstName || f.firstName, lastName: d.form.lastName || f.lastName, phone: d.form.phone.trim() ? d.form.phone : f.phone }));
+        if (d.serviceId && d.serviceId === service?.id) {
+          if (d.barberId && barbers.some((b) => b.id === d.barberId)) setBarberId(d.barberId);
+          if (d.date && dayItems.some((x) => x.iso === d.date)) {
+            setDate(d.date);
+            pendingSlot.current = d.slot; // se restaura solo si ese horario sigue disponible
+          }
+          pendingChoice.current = d.payment;
+        }
+      }
+    }
+    setHydrated(true);
+    // Solo al montar: el borrador se lee una vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Guardar el progreso cada vez que cambia algo (sin pisarlo con un borrador vacío).
+  useEffect(() => {
+    if (!hydrated || mode === "list") return;
+    const draft = { serviceId: service?.id ?? null, barberId, date, slot: slot ?? pendingSlot.current, payment: choice, form };
+    if (isMeaningful(draft, DEFAULT_PREFIX)) saveDraft(slug, draft);
+  }, [hydrated, slug, mode, service, barberId, date, slot, choice, form]);
+
   useEffect(() => {
     if (!service || !barberId || !date) return;
     let cancelled = false;
@@ -121,7 +162,9 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
         if (cancelled) return;
         const list: string[] = j.slots ?? [];
         setSlots(list);
-        setSlot((prev) => (prev && list.includes(prev) ? prev : null));
+        const want = pendingSlot.current; // horario restaurado del borrador: vale si sigue disponible
+        pendingSlot.current = null;
+        setSlot((prev) => (prev && list.includes(prev) ? prev : want && list.includes(want) ? want : null));
         setTiming(j.adjusted && typeof j.durationMin === "number" ? { durationMin: j.durationMin, adjusted: true } : null);
       })
       .catch(() => !cancelled && setSlots([]));
@@ -132,7 +175,11 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
   // Opciones de pago para el servicio elegido (el servidor las vuelve a validar y calcula el monto real).
   const options = useMemo(() => (service ? payOptions(service.priceCents, pay) : []), [service, pay]);
-  useEffect(() => setChoice(options[0]?.choice ?? "NONE"), [options]);
+  useEffect(() => {
+    const want = pendingChoice.current; // forma de pago restaurada del borrador (si sigue siendo una opción válida)
+    pendingChoice.current = null;
+    setChoice((want && options.find((o) => o.choice === want)?.choice) || options[0]?.choice || "NONE");
+  }, [options]);
   const selected = options.find((o) => o.choice === choice) ?? options[0];
   const online = !!selected && selected.choice !== "NONE";
   // Podía pagar online pero eligió abonar en el local (efectivo o físico).
@@ -151,6 +198,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
       body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form, payment: selected?.choice ?? "NONE" }),
     });
     const j = await res.json().catch(() => ({}));
+    if (res.ok) clearDraft(slug); // el turno ya está creado: no queda nada a medias
     if (res.ok && j.checkoutUrl) {
       window.location.href = j.checkoutUrl; // Checkout Pro de Mercado Pago; el botón queda ocupado hasta salir
       return;
@@ -177,7 +225,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     const local = DateTime.fromISO(slot).setZone(timezone).setLocale("es");
     return (
       <div className="card text-center">
-        <div className="mb-2 text-4xl">✅</div>
+        <Icon name="check-circle" size={44} className="mx-auto mb-2 text-green-600" />
         <h2 className="text-xl font-bold">¡Turno confirmado!</h2>
         <p className="mt-2 text-neutral-600">
           {service.name} · {local.toFormat("cccc d 'de' LLLL")} a las {local.toFormat("HH:mm")}
@@ -226,6 +274,29 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           )}
           <h2 className="text-xl font-bold tracking-tight">Servicios</h2>
         </div>
+        {/* Reserva que quedó a medias en este navegador: se puede retomar o descartar. */}
+        {mode === "list" && resume && (
+          <div className="card mb-3 flex flex-wrap items-center gap-3 !border-brand/40">
+            <Icon name="clock" size={20} className="text-neutral-500" />
+            <div className="min-w-0 flex-1 text-sm">
+              <div className="font-semibold">Tenés una reserva sin terminar</div>
+              <div className="text-neutral-500">{services.find((x) => x.id === resume.serviceId)?.name}</div>
+            </div>
+            <button type="button" className="btn !px-4 !py-2 text-sm" onClick={() => router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(resume.serviceId!)}`)}>
+              Continuar
+            </button>
+            <button
+              type="button"
+              className="btn-ghost !px-3 !py-2"
+              onClick={() => {
+                clearDraft(slug);
+                setResume(null);
+              }}
+            >
+              Descartar
+            </button>
+          </div>
+        )}        {services.length === 0 && <p className="card text-center text-sm text-neutral-500">Este negocio todavía no cargó sus servicios. Volvé a pasar en unos días.</p>}
         <div className="space-y-2.5">
           {services.map((s) => (
             <button
@@ -319,7 +390,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           <DayPicker days={dayItems} value={date} onChange={setDate} />
           {timing && date && (
             <p className="mt-3 rounded-xl bg-green-50 p-2.5 text-sm text-green-900">
-              ⏱️ Ajustamos tu turno a <strong>{timing.durationMin} min</strong> (lo que habitualmente te lleva) en lugar de {service.durationMin} min.
+              <Icon name="clock" size={16} className="mr-1.5 inline -translate-y-px" />Ajustamos tu turno a <strong>{timing.durationMin} min</strong> (lo que habitualmente te lleva) en lugar de {service.durationMin} min.
             </p>
           )}
 

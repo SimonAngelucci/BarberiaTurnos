@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui/Icon";
 import { Stars } from "./Stars";
 import { SOCIAL_LABELS, mapsHref, prettyPhone, telHref, whatsappHref } from "@/lib/profile";
 import { safePhone, safeUrl } from "./InfoSections";
@@ -86,9 +87,7 @@ export function BusinessCard({
         <div className="mt-5 border-t border-neutral-100 pt-4 text-sm">
           {contact.address && (
             <p className="text-neutral-700">
-              <span aria-hidden className="mr-1">
-                📍
-              </span>
+              <Icon name="map-pin" size={16} className="mr-1 inline -translate-y-px" />
               {contact.address}
             </p>
           )}

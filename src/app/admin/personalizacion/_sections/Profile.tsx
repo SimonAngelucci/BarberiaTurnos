@@ -1,3 +1,4 @@
+import { IconButton } from "@/components/ui/IconButton";
 import { cache } from "react";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -185,8 +186,7 @@ export async function ReviewsStep() {
                   <select id="rating" name="rating" defaultValue="5" className="input">
                     {[5, 4, 3, 2, 1].map((n) => (
                       <option key={n} value={n}>
-                        {"★".repeat(n)}
-                        {"☆".repeat(5 - n)} ({n})
+                        {n} {n === 1 ? "estrella" : "estrellas"}
                       </option>
                     ))}
                   </select>
@@ -235,7 +235,7 @@ export async function ReviewsStep() {
                 )}
                 <form action={deleteReview}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button className="btn-ghost !border-red-300 !text-red-600">Eliminar</button>
+                  <IconButton type="submit" icon="trash" label="Eliminar reseña" variant="danger" />
                 </form>
               </div>
             </div>

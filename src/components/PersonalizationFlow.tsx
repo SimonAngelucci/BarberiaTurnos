@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -64,7 +65,12 @@ export function PersonalizationFlow({ steps }: { steps: FlowStep[] }) {
 
   return (
     <div ref={top} className="scroll-mt-4 space-y-5">
-      <nav aria-label="Secciones de Personalización" className="space-y-3">
+      {/* Accesos a cada sección: quedan fijos debajo del menú del panel al bajar (top = alto del menú, ver AdminNav). */}
+      <nav
+        aria-label="Secciones de Personalización"
+        className="sticky z-20 -mx-4 space-y-2 px-4 pb-2 pt-1"
+        style={{ top: "var(--sticky-offset, 0px)", background: "var(--page-bg, #fafafa)" }}
+      >
         <ol className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
           {steps.map((s, i) => {
             const on = i === current;
@@ -79,7 +85,7 @@ export function PersonalizationFlow({ steps }: { steps: FlowStep[] }) {
                     on ? "border-brand bg-brand text-brand-fg shadow-sm" : done ? "border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400" : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300"
                   }`}
                 >
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${on ? "bg-brand-fg/20" : done ? "bg-green-100 text-green-700" : "bg-neutral-100"}`}>{done ? "✓" : i + 1}</span>
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${on ? "bg-brand-fg/20" : done ? "bg-green-100 text-green-700" : "bg-neutral-100"}`}>{done ? <Icon name="check" size={12} strokeWidth={3} /> : i + 1}</span>
                   {s.label}
                   {!!s.badge && s.badge > 0 && <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{s.badge}</span>}
                 </button>
@@ -94,7 +100,7 @@ export function PersonalizationFlow({ steps }: { steps: FlowStep[] }) {
             </span>
             <span>{Math.round(pct)}%</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-neutral-200" role="progressbar" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={current + 1} aria-label="Progreso de la personalización">
+          <div className="h-1 overflow-hidden rounded-full bg-neutral-200" role="progressbar" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={current + 1} aria-label="Progreso de la personalización">
             <div className="h-full rounded-full bg-brand transition-[width] duration-300" style={{ width: `${pct}%` }} />
           </div>
         </div>

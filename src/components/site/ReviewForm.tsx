@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
 
 /** Formulario para que un cliente deje su reseña. Va a /api/reviews y queda pendiente hasta que el administrador la apruebe. */
@@ -44,7 +45,7 @@ export function ReviewForm({ slug }: { slug: string }) {
     return (
       <div className="text-center">
         <button type="button" onClick={() => setOpen(true)} className="btn-ghost !px-5 !py-2.5">
-          ✍️ Dejar una reseña
+          <Icon name="pencil" size={16} className="mr-2 inline -translate-y-px" />Dejar una reseña
         </button>
       </div>
     );
@@ -64,9 +65,9 @@ export function ReviewForm({ slug }: { slug: string }) {
               aria-checked={rating === n}
               aria-label={`${n} ${n === 1 ? "estrella" : "estrellas"}`}
               onClick={() => setRating(n)}
-              className={`text-3xl leading-none transition active:scale-90 ${n <= rating ? "text-amber-500" : "text-neutral-300 hover:text-amber-300"}`}
+              className={`p-0.5 leading-none transition active:scale-90 ${n <= rating ? "text-amber-500" : "text-neutral-300 hover:text-amber-300"}`}
             >
-              ★
+              <Icon name="star" size={32} className={n <= rating ? "fill-current" : "fill-neutral-200"} />
             </button>
           ))}
         </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "./NotificationBell";
 import { LogoutButton } from "./LogoutButton";
+import { ThemeCycleButton } from "./ui/ThemeToggle";
 
 export type NavLink = {
   href: string;
@@ -28,6 +29,22 @@ function isActive(path: string, l: NavLink) {
 export function AdminNav({ links, logoUrl, pendingReviews }: { links: NavLink[]; logoUrl: string | null; pendingReviews: number }) {
   const path = usePathname() ?? "";
   const activeRef = useRef<HTMLAnchorElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+
+  // El menú queda fijo arriba al hacer scroll. Su alto se publica como --sticky-offset para que otras barras fijas (ej: los pasos
+  // de Personalización) se acomoden debajo y para que los saltos a #anclas no queden tapados (ver globals.css).
+  useEffect(() => {
+    const el = bar.current;
+    if (!el) return;
+    const publish = () => document.documentElement.style.setProperty("--sticky-offset", `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty("--sticky-offset");
+    };
+  }, []);
 
   useEffect(() => {
     // Solo mueve el menú (no la página): inline: "center" con block: "nearest".
@@ -35,7 +52,10 @@ export function AdminNav({ links, logoUrl, pendingReviews }: { links: NavLink[];
   }, [path]);
 
   return (
-    <nav aria-label="Panel" className="card mb-3 flex items-center gap-1 overflow-x-auto !p-2">
+    // Fijo arriba: -mx-4 + px-4 lo hace llegar a los bordes del contenedor; el fondo tapa lo que pasa por abajo y el padding superior
+    // respeta la muesca de iOS (env(safe-area-inset-top)).
+    <div ref={bar} className="sticky top-0 z-30 -mx-4 mb-3 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]" style={{ background: "var(--page-bg, #fafafa)" }}>
+    <nav aria-label="Panel" className="card flex items-center gap-1 overflow-x-auto !p-2">
       {logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={logoUrl} alt="" className="mr-2 h-8 w-8 shrink-0 rounded-full object-cover" />}
       {links.map((l) => {
         const on = isActive(path, l);
@@ -59,9 +79,11 @@ export function AdminNav({ links, logoUrl, pendingReviews }: { links: NavLink[];
         );
       })}
       <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+        <ThemeCycleButton />
         <NotificationBell />
         <LogoutButton />
       </div>
     </nav>
+    </div>
   );
 }

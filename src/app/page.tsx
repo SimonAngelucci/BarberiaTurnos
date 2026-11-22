@@ -1,7 +1,10 @@
+import { Icon, type IconName } from "@/components/ui/Icon";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { money } from "@/lib/format";
+import { AppLogo } from "@/components/AppLogo";
+import { ThemeCycleButton } from "@/components/ui/ThemeToggle";
 import { CtaLink } from "@/components/landing/CtaLink";
 import { PhoneMockup, ScheduleChips } from "@/components/landing/Mockups";
 
@@ -49,22 +52,22 @@ const STEPS = [
   { n: "4", title: "Recibí turnos", text: "Te avisamos de cada turno nuevo y tus clientes reciben confirmación y recordatorio por WhatsApp." },
 ];
 
-const FEATURES = [
-  { icon: "🌐", title: "Página propia, profesional", text: "Portada, galería de fotos y videos cortos, reseñas, mapa y contacto. Con tu logo y tus colores." },
-  { icon: "📅", title: "Reserva online en 2 pasos", text: "El cliente elige servicio, profesional, día y horario, y confirma. Sin llamadas, sin ida y vuelta." },
-  { icon: "💬", title: "WhatsApp automático", text: "Confirmación al reservar y recordatorios antes del turno, para que se cancelen menos." },
-  { icon: "💳", title: "Señas y pagos con Mercado Pago", text: "Cobrá una seña o el total al reservar, directo en tu cuenta de Mercado Pago, o dejá pagar en el local." },
-  { icon: "🔁", title: "Reprogramar y cancelar", text: "Tus clientes cambian su turno con un código, hasta el plazo que vos definas." },
-  { icon: "👥", title: "Varios profesionales", text: "Cada uno con su foto, su descripción y su propia agenda de días y horarios." },
-  { icon: "⭐", title: "Reseñas con tu aprobación", text: "Tus clientes dejan su opinión y vos elegís qué se publica." },
-  { icon: "🎨", title: "Para tu rubro", text: "Barbería, estética, uñas, tatuajes, consultorio u otro: íconos y textos que se adaptan a lo que hacés." },
+const FEATURES: { icon: IconName; title: string; text: string }[] = [
+  { icon: "globe", title: "Página propia, profesional", text: "Portada, galería de fotos y videos cortos, reseñas, mapa y contacto. Con tu logo y tus colores." },
+  { icon: "calendar", title: "Reserva online en 2 pasos", text: "El cliente elige servicio, profesional, día y horario, y confirma. Sin llamadas, sin ida y vuelta." },
+  { icon: "message", title: "WhatsApp automático", text: "Confirmación al reservar y recordatorios antes del turno, para que se cancelen menos." },
+  { icon: "credit-card", title: "Señas y pagos con Mercado Pago", text: "Cobrá una seña o el total al reservar, directo en tu cuenta de Mercado Pago, o dejá pagar en el local." },
+  { icon: "repeat", title: "Reprogramar y cancelar", text: "Tus clientes cambian su turno con un código, hasta el plazo que vos definas." },
+  { icon: "users", title: "Varios profesionales", text: "Cada uno con su foto, su descripción y su propia agenda de días y horarios." },
+  { icon: "star", title: "Reseñas con tu aprobación", text: "Tus clientes dejan su opinión y vos elegís qué se publica." },
+  { icon: "palette", title: "Para tu rubro", text: "Barbería, estética, uñas, tatuajes, consultorio u otro: íconos y textos que se adaptan a lo que hacés." },
 ];
 
-const OWNER = [
-  { icon: "🔴", title: "Vista de Turnos en vivo", text: "Pantalla completa con los próximos turnos y colores de alerta según qué tan cerca está cada uno." },
-  { icon: "🔔", title: "Notificaciones en el panel", text: "Nuevos turnos, cancelaciones y reprogramaciones, sin tener que estar revisando." },
-  { icon: "📈", title: "Economía", text: "Ingresos de la semana y del mes, comparados con el período anterior, más los ingresos manuales que quieras sumar." },
-  { icon: "🧠", title: "Aprende los tiempos de cada cliente", text: "Opcional: si un cliente suele tardar 35 min en un servicio de 45, la agenda lo reserva con su tiempo real." },
+const OWNER: { icon: IconName; title: string; text: string }[] = [
+  { icon: "clock", title: "Vista de Turnos en vivo", text: "Pantalla completa con los próximos turnos y colores de alerta según qué tan cerca está cada uno." },
+  { icon: "bell", title: "Notificaciones en el panel", text: "Nuevos turnos, cancelaciones y reprogramaciones, sin tener que estar revisando." },
+  { icon: "trending-up", title: "Economía", text: "Ingresos de la semana y del mes, comparados con el período anterior, más los ingresos manuales que quieras sumar." },
+  { icon: "brain", title: "Aprende los tiempos de cada cliente", text: "Opcional: si un cliente suele tardar 35 min en un servicio de 45, la agenda lo reserva con su tiempo real." },
 ];
 
 const FAQ = [
@@ -106,16 +109,14 @@ export default async function Landing() {
   };
 
   return (
-    <div className="bg-white text-neutral-900" style={{ scrollBehavior: "smooth" }}>
+    <div className="app-themed bg-white text-neutral-900" style={{ scrollBehavior: "smooth" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
 
       {/* Barra superior */}
       <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-white/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5">
           <Link href="/" className="flex items-center gap-2 text-lg font-extrabold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-sm text-white" aria-hidden>
-              T
-            </span>
+            <AppLogo size={32} />
             Turnos
           </Link>
           <nav aria-label="Principal" className="hidden items-center gap-6 text-sm font-medium text-neutral-600 md:flex">
@@ -125,6 +126,7 @@ export default async function Landing() {
             <a href="#preguntas" className="hover:text-neutral-900">Preguntas</a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeCycleButton />
             <Link href="/admin/login" className="rounded-full px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
               Ingresar
             </Link>
@@ -142,7 +144,7 @@ export default async function Landing() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="animate-rise text-center lg:text-left">
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-sm font-semibold text-emerald-800">
-                🎁 1 mes gratis · Sin tarjeta
+                <Icon name="gift" size={16} />1 mes gratis · Sin tarjeta
               </p>
               <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
                 Llená tu agenda y dejá de coordinar turnos <span className="text-emerald-600">a mano</span>
@@ -159,9 +161,9 @@ export default async function Landing() {
                 </a>
               </div>
               <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-neutral-600 lg:justify-start">
-                <li>✓ Listo en minutos</li>
-                <li>✓ Funciona en el celular</li>
-                <li>✓ Sin instalar nada</li>
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Listo en minutos</li>
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Funciona en el celular</li>
+                <li className="flex items-center gap-1.5"><Icon name="check" size={16} className="text-emerald-600" />Sin instalar nada</li>
               </ul>
             </div>
             <div className="animate-rise" style={{ animationDelay: "120ms" }}>
@@ -176,8 +178,9 @@ export default async function Landing() {
           <div className="mx-auto max-w-6xl text-center">
             <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-neutral-500">Pensado para negocios que trabajan con turnos</p>
             <ul className="flex flex-wrap justify-center gap-2.5 text-sm font-semibold">
-              {["💈 Barberías", "💅 Uñas", "✨ Estética", "🖋️ Tatuajes", "🩺 Consultorios", "➕ Y más servicios"].map((r) => (
-                <li key={r} className="rounded-full border border-neutral-200 bg-white px-4 py-2">
+              {([["scissors", "Barberías"], ["palette", "Uñas"], ["sparkles", "Estética"], ["pencil", "Tatuajes"], ["stethoscope", "Consultorios"], ["plus", "Y más servicios"]] as [IconName, string][]).map(([icon, r]) => (
+                <li key={r} className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2">
+                  <Icon name={icon} size={16} className="text-emerald-600" />
                   {r}
                 </li>
               ))}
@@ -217,19 +220,19 @@ export default async function Landing() {
               />
               <ul className="space-y-3 text-neutral-200">
                 <li className="flex gap-3">
-                  <span className="text-emerald-400">✓</span>
+                  <Icon name="check" size={18} className="mt-0.5 text-emerald-400" />
                   <span>
                     <strong className="text-white">Sin límites:</strong> 07:30, 09:10, 10:45… los horarios que se te ocurran, distintos para cada día de la semana.
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-emerald-400">✓</span>
+                  <Icon name="check" size={18} className="mt-0.5 text-emerald-400" />
                   <span>
                     <strong className="text-white">Editás uno por uno:</strong> cambiás, quitás o copiás los horarios de un día a toda la semana.
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-emerald-400">✓</span>
+                  <Icon name="check" size={18} className="mt-0.5 text-emerald-400" />
                   <span>
                     <strong className="text-white">Nunca se reserva dos veces el mismo horario:</strong> cuando alguien lo toma, desaparece para los demás. También podés bloquear fechas completas.
                   </span>
@@ -253,8 +256,8 @@ export default async function Landing() {
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <li key={f.title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg">
-                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-2xl" aria-hidden>
-                  {f.icon}
+                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <Icon name={f.icon} size={24} />
                 </span>
                 <h3 className="font-bold">{f.title}</h3>
                 <p className="mt-1.5 text-sm text-neutral-600">{f.text}</p>
@@ -269,8 +272,8 @@ export default async function Landing() {
           <ul className="grid gap-5 sm:grid-cols-2">
             {OWNER.map((o) => (
               <li key={o.title} className="flex gap-4 rounded-2xl border border-neutral-200 bg-white p-6">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-2xl" aria-hidden>
-                  {o.icon}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white">
+                  <Icon name={o.icon} size={24} />
                 </span>
                 <div>
                   <h3 className="font-bold">{o.title}</h3>
@@ -300,12 +303,12 @@ export default async function Landing() {
                     <p className={`mt-1 text-sm font-semibold ${hot ? "text-emerald-300" : "text-emerald-700"}`}>1 mes gratis para probar</p>
                     <ul className={`mt-5 flex-1 space-y-2 text-sm ${hot ? "text-neutral-200" : "text-neutral-700"}`}>
                       <li className="flex gap-2">
-                        <span className="text-emerald-500">✓</span>
+                        <Icon name="check" size={18} className="mt-0.5 text-emerald-500" />
                         {p.limit}
                       </li>
                       {p.features.map((f) => (
                         <li key={f} className="flex gap-2">
-                          <span className="text-emerald-500">✓</span>
+                          <Icon name="check" size={18} className="mt-0.5 text-emerald-500" />
                           {f}
                         </li>
                       ))}

@@ -1,8 +1,12 @@
+import { IconButton } from "@/components/ui/IconButton";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/upload";
 import { IconPicker } from "@/components/IconPicker";
 import { SaveForm } from "@/components/SaveForm";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { Icon } from "@/components/ui/Icon";
+import { money } from "@/lib/format";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { BUSINESS_TYPES, asBusinessType, type BusinessType } from "@/lib/service-icons";
 import { saveService, archiveService, saveBusinessType } from "../actions";
@@ -22,7 +26,7 @@ function Fields({ s, type }: { s?: S; type: BusinessType }) {
       </div>
       <div>
         <label className="label">Duración (min)</label>
-        <input name="durationMin" type="number" min={5} step={5} required className="input" defaultValue={s?.durationMin ?? 30} />
+        <input name="durationMin" type="number" min={5} step={5} required className="input" defaultValue={s?.durationMin} />
       </div>
       <div className="sm:col-span-4">
         <label className="label">Descripción</label>
@@ -46,15 +50,16 @@ export default async function ServicesPage() {
   const { businessId } = await requireAdmin();
   const [services, biz] = await Promise.all([
     prisma.service.findMany({ where: { businessId, archived: false }, orderBy: [{ active: "desc" }, { sortOrder: "asc" }] }),
-    prisma.business.findUnique({ where: { id: businessId }, select: { businessType: true } }),
+    prisma.business.findUnique({ where: { id: businessId }, select: { businessType: true, currency: true } }),
   ]);
   const type = asBusinessType(biz?.businessType);
+  const currency = biz?.currency ?? "ARS";
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Servicios</h1>
 
-      <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado ✓">
+      <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado">
         <div>
           <label className="label" htmlFor="businessType">
             Rubro del negocio
@@ -71,19 +76,53 @@ export default async function ServicesPage() {
         <p className="w-full text-xs text-neutral-500">Define los íconos sugeridos para tus servicios. No cambia nada más.</p>
       </SaveForm>
 
-      <SaveForm action={saveService} className="card space-y-3" successText="Servicio creado ✓" resetOnSuccess>
-        <h2 className="font-semibold">Nuevo servicio</h2>
-        <Fields type={type} />
-        <button className="btn">Crear</button>
-      </SaveForm>
+      {services.length === 0 && (
+        <div className="card flex flex-col items-center gap-2 py-8 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
+            <Icon name="scissors" size={26} />
+          </span>
+          <h2 className="text-lg font-bold">Todavía no tenés servicios</h2>
+          <p className="max-w-sm text-sm text-neutral-500">Creá tu primer servicio con nombre, precio y duración: es lo que tus clientes van a poder reservar en tu página.</p>
+        </div>
+      )}
+
+      {/* Los formularios no se ven de entrada: se abren al elegir el servicio (acordeón). Quedan montados, así que lo escrito no se pierde al cerrar. */}
+      <Collapsible
+        className="card"
+        defaultOpen={services.length === 0}
+        leading={
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
+            <Icon name="plus" />
+          </span>
+        }
+        title={services.length === 0 ? "Crear servicio" : "Agregar servicio"}
+        summary="Nombre, precio, duración e ícono"
+      >
+        <SaveForm action={saveService} className="space-y-3" successText="Servicio creado" resetOnSuccess>
+          <Fields type={type} />
+          <button className="btn">Crear servicio</button>
+        </SaveForm>
+      </Collapsible>
 
       {services.map((s) => (
-        <div key={s.id} className={`card ${s.active ? "" : "opacity-60"}`}>
-          <div className="mb-2 flex items-center gap-3">
-            <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={type} size={40} />
-            <span className="font-semibold">{s.name}</span>
-          </div>
-          <SaveForm action={saveService} className="space-y-3" successText="Servicio guardado ✓">
+        <Collapsible
+          key={s.id}
+          className={`card ${s.active ? "" : "opacity-70"}`}
+          leading={<ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={type} size={40} />}
+          title={s.name}
+          summary={`${s.durationMin} min · ${money(s.priceCents, currency)}`}
+          trailing={
+            <span className="flex flex-wrap items-center justify-end gap-1.5">
+              <span className="hidden items-center gap-1 text-xs font-medium text-neutral-500 sm:inline-flex">
+                <Icon name="pencil" size={13} />
+                Editar
+              </span>
+              {s.comingSoon && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Próximamente</span>}
+              {!s.active && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-700">Oculto</span>}
+            </span>
+          }
+        >
+          <SaveForm action={saveService} className="space-y-3" successText="Servicio guardado">
             <input type="hidden" name="id" value={s.id} />
             <Fields s={s} type={type} />
             <div className="flex items-center gap-4">
@@ -93,14 +132,11 @@ export default async function ServicesPage() {
               <button className="btn">Guardar</button>
             </div>
           </SaveForm>
-          {(
-            <SaveForm action={archiveService} className="mt-2" successText="Servicio eliminado ✓" confirm="¿Eliminar este servicio? Los turnos ya agendados no se tocan.">
-              <input type="hidden" name="id" value={s.id} />
-              <button className="text-sm text-red-600 underline">Eliminar</button>
-            </SaveForm>
-          )}
-        </div>
-      ))}
-    </div>
+          <SaveForm action={archiveService} className="mt-2" successText="Servicio eliminado" confirm="¿Eliminar este servicio? Los turnos ya agendados no se tocan.">
+            <input type="hidden" name="id" value={s.id} />
+            <IconButton type="submit" icon="trash" label="Eliminar servicio" variant="danger" />
+          </SaveForm>
+        </Collapsible>
+      ))}    </div>
   );
 }

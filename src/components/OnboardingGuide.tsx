@@ -3,21 +3,23 @@
 import { useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { setOnboardingStep } from "@/app/admin/onboarding-actions";
+import { AppLogo } from "./AppLogo";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
-type StepInfo = { path: string; emoji: string; title: string; short: string; tips: string[]; next: string };
+type StepInfo = { path: string; icon: IconName; title: string; short: string; tips: string[]; next: string };
 
 const STEPS: StepInfo[] = [
   {
     path: "/admin/services",
-    emoji: "✂️",
+    icon: "scissors",
     title: "Tus servicios y precios",
     short: "Servicios",
-    tips: ["Editá los servicios de ejemplo o creá los tuyos.", "Poné el precio y cuánto dura cada uno: así se arma la agenda.", "Podés ocultar los que no uses."],
+    tips: ["Creá tus servicios: nombre, precio y duración.", "Poné el precio y cuánto dura cada uno: así se arma la agenda.", "Podés ocultar los que no uses."],
     next: "Siguiente: Profesionales",
   },
   {
     path: "/admin/barbers",
-    emoji: "💈",
+    icon: "users",
     title: "Tu equipo de profesionales",
     short: "Profesionales",
     tips: ["Cambiá «Profesional 1» por el nombre real y sumá a los demás.", "Subí una foto y una breve descripción de cada uno.", "Ajustá los días y horarios en que atiende cada profesional."],
@@ -25,7 +27,7 @@ const STEPS: StepInfo[] = [
   },
   {
     path: "/admin/personalizacion",
-    emoji: "🖼️",
+    icon: "image",
     title: "Armá tu página pública",
     short: "Mi página",
     tips: ["Subí fotos de portada y de tu galería.", "Contá quiénes son en «Acerca de» y cargá tu política de reserva.", "Completá contacto, dirección y redes para que te encuentren."],
@@ -81,7 +83,7 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
           ))}
         </div>
         <div className="card ob-pop relative w-full max-w-sm !p-8 text-center">
-          <div className="ob-float text-6xl">🎉</div>
+          <Icon name="sparkles" size={64} className="ob-float mx-auto text-amber-500" />
           <h2 className="mt-3 text-2xl font-bold">¡Tu negocio está listo!</h2>
           <p className="mt-2 text-sm text-neutral-600">Ya podés recibir reservas. Mirá cómo quedó tu página y compartí el link con tus clientes.</p>
           <div className="mt-5 flex flex-col gap-2">
@@ -104,10 +106,9 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-gradient-to-br from-neutral-900/80 via-neutral-900/70 to-brand/60 p-4 backdrop-blur-md ob-fade" role="dialog" aria-modal="true" aria-label="Bienvenida">
         <div className="card ob-pop w-full max-w-md !p-7 text-center">
-          <div className="ob-float text-6xl" aria-hidden>
-            ✂️
-          </div>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight">¡Bienvenido! Vamos a dejar todo listo</h2>
+          <AppLogo size={72} className="ob-float mx-auto" />
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight">Bienvenido</h2>
+          <p className="mt-1 text-neutral-600">Vamos a dejar todo listo.</p>
           <p className="mt-2 text-sm text-neutral-600">Te acompañamos en 3 pasos rápidos para que puedas recibir tus primeras reservas.</p>
           <ol className="mt-5 space-y-2 text-left">
             {STEPS.map((s, i) => (
@@ -117,9 +118,7 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
                   <strong>{s.short}</strong>
                   <span className="block text-xs text-neutral-500">{s.title}</span>
                 </span>
-                <span aria-hidden className="ml-auto text-xl">
-                  {s.emoji}
-                </span>
+                <Icon name={s.icon} size={22} className="ml-auto text-neutral-400" />
               </li>
             ))}
           </ol>
@@ -154,8 +153,8 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
             <span className="ml-1 text-xs font-medium text-neutral-500">{step}/3</span>
           </div>
           <div className="flex items-start gap-3">
-            <span className="ob-float text-3xl" aria-hidden>
-              {info.emoji}
+            <span className="ob-float flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg">
+              <Icon name={info.icon} size={22} />
             </span>
             <div className="min-w-0">
               <h2 className="font-bold leading-tight">{info.title}</h2>
@@ -188,7 +187,7 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
                   }
                 }}
               >
-                {info.next} {last ? "🎉" : "→"}
+                {info.next} <Icon name={last ? "sparkles" : "arrow-right"} size={16} className="ml-1 inline -translate-y-px" />
               </button>
             ) : (
               <button type="button" className="btn !px-5" onClick={() => router.push(info.path)}>

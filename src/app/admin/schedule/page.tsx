@@ -1,3 +1,4 @@
+import { IconButton } from "@/components/ui/IconButton";
 import Link from "next/link";
 import { DateTime } from "luxon";
 import { prisma, getBusinessById } from "@/lib/db";
@@ -60,7 +61,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
       {barber && (
         // La clave incluye lo guardado: al guardar (o cambiar de profesional) el editor se arma de nuevo con los datos reales de la base.
-        <SaveForm key={`${barber.id}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados ✓">
+        <SaveForm key={`${barber.id}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Horarios de {barber.name}</h2>
           <ScheduleEditor initial={days} />
@@ -70,7 +71,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       )}
       <section className="card space-y-3">
         <h2 className="font-semibold">Bloquear fechas (vacaciones, feriados, descansos)</h2>
-        <SaveForm action={addTimeOff} className="grid gap-3 sm:grid-cols-5" successText="Fecha bloqueada ✓" resetOnSuccess>
+        <SaveForm action={addTimeOff} className="grid gap-3 sm:grid-cols-5" successText="Fecha bloqueada" resetOnSuccess>
           <div className="sm:col-span-1">
             <label className="label">Aplica a</label>
             <select name="barberId" className="input">
@@ -106,9 +107,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
                 {fmtDateTime(t.startAt, business.timezone)} → {fmtDateTime(t.endAt, business.timezone)} · {t.barber?.name ?? "Todo el negocio"}
                 {t.reason ? ` · ${t.reason}` : ""}
               </span>
-              <SaveForm action={deleteTimeOff} successText="Bloqueo quitado ✓">
+              <SaveForm action={deleteTimeOff} successText="Bloqueo quitado">
                 <input type="hidden" name="id" value={t.id} />
-                <button className="text-red-600 underline">Quitar</button>
+                <IconButton type="submit" icon="trash" label="Quitar bloqueo" variant="danger" />
               </SaveForm>
             </li>
           ))}

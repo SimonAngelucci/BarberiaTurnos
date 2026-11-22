@@ -57,14 +57,7 @@ export async function createBusiness(input: { name: string; email: string; passw
           creatorCode: input.creator?.code ?? null,
           subscription: { create: { status: "TRIAL", trialEndsAt: newTrialEnd() } },
           admins: { create: { email, passwordHash } },
-          services: {
-            createMany: {
-              data: [
-                { name: "Servicio 1", description: "Editá este servicio de ejemplo", priceCents: 800000, durationMin: 30, sortOrder: 1 },
-                { name: "Servicio 2", description: "Editá este servicio de ejemplo", priceCents: 600000, durationMin: 30, sortOrder: 2 },
-              ],
-            },
-          },
+          // Sin servicios de ejemplo: el negocio nuevo arranca con la lista vacía y los crea él (Servicios).
           barbers: {
             create: {
               name: "Profesional 1",

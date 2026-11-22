@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
 
 const QUICK = [15, 20, 30, 40, 45, 60, 75, 90];
@@ -25,7 +26,7 @@ export function SurveyForm({ slug, token, serviceName, initial }: { slug: string
   if (done) {
     return (
       <div className="card text-center">
-        <div className="mb-2 text-4xl">🙏</div>
+        <Icon name="heart" size={40} className="mx-auto mb-2 text-rose-500" />
         <h2 className="text-xl font-bold">¡Gracias!</h2>
         <p className="mt-2 text-neutral-600">Con tu respuesta vamos a ajustar el tiempo de tus próximos turnos.</p>
       </div>

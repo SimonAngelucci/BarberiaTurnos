@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
@@ -60,7 +61,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
       <div className="card space-y-3 text-center">
         {paid ? (
           <>
-            <div className="text-4xl">✅</div>
+            <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
             <h2 className="text-xl font-bold">¡Pago recibido! Turno confirmado</h2>
             <p className="text-neutral-600">
               {appt.service.name} · {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}
@@ -82,7 +83,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
           </>
         ) : pending && !inProcess ? (
           <>
-            <div className="text-4xl">⚠️</div>
+            <Icon name="alert" size={40} className="mx-auto text-amber-500" />
             <h2 className="text-xl font-bold">No se completó el pago</h2>
             <p className="text-sm text-neutral-500">
               Tu turno de {appt.service.name} del {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")} sigue reservado
@@ -95,7 +96,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
           </>
         ) : pending ? (
           <>
-            <div className="text-4xl">⏳</div>
+            <Icon name="hourglass" size={40} className="mx-auto text-amber-500" />
             <h2 className="text-xl font-bold">Estamos confirmando tu pago…</h2>
             <p className="text-sm text-neutral-500">
               Si ya pagaste, puede tardar unos segundos. Esta pantalla se actualiza sola. Tu horario está reservado por unos minutos.
@@ -104,7 +105,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
           </>
         ) : appt.status === "CONFIRMED" ? (
           <>
-            <div className="text-4xl">✅</div>
+            <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
             <h2 className="text-xl font-bold">Turno confirmado</h2>
             <p className="text-neutral-600">
               {appt.service.name} · {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}
@@ -112,7 +113,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
           </>
         ) : (
           <>
-            <div className="text-4xl">⚠️</div>
+            <Icon name="alert" size={40} className="mx-auto text-amber-500" />
             <h2 className="text-xl font-bold">No se completó el pago</h2>
             <p className="text-sm text-neutral-500">No se te cobró nada y el horario fue liberado. Podés reintentar si todavía está disponible, o reservar de nuevo.</p>
             {canRetry && <RetryPaymentButton a={sp.a} t={sp.t!} />}

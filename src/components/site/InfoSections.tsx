@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui/Icon";
 import { SOCIAL_LABELS, mapsHref, prettyPhone, telHref, whatsappHref } from "@/lib/profile";
 
 type Profile = {
@@ -76,9 +77,7 @@ export function ContactCard({ p: raw }: { p: Profile }) {
         <div className="space-y-2">
           {p.address && (
             <p className="text-sm">
-              <span className="mr-1" aria-hidden>
-                📍
-              </span>
+              <Icon name="map-pin" size={16} className="mr-1 inline -translate-y-px" />
               {p.address}
             </p>
           )}

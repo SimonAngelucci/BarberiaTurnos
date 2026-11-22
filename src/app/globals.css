@@ -5,6 +5,13 @@
 :root {
   --brand: #111827;
   --brand-fg: #ffffff;
+  --color-primary: #111827;
+  --color-primary-hover: #0d121d;
+  --color-primary-fg: #ffffff;
+  /* Variantes para el modo oscuro (si el negocio tiene tema, themeCss las recalcula a partir de su color). */
+  --brand-dark: #f3f4f6;
+  --brand-dark-fg: #111827;
+  --brand-dark-hover: #ffffff;
   --page-bg: #fafafa;
   --page-fg: #171717;
 }
@@ -91,6 +98,9 @@ body {
   .btn {
     @apply inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-medium text-brand-fg transition active:scale-[.98] disabled:opacity-50;
   }
+  .btn:hover:not(:disabled) {
+    background-color: var(--color-primary-hover, var(--brand));
+  }
   .btn-ghost {
     @apply inline-flex items-center justify-center rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100;
   }
@@ -108,3 +118,87 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .urgent-pulse { animation: none; }
 }
+
+/* Barras fijas del panel: los saltos a #anclas dejan lugar debajo de ellas, y en iOS con muesca el contenido no queda debajo de los bordes. */
+html {
+  scroll-padding-top: calc(var(--sticky-offset, 0px) + 0.5rem);
+}
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ==========================================================================================================================
+   MODO OSCURO
+   Se activa con html[data-theme="dark"] (lo fija un script en <head> antes de pintar, según la preferencia: claro, oscuro o
+   sistema). Solo afecta lo que lleva la clase .app-themed: el panel de administración, la landing y las pantallas de acceso.
+   La página pública de cada negocio NO lleva esa clase: conserva exactamente los colores que eligió el negocio.
+   El color principal se adapta (--brand-dark*, ver themeCss) para que siga viéndose y con texto legible sobre fondo oscuro.
+   ========================================================================================================================== */
+html[data-theme="dark"] body:has(.app-themed) {
+  background: #0b0f14;
+  color: #e5e7eb;
+}
+html[data-theme="dark"] .app-themed {
+  color-scheme: dark;
+  --page-bg: #0b0f14;
+  --page-fg: #e5e7eb;
+  --brand: var(--brand-dark);
+  --brand-fg: var(--brand-dark-fg);
+  --color-primary: var(--brand-dark);
+  --color-primary-fg: var(--brand-dark-fg);
+  --color-primary-hover: var(--brand-dark-hover);
+}
+/* Componentes base */
+html[data-theme="dark"] .app-themed .card { background: #151b23; border-color: #263040; color: #e5e7eb; box-shadow: none; }
+html[data-theme="dark"] .app-themed .input { background: #0f141b; border-color: #2e3948; color: #e5e7eb; }
+html[data-theme="dark"] .app-themed .input:focus { box-shadow: 0 0 0 2px #2e3948; }
+html[data-theme="dark"] .app-themed .btn-ghost { background: #151b23; border-color: #2e3948; color: #d1d5db; }
+html[data-theme="dark"] .app-themed .btn-ghost:hover { background: #1d2530; }
+html[data-theme="dark"] .app-themed .label { color: #aab2bd; }
+html[data-theme="dark"] .app-themed ::placeholder { color: #6b7684; }
+/* Superficies y bordes neutros */
+html[data-theme="dark"] .app-themed [class*="bg-white"] { background-color: #151b23; }
+html[data-theme="dark"] .app-themed .bg-neutral-50 { background-color: #10161d; }
+html[data-theme="dark"] .app-themed .bg-neutral-100 { background-color: #1b232d; }
+html[data-theme="dark"] .app-themed .bg-neutral-200 { background-color: #263040; }
+html[data-theme="dark"] .app-themed .bg-neutral-300 { background-color: #323d4d; }
+html[data-theme="dark"] .app-themed .border-neutral-100,
+html[data-theme="dark"] .app-themed .border-neutral-200 { border-color: #263040; }
+html[data-theme="dark"] .app-themed .border-neutral-300 { border-color: #334053; }
+html[data-theme="dark"] .app-themed .divide-neutral-100 > :not([hidden]) ~ :not([hidden]),
+html[data-theme="dark"] .app-themed .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: #263040; }
+html[data-theme="dark"] .app-themed .hover\:bg-neutral-50:hover,
+html[data-theme="dark"] .app-themed .hover\:bg-neutral-100:hover { background-color: #1d2530; }
+html[data-theme="dark"] .app-themed .hover\:bg-neutral-200:hover { background-color: #263040; }
+html[data-theme="dark"] .app-themed .hover\:border-neutral-400:hover { border-color: #4a586b; }
+/* Textos neutros */
+html[data-theme="dark"] .app-themed .text-neutral-900,
+html[data-theme="dark"] .app-themed .text-neutral-800 { color: #f3f4f6; }
+html[data-theme="dark"] .app-themed .text-neutral-700 { color: #d1d5db; }
+html[data-theme="dark"] .app-themed .text-neutral-600 { color: #aab2bd; }
+html[data-theme="dark"] .app-themed .text-neutral-500 { color: #9aa3af; }
+html[data-theme="dark"] .app-themed .text-neutral-400 { color: #7c8693; }
+html[data-theme="dark"] .app-themed .text-neutral-300 { color: #5b6573; }
+html[data-theme="dark"] .app-themed .hover\:text-neutral-900:hover,
+html[data-theme="dark"] .app-themed .hover\:text-neutral-800:hover { color: #ffffff; }
+/* Etiquetas y avisos de color: fondo translúcido y texto claro del mismo tono */
+html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: rgba(34, 197, 94, 0.15); }
+html[data-theme="dark"] .app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #86efac; }
+html[data-theme="dark"] .app-themed :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100, .bg-orange-100) { background-color: rgba(245, 158, 11, 0.15); }
+html[data-theme="dark"] .app-themed :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-yellow-800, .text-orange-800) { color: #fcd34d; }
+html[data-theme="dark"] .app-themed :is(.bg-red-50, .bg-red-100) { background-color: rgba(239, 68, 68, 0.16); }
+html[data-theme="dark"] .app-themed :is(.text-red-600, .text-red-700, .text-red-800) { color: #fca5a5; }
+html[data-theme="dark"] .app-themed :is(.bg-blue-100, .bg-sky-50) { background-color: rgba(59, 130, 246, 0.16); }
+html[data-theme="dark"] .app-themed :is(.text-blue-800) { color: #93c5fd; }
+html[data-theme="dark"] .app-themed :is(.bg-violet-50, .bg-violet-100) { background-color: rgba(139, 92, 246, 0.16); }
+html[data-theme="dark"] .app-themed :is(.text-violet-800) { color: #c4b5fd; }
+html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: rgba(34, 197, 94, 0.4); }
+html[data-theme="dark"] .app-themed :is(.border-amber-200, .border-amber-300, .border-yellow-300) { border-color: rgba(245, 158, 11, 0.45); }
+html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .border-red-400, .border-red-500) { border-color: rgba(239, 68, 68, 0.5); }
+/* Sombras y fondos de superposición */
+html[data-theme="dark"] .app-themed .shadow-sm,
+html[data-theme="dark"] .app-themed .shadow-md,
+html[data-theme="dark"] .app-themed .shadow-lg,
+html[data-theme="dark"] .app-themed .shadow-xl,
+html[data-theme="dark"] .app-themed .shadow-2xl { --tw-shadow-color: rgba(0, 0, 0, 0.5); }

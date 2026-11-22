@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Modal } from "./Modal";
@@ -97,7 +98,7 @@ export function PhotoCropper({ src, onCancel, onDone }: { src: string; onCancel:
 
       <div className="flex items-center gap-4">
         <label className="flex flex-1 items-center gap-2 text-sm text-neutral-600">
-          <span aria-hidden>🔍</span>
+          <Icon name="search" size={16} />
           <input
             type="range"
             min={1}

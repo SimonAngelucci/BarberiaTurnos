@@ -20,6 +20,7 @@
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.0",
     "libphonenumber-js": "^1.11.0",
+    "lucide-react": "^1.77.0",
     "luxon": "^3.5.0",
     "mercadopago": "^3.6.1",
     "next": "^15.3.0",

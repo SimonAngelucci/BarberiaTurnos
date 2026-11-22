@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DateTime } from "luxon";
@@ -132,7 +133,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
     const d = local(result.startAt);
     return (
       <div className="card space-y-3 text-center">
-        <div className="text-4xl">✅</div>
+        <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
         <h2 className="text-xl font-bold">¡Turno reprogramado!</h2>
         <p className="text-neutral-600">
           {info?.appointment.serviceName} · {d.toFormat("cccc d 'de' LLLL")} a las {d.toFormat("HH:mm")}
@@ -147,7 +148,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
   if (stage === "cancelled") {
     return (
       <div className="card space-y-3 text-center">
-        <div className="text-4xl">🗑️</div>
+        <Icon name="trash" size={40} className="mx-auto text-neutral-500" />
         <h2 className="text-xl font-bold">Turno cancelado</h2>
         <p className="text-sm text-neutral-500">Liberamos el horario y te avisamos por WhatsApp.</p>
         {result?.hadPayment && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Tenías un pago registrado: comunicate con el negocio para coordinar la devolución.</p>}
@@ -218,7 +219,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
     return (
       <div className="card space-y-4">
         <div>
-          <h2 className="text-lg font-bold">Hola {a.customerFirstName} 👋</h2>
+          <h2 className="text-lg font-bold">Hola {a.customerFirstName}</h2>
           <p className="text-sm text-neutral-500">Este es tu turno:</p>
         </div>
         {summary}
@@ -231,7 +232,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
             <Err />
             <div className="grid gap-2 sm:grid-cols-2">
               <button className="btn" onClick={() => { setError(null); setStage("reschedule"); }}>
-                📅 Reprogramar
+                <Icon name="calendar" size={16} className="mr-2 inline -translate-y-px" />Reprogramar
               </button>
               <button className="btn-ghost !border-red-300 !text-red-600" onClick={() => { setError(null); setConfirmCancel(true); }}>
                 Cancelar turno

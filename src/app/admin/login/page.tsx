@@ -1,5 +1,6 @@
 "use client";
 
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -37,7 +38,7 @@ export default function LoginPage() {
         </div>
         <div>
           <label className="label">Contraseña</label>
-          <input name="password" type="password" required className="input" autoComplete="current-password" />
+          <PasswordInput name="password" required autoComplete="current-password" />
         </div>
         {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
         <button className="btn w-full" disabled={busy}>

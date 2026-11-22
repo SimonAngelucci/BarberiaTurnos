@@ -1,9 +1,10 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Notice } from "@/lib/notifications";
 
-const ICON: Record<Notice["kind"], string> = { new: "🆕", cancel: "❌", reschedule: "🔁", reminder: "⏰" };
+const ICON: Record<Notice["kind"], IconName> = { new: "calendar", cancel: "x", reschedule: "repeat", reminder: "clock" };
 const TONE: Record<Notice["kind"], string> = {
   new: "bg-green-50",
   cancel: "bg-red-50",
@@ -71,14 +72,14 @@ export function NotificationBell() {
         onClick={() => setOpen((o) => !o)}
         aria-label={unread > 0 ? `Notificaciones: ${unread} sin leer` : "Notificaciones"}
         aria-expanded={open}
-        className="relative rounded-lg px-3 py-2 text-lg hover:bg-neutral-100"
+        className="relative rounded-lg px-3 py-2 hover:bg-neutral-100"
       >
-        <span aria-hidden>🔔</span>
+        <Icon name="bell" size={20} />
         {unread > 0 && <span className="absolute right-0.5 top-0.5 min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white">{unread > 9 ? "9+" : unread}</span>}
       </button>
 
       {open && (
-        <div role="dialog" aria-label="Notificaciones" className="fixed inset-x-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96">
+        <div role="dialog" aria-label="Notificaciones" className="fixed inset-x-3 top-[4.5rem] z-50 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-2xl sm:inset-x-auto sm:right-4 sm:w-96">
           <div className="flex items-center justify-between px-2 py-1.5">
             <h2 className="font-semibold">Notificaciones</h2>
             {data && data.items.some((i) => i.unread && i.kind !== "reminder") && (
@@ -93,9 +94,7 @@ export function NotificationBell() {
             <ul className="space-y-1">
               {data.items.map((n) => (
                 <li key={n.id} className={`flex gap-3 rounded-xl p-2.5 ${n.unread ? TONE[n.kind] : ""}`}>
-                  <span aria-hidden className="text-lg">
-                    {ICON[n.kind]}
-                  </span>
+                  <Icon name={ICON[n.kind]} size={20} className="mt-0.5 text-neutral-600" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className={`text-sm ${n.unread ? "font-semibold" : "font-medium"}`}>{n.title}</span>

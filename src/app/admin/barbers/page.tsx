@@ -12,7 +12,7 @@ type B = { id: string; name: string; bio: string | null; photoUrl: string | null
 
 function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
   return (
-    <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Profesional guardado ✓" : "Profesional agregado ✓"} resetOnSuccess={!b}>
+    <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Profesional guardado" : "Profesional agregado"} resetOnSuccess={!b}>
       {b && <input type="hidden" name="id" value={b.id} />}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>

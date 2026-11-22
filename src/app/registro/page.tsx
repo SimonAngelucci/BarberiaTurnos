@@ -1,8 +1,10 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PasswordPair } from "@/components/ui/PasswordPair";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), creatorCode: creatorCode.trim() || undefined }),
+      body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), confirmPassword: fd.get("confirmPassword"), creatorCode: creatorCode.trim() || undefined }),
     });
     const j = await res.json().catch(() => ({}));
     if (res.ok) {
@@ -37,12 +39,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto mt-12 max-w-sm px-4">
+    <main className="app-themed mx-auto mt-12 max-w-sm px-4">
       <form onSubmit={onSubmit} className="card space-y-4">
         <h1 className="text-xl font-bold">Comenzar mis turnos</h1>
         <p className="text-sm text-neutral-500">Vas a recibir un link propio para que tus clientes reserven.</p>
         <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">
-          🎁 <strong>1 mes de prueba gratis</strong>, sin tarjeta. No se cobra nada durante la prueba.
+          <Icon name="gift" size={16} className="mr-1.5 inline -translate-y-px" /><strong>1 mes de prueba gratis</strong>, sin tarjeta. No se cobra nada durante la prueba.
         </p>
         <div>
           <label className="label">Nombre de tu negocio</label>
@@ -52,10 +54,8 @@ export default function RegisterPage() {
           <label className="label">Email</label>
           <input name="email" type="email" required className="input" autoComplete="username" />
         </div>
-        <div>
-          <label className="label">Contraseña (mín. 8 caracteres)</label>
-          <input name="password" type="password" required minLength={8} className="input" autoComplete="new-password" />
-        </div>
+        <PasswordPair newName="password" newLabel="Contraseña" hint="Mínimo 8 caracteres." />
+
         <div>
           <label className="label">
             Código de creador <span className="font-normal text-neutral-400">(opcional)</span>

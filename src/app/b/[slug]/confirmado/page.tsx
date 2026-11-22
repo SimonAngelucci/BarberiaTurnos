@@ -1,3 +1,5 @@
+import { CopyButton } from "@/components/ui/CopyButton";
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -61,9 +63,7 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
           return (
             <div className="space-y-4">
               <div className="card text-center">
-                <div className="mb-2 text-5xl" aria-hidden>
-                  ✅
-                </div>
+                <Icon name="check-circle" size={52} className="mx-auto mb-2 text-green-600" />
                 <h2 className="text-2xl font-bold">¡Turno confirmado!</h2>
                 <p className="mt-1 text-neutral-600">Gracias, {appt.customer.firstName}. Te esperamos.</p>
               </div>
@@ -91,7 +91,10 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
               {b.allowClientChanges && appt.claimCode && (
                 <div className="card space-y-2 text-center">
                   <div className="text-xs text-neutral-500">Tu código para reprogramar o cancelar</div>
-                  <div className="font-mono text-2xl font-bold tracking-widest">{appt.claimCode}</div>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="font-mono text-2xl font-bold tracking-widest">{appt.claimCode}</span>
+                    <CopyButton text={appt.claimCode} label="Copiar código" />
+                  </div>
                   <p className="text-xs text-neutral-500">Guardalo: también te lo enviamos por WhatsApp.</p>
                   <Link href={`/b/${b.slug}/turno?c=${encodeURIComponent(appt.claimCode)}`} className="btn-ghost w-full">
                     Reprogramar o cancelar

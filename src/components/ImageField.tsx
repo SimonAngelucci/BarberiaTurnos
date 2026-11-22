@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import { PhotoCropper } from "./PhotoCropper";
 
@@ -147,7 +148,7 @@ export function ImageField({
             </label>
           )}
 
-          {status === "done" && <p className="text-xs text-green-700">✓ Imagen lista. Tocá «Guardar» para publicarla.</p>}
+          {status === "done" && <p className="text-xs text-green-700"><Icon name="check" size={14} className="mr-1 inline -translate-y-px" />Imagen lista. Tocá «Guardar» para publicarla.</p>}
           {error && (
             <p role="alert" className="rounded-lg bg-red-50 p-2 text-xs text-red-700">
               {error}

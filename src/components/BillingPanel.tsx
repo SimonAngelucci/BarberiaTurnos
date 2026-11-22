@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { money } from "@/lib/format";
 import { Modal } from "./Modal";
@@ -165,9 +166,9 @@ export function BillingPanel(p: Props) {
                       {plan.description && <p className="mt-1 text-sm text-neutral-500">{plan.description}</p>}
                     </div>
                     <ul className="flex-1 space-y-1 text-sm">
-                      <li>✓ {plan.maxBarbers === null ? "Profesionales ilimitados" : `Hasta ${plan.maxBarbers} ${plan.maxBarbers === 1 ? "profesional" : "profesionales"}`}</li>
+                      <li className="flex gap-2"><Icon name="check" size={16} className="mt-0.5 text-green-600" />{plan.maxBarbers === null ? "Profesionales ilimitados" : `Hasta ${plan.maxBarbers} ${plan.maxBarbers === 1 ? "profesional" : "profesionales"}`}</li>
                       {plan.features.map((f) => (
-                        <li key={f}>✓ {f}</li>
+                        <li key={f} className="flex gap-2"><Icon name="check" size={16} className="mt-0.5 text-green-600" />{f}</li>
                       ))}
                     </ul>
                     <button name="planId" value={plan.id} className="btn w-full" disabled={!p.configured || pending || isCurrent}>

@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 
 type Status = { kind: "ok" | "error"; text: string } | null;
 
 /**
  * Formulario para acciones del servidor que no devuelven nada (guardar horarios, servicios, ajustes…).
  * Lo envía a mano (React 19 vacía los campos al terminar un `action={…}` y la pantalla quedaba distinta de lo guardado),
- * bloquea el envío mientras guarda y avisa con un cartel claro: «Guardado ✓» o el error.
+ * bloquea el envío mientras guarda y avisa con un cartel claro («Guardado» con un check) o el error.
  * Con `resetOnSuccess` el formulario se vuelve a armar vacío (ej: «Nuevo servicio»).
  */
 export function SaveForm({
   action,
   children,
   className,
-  successText = "Guardado ✓",
+  successText = "Guardado",
   resetOnSuccess = false,
   confirm,
 }: {
@@ -66,7 +67,10 @@ export function SaveForm({
       {/* Cartel flotante: se ve aunque el botón esté lejos (en el celular, abajo de todo). */}
       <div aria-live="polite" role="status" className="pointer-events-none fixed inset-x-0 bottom-5 z-[60] flex justify-center px-4">
         {status && (
-          <div className={`rounded-full px-5 py-2.5 text-sm font-semibold shadow-lg ${status.kind === "ok" ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}>{status.text}</div>
+          <div className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-lg ${status.kind === "ok" ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}>
+            <Icon name={status.kind === "ok" ? "check" : "alert"} size={16} strokeWidth={2.5} />
+            {status.text.replace(/\s*✓\s*$/, "")}
+          </div>
         )}
       </div>
       {pending && <span className="sr-only">Guardando…</span>}

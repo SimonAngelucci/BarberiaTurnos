@@ -1,7 +1,10 @@
+import { Icon } from "@/components/ui/Icon";
+import { Collapsible } from "@/components/ui/Collapsible";
 import { requireAdmin } from "@/lib/auth";
 import { getBusinessById } from "@/lib/db";
 import { uploadsEnabled } from "@/lib/upload";
 import { ImageField } from "@/components/ImageField";
+import { ColorWheel } from "@/components/ui/ColorWheel";
 import { SaveForm } from "@/components/SaveForm";
 import { saveSettings } from "@/app/admin/actions";
 
@@ -14,7 +17,7 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
   const noticeOptions = [...new Set([0, 1, 2, 3, 4, 6, 12, 24, 48, 72, 168, noticeHours])].sort((x, y) => x - y);
 
   return (
-    <SaveForm action={saveSettings} className="space-y-4" successText="Cambios guardados ✓">
+    <SaveForm action={saveSettings} className="space-y-4" successText="Cambios guardados">
       <h1 className="text-xl font-bold">Configuración del negocio</h1>
 
       {welcome && (
@@ -39,9 +42,8 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
 
       <section className="card grid gap-3 sm:grid-cols-2">
         <h2 className="font-semibold sm:col-span-2">Apariencia</h2>
-        <div>
-          <label className="label">Color principal (botones y acentos)</label>
-          <input name="primaryColor" type="color" className="h-11 w-full rounded-xl border border-neutral-300" defaultValue={b.primaryColor} />
+        <div className="sm:col-span-2">
+          <ColorWheel name="primaryColor" defaultValue={b.primaryColor} label="Color principal (botones y acentos)" />
         </div>
         <div>
           <label className="label">Color de fondo de la página</label>
@@ -101,10 +103,12 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
 
       <section className="card space-y-3">
         <h2 className="font-semibold">Mensajes de WhatsApp</h2>
-        <p className="text-xs text-neutral-500">Variables: {"{{nombre}} {{servicio}} {{fecha}} {{hora}} {{negocio}} {{codigo}}"}</p>
-        <p className="text-xs text-neutral-500">
-          El código de reclamo y el plazo se agregan solos al final del mensaje de confirmación (y de pago). Si preferís ubicarlo vos, escribí {"{{codigo}}"} en el texto.
-        </p>
+        <Collapsible className="rounded-xl border border-neutral-200 p-2.5" title="Variables y código de reclamo" leading={<Icon name="info" size={18} className="text-neutral-500" />} headerClassName="text-sm">
+          <div className="space-y-1.5 text-xs text-neutral-600">
+            <p>Variables: {"{{nombre}} {{servicio}} {{fecha}} {{hora}} {{negocio}} {{codigo}}"}</p>
+            <p>El código de reclamo y el plazo se agregan solos al final del mensaje de confirmación (y de pago). Si preferís ubicarlo vos, escribí {"{{codigo}}"} en el texto.</p>
+          </div>
+        </Collapsible>
         <div>
           <label className="label">Confirmación</label>
           <textarea name="confirmTemplate" rows={3} className="input" defaultValue={b.confirmTemplate} />

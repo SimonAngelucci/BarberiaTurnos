@@ -1,3 +1,5 @@
+import { Icon } from "@/components/ui/Icon";
+import { Collapsible } from "@/components/ui/Collapsible";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { prettyPhone } from "@/lib/profile";
@@ -41,14 +43,14 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <SaveForm action={saveLearnDurations} className="card space-y-3">
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="learnDurations" defaultChecked={learn} className="mt-1" />
-          <span>
-            <span className="font-medium">Aprender el tiempo real de cada cliente</span>
-            <span className="block text-neutral-500">
-              Después de cada turno el cliente recibe por WhatsApp una encuesta de 10 segundos («¿cuánto tiempo te llevó?»). Cuando hay {MIN_SAMPLES} respuestas o más, sus próximos turnos se reservan con su tiempo habitual (la mediana de las últimas {WINDOW}).
-              Los clientes nuevos, o con pocos datos, usan la duración normal del servicio.
-            </span>
-          </span>
+          <span className="font-medium">Aprender el tiempo real de cada cliente</span>
         </label>
+        <Collapsible className="rounded-xl border border-neutral-200 p-2.5" title="Cómo funciona" leading={<Icon name="info" size={18} className="text-neutral-500" />} headerClassName="text-sm">
+          <p className="text-sm text-neutral-600">
+            Después de cada turno el cliente recibe por WhatsApp una encuesta de 10 segundos («¿cuánto tiempo te llevó?»). Cuando hay {MIN_SAMPLES} respuestas o más, sus próximos turnos se reservan con su tiempo habitual (la mediana de las últimas {WINDOW}).
+            Los clientes nuevos, o con pocos datos, usan la duración normal del servicio.
+          </p>
+        </Collapsible>
         <button className="btn">Guardar</button>
       </SaveForm>
 
@@ -89,21 +91,21 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                       {res.source === "standard" && samples.length > 0 && samples.length < MIN_SAMPLES && ` (faltan ${MIN_SAMPLES - samples.length} para usarlas)`}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <SaveForm action={setCustomerTime} className="flex items-center gap-1.5" successText="Tiempo fijado ✓">
+                      <SaveForm action={setCustomerTime} className="flex items-center gap-1.5" successText="Tiempo fijado">
                         <input type="hidden" name="customerId" value={hidden.customerId} />
                         <input type="hidden" name="serviceId" value={hidden.serviceId} />
                         <input name="minutes" type="number" min={5} max={480} step={5} required defaultValue={adj?.overrideMin ?? res.minutes} aria-label={`Minutos para ${s.name}`} className="input !w-20 !py-1 !text-sm" />
                         <button className="btn-ghost !px-2 !py-1 text-xs">Fijar tiempo</button>
                       </SaveForm>
                       {adj?.overrideMin ? (
-                        <SaveForm action={clearCustomerTime} successText="Tiempo fijo quitado ✓">
+                        <SaveForm action={clearCustomerTime} successText="Tiempo fijo quitado">
                           <input type="hidden" name="customerId" value={hidden.customerId} />
                           <input type="hidden" name="serviceId" value={hidden.serviceId} />
                           <button className="btn-ghost !px-2 !py-1 text-xs">Quitar tiempo fijo</button>
                         </SaveForm>
                       ) : null}
                       {(samples.length > 0 || adj?.overrideMin) && (
-                        <SaveForm action={resetCustomerTime} successText="Reseteado ✓" confirm="¿Ignorar las respuestas anteriores de este cliente y empezar de cero?">
+                        <SaveForm action={resetCustomerTime} successText="Reseteado" confirm="¿Ignorar las respuestas anteriores de este cliente y empezar de cero?">
                           <input type="hidden" name="customerId" value={hidden.customerId} />
                           <input type="hidden" name="serviceId" value={hidden.serviceId} />
                           <button className="px-2 py-1 text-xs text-red-600 underline">Resetear</button>

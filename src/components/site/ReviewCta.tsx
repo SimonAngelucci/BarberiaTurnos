@@ -1,3 +1,4 @@
+import { Stars } from "@/components/site/Stars";
 import Link from "next/link";
 
 /**
@@ -7,9 +8,7 @@ import Link from "next/link";
 export function ReviewCta({ slug, after = false }: { slug: string; after?: boolean }) {
   return (
     <section aria-label="Dejá tu reseña" className="overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-100 p-6 text-center shadow-sm">
-      <div className="text-4xl" aria-hidden>
-        ⭐⭐⭐⭐⭐
-      </div>
+      <Stars value={5} size={30} className="justify-center" />
       <h2 className="mt-2 text-xl font-extrabold text-neutral-900">{after ? "Después de tu turno, ¡contanos cómo te fue!" : "¿Ya te atendimos? ¡Dejá tu reseña!"}</h2>
       <p className="mx-auto mt-1 max-w-md text-sm text-neutral-700">
         {after

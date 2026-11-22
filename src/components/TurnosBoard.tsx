@@ -94,7 +94,7 @@ export function TurnosBoard({ appts, tz }: { appts: BoardAppt[]; tz: string }) {
                 </p>
               </>
             ) : (
-              <p className="text-lg font-semibold">Sin turnos próximos 🎉</p>
+              <p className="text-lg font-semibold">Sin turnos próximos</p>
             )}
           </div>
         </div>
@@ -138,14 +138,14 @@ export function TurnosBoard({ appts, tz }: { appts: BoardAppt[]; tz: string }) {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {a.paid !== "PAID" && (
-                        <SaveForm action={markAppointmentPaid} successText="Cobrado ✓">
+                        <SaveForm action={markAppointmentPaid} successText="Cobrado">
                           <input type="hidden" name="id" value={a.id} />
                           <button className="btn-ghost !bg-white/70" title="Marcar como cobrado en el local">
                             Cobrado
                           </button>
                         </SaveForm>
                       )}
-                      <SaveForm action={setAppointmentStatus} successText="Turno completado ✓">
+                      <SaveForm action={setAppointmentStatus} successText="Turno completado">
                         <input type="hidden" name="id" value={a.id} />
                         <input type="hidden" name="status" value="COMPLETED" />
                         <button className={live ? "btn" : "btn-ghost !bg-white/70"}>Completado</button>

@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui/Icon";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -36,8 +37,7 @@ const links: NavLink[] = [
   { href: "/admin/payments", label: "Pagos" },
   // Personalización reúne Negocio, Diseño y Mi página: las rutas viejas también la dejan marcada.
   { href: "/admin/personalizacion", label: "Personalización", also: ["/admin/settings", "/admin/design", "/admin/profile"], badge: true },
-  { href: "/admin/billing", label: "Suscripción" },
-  { href: "/admin/account", label: "Mi cuenta" },
+  { href: "/admin/account", label: "Mi cuenta", also: ["/admin/billing"] },
 ];
 
 
@@ -64,7 +64,7 @@ function BillingBanner({ a }: { a: Access }) {
       return box(
         "info",
         <>
-          🎁 <strong>Prueba gratis:</strong> te {a.trialDaysLeft === 1 ? "queda 1 día" : `quedan ${a.trialDaysLeft} días`}.
+          <Icon name="gift" size={16} className="mr-1.5 inline -translate-y-px" /><strong>Prueba gratis:</strong> te {a.trialDaysLeft === 1 ? "queda 1 día" : `quedan ${a.trialDaysLeft} días`}.
           {a.sub.mpStatus === "authorized" ? <> Tu suscripción ya está autorizada: el primer cobro será al terminar la prueba.</> : <> Elegí un plan antes de que termine para no perder el acceso.</>}
           {cta(a.sub.mpStatus === "authorized" ? "Ver mi suscripción" : "Elegir plan")}
         </>,
@@ -113,7 +113,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
 
   return (
-    <>
+    <div className="app-themed">
       {business && <style dangerouslySetInnerHTML={{ __html: themeCss(business.primaryColor, business.applyBgToAdmin ? business.bgColor : "#fafafa") }} />}
       {/* En solo lectura se deshabilitan los formularios del panel (salvo Suscripción y Mi cuenta). La defensa real está en el
           servidor: las acciones exigen la suscripción al día. */}
@@ -121,6 +121,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {children}
       </PanelShell>
       {business && business.onboardingStep < 4 && <OnboardingGuide initialStep={business.onboardingStep} publicUrl={publicUrl} />}
-    </>
+    </div>
   );
 }

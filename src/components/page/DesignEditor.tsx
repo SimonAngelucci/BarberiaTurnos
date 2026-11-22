@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -357,12 +358,12 @@ export function DesignEditor({ initial, business, publicUrl, booking }: {
         <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-neutral-300 text-sm">
           {(["mobile", "desktop"] as const).map((d) => (
             <button key={d} type="button" aria-pressed={device === d} onClick={() => setDevice(d)} className={`px-3 py-2 font-medium ${device === d ? "bg-neutral-900 text-white" : "bg-white hover:bg-neutral-100"}`}>
-              {d === "mobile" ? "📱 Móvil" : "🖥 Escritorio"}
+              {d === "mobile" ? (<><Icon name="smartphone" size={14} className="mr-1 inline -translate-y-px" />Móvil</>) : (<><Icon name="monitor" size={14} className="mr-1 inline -translate-y-px" />Escritorio</>)}
             </button>
           ))}
         </div>
         <button type="button" className="btn-ghost lg:hidden" onClick={() => { setSel(null); setPageOpen((v) => !v); }}>
-          ⚙ Página
+          <Icon name="settings" size={14} className="mr-1 inline -translate-y-px" />Página
         </button>
         <button type="button" className="btn-ghost" onClick={() => setConfirmReset(true)}>
           Restablecer
@@ -372,7 +373,7 @@ export function DesignEditor({ initial, business, publicUrl, booking }: {
             Ver página ↗
           </a>
           <button type="button" className="btn" disabled={saving || !dirty} onClick={save}>
-            {saving ? "Publicando…" : dirty ? "Guardar y publicar ●" : "Publicado ✓"}
+            {saving ? "Publicando…" : dirty ? "Guardar y publicar" : "Publicado"}
           </button>
         </div>
       </div>

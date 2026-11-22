@@ -1,3 +1,6 @@
+import { Collapsible } from "@/components/ui/Collapsible";
+import { IconButton } from "@/components/ui/IconButton";
+import { Icon } from "@/components/ui/Icon";
 import { DateTime } from "luxon";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -14,7 +17,7 @@ function Delta({ cur, prev, what }: { cur: number; prev: number; what: string })
   const up = c >= 0;
   return (
     <span className={`text-xs font-semibold ${up ? "text-green-700" : "text-red-700"}`}>
-      {up ? "▲" : "▼"} {Math.abs(c)}% <span className="font-normal text-neutral-500">vs {what}</span>
+      <Icon name={up ? "trending-up" : "trending-down"} size={14} className="mr-0.5 inline -translate-y-px" />{Math.abs(c)}% <span className="font-normal text-neutral-500">vs {what}</span>
     </span>
   );
 }
@@ -89,9 +92,11 @@ export default async function EconomyPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold">Economía</h1>
-        <p className="text-sm text-neutral-500">
-          Ingresos por turnos realizados (completados, o confirmados cuyo horario ya pasó) más los montos que cargues a mano. Los turnos cancelados o ausentes no suman.
-        </p>
+        <Collapsible className="mt-2" title="¿Cómo se calcula?" leading={<Icon name="info" size={18} className="text-neutral-500" />} headerClassName="text-sm text-neutral-600">
+          <p className="text-sm text-neutral-500">
+            Ingresos por turnos realizados (completados, o confirmados cuyo horario ya pasó) más los montos que cargues a mano. Los turnos cancelados o ausentes no suman.
+          </p>
+        </Collapsible>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -101,7 +106,7 @@ export default async function EconomyPage() {
 
       {s.pendingCount > 0 && (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          ⏳ Tenés <strong>{s.pendingCount}</strong> {s.pendingCount === 1 ? "turno agendado" : "turnos agendados"} este mes que todavía no se {s.pendingCount === 1 ? "hizo" : "hicieron"}:{" "}
+          <Icon name="hourglass" size={16} className="mr-1 inline -translate-y-px" />Tenés <strong>{s.pendingCount}</strong> {s.pendingCount === 1 ? "turno agendado" : "turnos agendados"} este mes que todavía no se {s.pendingCount === 1 ? "hizo" : "hicieron"}:{" "}
           <strong>{money(s.pendingCents, c)}</strong> más cuando se realicen.
         </p>
       )}
@@ -176,7 +181,7 @@ export default async function EconomyPage() {
           <h2 className="font-semibold">Sumar un ingreso manual</h2>
           <p className="text-sm text-neutral-500">Para ventas de productos u otros ingresos que no vienen de un turno. Se suman a los totales de la semana y del mes que corresponda.</p>
         </div>
-        <SaveForm action={addManualIncome} className="grid gap-3 sm:grid-cols-5" successText="Ingreso agregado ✓" resetOnSuccess>
+        <SaveForm action={addManualIncome} className="grid gap-3 sm:grid-cols-5" successText="Ingreso agregado" resetOnSuccess>
           <div className="sm:col-span-2">
             <label className="label">Descripción</label>
             <input name="description" required maxLength={100} className="input" placeholder="Ej: Venta de shampoo" />
@@ -208,7 +213,7 @@ export default async function EconomyPage() {
                   <strong className="tabular-nums">{money(m.amountCents, c)}</strong>
                   <SaveForm action={deleteManualIncome} successText="Ingreso eliminado" confirm="¿Eliminar este ingreso manual?">
                     <input type="hidden" name="id" value={m.id} />
-                    <button className="text-red-600 underline">Quitar</button>
+                    <IconButton type="submit" icon="trash" label="Quitar ingreso" variant="danger" />
                   </SaveForm>
                 </span>
               </li>

@@ -1,5 +1,7 @@
 "use client";
 
+import { IconButton } from "@/components/ui/IconButton";
+import { Icon } from "@/components/ui/Icon";
 import { useRef, useState, useTransition } from "react";
 import { addPhoto, movePhoto, removePhoto } from "@/app/admin/profile/actions";
 import { IMAGE_TYPES as TYPES, MAX_SOURCE, shrink } from "@/lib/client-image";
@@ -63,22 +65,9 @@ export function PhotoManager({ kind, photos, max, enabled }: { kind: "HERO" | "G
               <div className="flex items-center justify-between gap-1 p-1.5">
                 <span className="pl-1 text-xs text-neutral-500">{i + 1}</span>
                 <div className="flex gap-1">
-                  <button type="button" aria-label="Mover antes" disabled={pending || !!busy || i === 0} onClick={() => run(() => movePhoto(p.id, "up"))} className="btn-ghost !px-2 !py-1 disabled:opacity-40">
-                    ←
-                  </button>
-                  <button type="button" aria-label="Mover después" disabled={pending || !!busy || i === photos.length - 1} onClick={() => run(() => movePhoto(p.id, "down"))} className="btn-ghost !px-2 !py-1 disabled:opacity-40">
-                    →
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Quitar foto"
-                    disabled={pending || !!busy}
-                    onClick={() => confirm("¿Quitar esta foto?") && run(() => removePhoto(p.id))}
-                    className="btn-ghost !border-red-300 !px-2 !py-1 !text-red-600 disabled:opacity-40"
-                  >
-                    ✕
-                  </button>
-                </div>
+                  <IconButton icon="chevron-left" label="Mover antes" size={16} disabled={pending || !!busy || i === 0} onClick={() => run(() => movePhoto(p.id, "up"))} className="!h-8 !w-8" />
+                  <IconButton icon="chevron-right" label="Mover después" size={16} disabled={pending || !!busy || i === photos.length - 1} onClick={() => run(() => movePhoto(p.id, "down"))} className="!h-8 !w-8" />
+                  <IconButton icon="trash" label="Quitar foto" variant="danger" size={16} disabled={pending || !!busy} onClick={() => confirm("¿Quitar esta foto?") && run(() => removePhoto(p.id))} className="!h-8 !w-8" />                </div>
               </div>
             </li>
           ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type GalleryItem = { url: string; type: "IMAGE" | "VIDEO"; poster: string | null };
@@ -195,7 +196,7 @@ export function Gallery({ items, visible = 4, showAll = false, allHref, bookHref
             <img src={cur.url} alt={`Foto ${open + 1} de ${n}`} className="max-h-[80vh] max-w-full rounded-sm object-contain" onClick={(e) => e.stopPropagation()} />
           )}
           <button type="button" aria-label="Cerrar" onClick={() => setOpen(null)} className="absolute right-3 top-3 rounded-full bg-white/15 px-3 py-1.5 text-lg text-white hover:bg-white/30">
-            ✕
+            <Icon name="x" size={14} />
           </button>
           {n > 1 && (
             <>
