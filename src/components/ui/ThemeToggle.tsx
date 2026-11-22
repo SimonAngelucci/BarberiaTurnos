@@ -13,7 +13,7 @@ const OPTIONS: { value: ThemePref; label: string; icon: IconName }[] = [
 
 /** Mantiene la preferencia sincronizada: reacciona a cambios del sistema (en modo «sistema») y a otras pestañas. */
 function usePref() {
-  const [pref, setPref] = useState<ThemePref>("system");
+  const [pref, setPref] = useState<ThemePref>("dark");
   useEffect(() => {
     setPref(readPref());
     const onChange = () => setPref(readPref());

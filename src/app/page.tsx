@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary", title: TITLE, description: DESC },
 };
 
-const BTN_PRIMARY = "inline-flex items-center justify-center rounded-full bg-neutral-900 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0";
+const BTN_PRIMARY = "inline-flex items-center justify-center rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-brand-fg shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0";
 const BTN_LIGHT = "inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-neutral-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-neutral-100";
 const BTN_GHOST = "inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-7 py-3.5 text-base font-semibold text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50";
 
@@ -109,7 +109,7 @@ export default async function Landing() {
   };
 
   return (
-    <div className="app-themed bg-white text-neutral-900" style={{ scrollBehavior: "smooth" }}>
+    <div className="app-themed text-neutral-900" style={{ scrollBehavior: "smooth" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
 
       {/* Barra superior */}
@@ -130,7 +130,7 @@ export default async function Landing() {
             <Link href="/admin/login" className="rounded-full px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
               Ingresar
             </Link>
-            <CtaLink where="header" className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">
+            <CtaLink where="header" className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-brand-fg hover:brightness-110">
               Comenzar gratis
             </CtaLink>
           </div>
@@ -194,7 +194,7 @@ export default async function Landing() {
           <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s) => (
               <li key={s.n} className="relative rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-                <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-lg font-extrabold text-white">{s.n}</span>
+                <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-brand text-lg font-extrabold text-brand-fg">{s.n}</span>
                 <h3 className="text-lg font-bold">{s.title}</h3>
                 <p className="mt-1.5 text-neutral-600">{s.text}</p>
               </li>
@@ -352,7 +352,7 @@ export default async function Landing() {
 
         {/* CTA final */}
         <section className="px-5 py-16 sm:py-24">
-          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-neutral-900 via-neutral-800 to-emerald-900 px-6 py-14 text-center text-white shadow-2xl sm:px-12">
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2a3318] via-[#1d2413] to-[#0c1008] px-6 py-14 text-center text-white shadow-2xl sm:px-12">
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">Tu próxima reserva puede estar llegando mientras trabajás</h2>
             <p className="mx-auto mt-3 max-w-xl text-lg text-neutral-300">Creá tu negocio hoy, compartí tu link y empezá a recibir turnos. El primer mes es gratis y no pedimos tarjeta.</p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

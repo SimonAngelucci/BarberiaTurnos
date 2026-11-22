@@ -5,9 +5,9 @@ export const THEME_KEY = "theme-pref";
 export function readPref(): ThemePref {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === "light" || v === "dark" ? v : "system";
+    return v === "light" || v === "dark" || v === "system" ? v : "dark"; // sin preferencia guardada: oscuro (el estilo de la app)
   } catch {
-    return "system";
+    return "dark";
   }
 }
 
@@ -27,8 +27,7 @@ export function applyPref(pref: ThemePref) {
 
 export function savePref(pref: ThemePref) {
   try {
-    if (pref === "system") localStorage.removeItem(THEME_KEY);
-    else localStorage.setItem(THEME_KEY, pref);
+    localStorage.setItem(THEME_KEY, pref);
   } catch {
     /* sin storage: el cambio vale para esta visita */
   }
@@ -40,4 +39,4 @@ export function savePref(pref: ThemePref) {
  * Script que corre en el <head> ANTES de pintar la página: fija el tema desde la preferencia guardada para que no se vea un
  * destello del tema equivocado al cargar. Tiene que ser autosuficiente (se inyecta como texto).
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem("${THEME_KEY}");var d=p==="dark"||((p!=="light")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light"}catch(e){}})()`;
+export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem("${THEME_KEY}");var d=p==="system"?window.matchMedia("(prefers-color-scheme: dark)").matches:p!=="light";document.documentElement.dataset.theme=d?"dark":"light"}catch(e){}})()`;

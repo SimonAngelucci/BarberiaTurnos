@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { NotificationBell } from "./NotificationBell";
 import { LogoutButton } from "./LogoutButton";
 import { ThemeCycleButton } from "./ui/ThemeToggle";
+import { AppLogo } from "./AppLogo";
+import { Icon, type IconName } from "./ui/Icon";
 
 export type NavLink = {
   href: string;
@@ -14,6 +16,20 @@ export type NavLink = {
   also?: string[];
   /** Muestra el globito de reseñas por aprobar. */
   badge?: boolean;
+};
+
+/** Ícono de cada sección en el menú flotante. */
+const ICONS: Record<string, IconName> = {
+  "/admin": "calendar",
+  "/admin/turnos": "play",
+  "/admin/services": "scissors",
+  "/admin/barbers": "users",
+  "/admin/customers": "heart",
+  "/admin/schedule": "clock",
+  "/admin/economia": "wallet",
+  "/admin/payments": "credit-card",
+  "/admin/personalizacion": "palette",
+  "/admin/account": "settings",
 };
 
 /** ¿Estoy en esta sección? «/admin» (Turnos) solo coincide exacto; las demás incluyen sus subpáginas. */
@@ -52,38 +68,46 @@ export function AdminNav({ links, logoUrl, pendingReviews }: { links: NavLink[];
   }, [path]);
 
   return (
-    // Fijo arriba: -mx-4 + px-4 lo hace llegar a los bordes del contenedor; el fondo tapa lo que pasa por abajo y el padding superior
-    // respeta la muesca de iOS (env(safe-area-inset-top)).
-    <div ref={bar} className="sticky top-0 z-30 -mx-4 mb-3 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]" style={{ background: "var(--page-bg, #fafafa)" }}>
-    <nav aria-label="Panel" className="card flex items-center gap-1 overflow-x-auto !p-2">
-      {logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={logoUrl} alt="" className="mr-2 h-8 w-8 shrink-0 rounded-full object-cover" />}
-      {links.map((l) => {
-        const on = isActive(path, l);
-        return (
-          <Link
-            key={l.href}
-            href={l.href}
-            ref={on ? activeRef : undefined}
-            aria-current={on ? "page" : undefined}
-            className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              on ? "bg-brand text-brand-fg shadow-sm" : "text-neutral-700 hover:bg-neutral-100"
-            }`}
-          >
-            {l.label}
-            {l.badge && pendingReviews > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold text-white" title="Reseñas por aprobar">
-                {pendingReviews}
-              </span>
-            )}
-          </Link>
-        );
-      })}
-      <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
-        <ThemeCycleButton />
-        <NotificationBell />
-        <LogoutButton />
+    <>
+      {/* Barra superior fija y transparente: logo y acciones. El padding superior respeta la muesca de iOS. */}
+      <div ref={bar} className="sticky top-0 z-30 -mx-4 mb-3 flex items-center justify-between px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-md" style={{ background: "color-mix(in srgb, var(--page-bg, #fafafa) 82%, transparent)" }}>
+        <div className="flex items-center gap-2.5">
+          {logoUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white/20" /> : <AppLogo size={36} />}
+          <span className="text-sm font-semibold">Mi panel</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <ThemeCycleButton />
+          <NotificationBell />
+          <LogoutButton />
+        </div>
       </div>
-    </nav>
-    </div>
+
+      {/* Menú flotante abajo, en píldora: solo la sección activa muestra su nombre; el resto son íconos (con nombre para lectores). */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <nav aria-label="Panel" className="dock no-scrollbar pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1.5">
+          {links.map((l) => {
+            const on = isActive(path, l);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                ref={on ? activeRef : undefined}
+                aria-current={on ? "page" : undefined}
+                title={l.label}
+                className="dock-item relative flex h-11 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-colors"
+              >
+                <Icon name={ICONS[l.href] ?? "circle"} size={20} />
+                <span className={on ? "whitespace-nowrap" : "sr-only"}>{l.label}</span>
+                {l.badge && pendingReviews > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 min-w-[1.1rem] rounded-full bg-amber-500 px-1 text-center text-[10px] font-bold leading-[1.1rem] text-white" title="Reseñas por aprobar">
+                    {pendingReviews}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </>
   );
 }

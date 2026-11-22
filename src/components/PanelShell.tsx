@@ -19,7 +19,7 @@ export function PanelShell({ chrome, readonly, children }: { chrome: React.React
   const lock = readonly && !bare && !path.startsWith("/admin/billing") && !path.startsWith("/admin/account");
 
   return (
-    <div className={`mx-auto min-h-screen px-4 py-4 ${path === "/admin/turnos" ? "max-w-5xl" : "max-w-4xl"}`}>
+    <div className={`mx-auto min-h-screen px-4 pt-4 ${bare ? "pb-4" : "pb-32"} ${path === "/admin/turnos" ? "max-w-5xl" : "max-w-4xl"}`}>
       {!bare && chrome}
       <fieldset disabled={lock} className="m-0 min-w-0 border-0 p-0">
         {children}
