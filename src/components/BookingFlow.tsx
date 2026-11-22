@@ -10,7 +10,7 @@ import { DayPicker, type DayItem } from "./DayPicker";
 import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
 import { ServiceIcon } from "./ServiceIcon";
-import { clearDraft, isMeaningful, loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-storage";
+import { clearBooked, clearDraft, isMeaningful, loadBooked, loadDraft, saveDraft, type BookedTurn, type BookingDraft } from "@/lib/booking-storage";
 import type { BusinessType } from "@/lib/service-icons";
 
 type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null; comingSoon?: boolean };
@@ -76,6 +76,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const pendingChoice = useRef<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [resume, setResume] = useState<BookingDraft | null>(null);
+  const [booked, setBooked] = useState<BookedTurn | null>(null); // turno ya reservado desde este navegador (y todavía no pasó)
 
   const days = useMemo(() => {
     const today = DateTime.now().setZone(timezone).startOf("day");
@@ -116,6 +117,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
   // Restaurar el borrador al entrar (solo en el navegador: en el servidor no hay localStorage).
   useEffect(() => {
+    if (mode === "list") setBooked(loadBooked(slug));
     const d = loadDraft(slug);
     if (d) {
       if (mode === "list") {
@@ -274,7 +276,37 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           )}
           <h2 className="text-xl font-bold tracking-tight">Servicios</h2>
         </div>
-        {/* Reserva que quedó a medias en este navegador: se puede retomar o descartar. */}
+        {/* Turno que ya reservó desde este navegador: día y hora, con acceso a verlo o cambiarlo. */}
+        {mode === "list" && booked && (() => {
+          const at = DateTime.fromISO(booked.startAt).setZone(timezone).setLocale("es");
+          return (
+            <div className="card mb-3 flex flex-wrap items-center gap-3 !border-brand" role="status">
+              <Icon name="check-circle" size={24} className="text-green-600" />
+              <div className="min-w-0 flex-1 text-sm">
+                <div className="font-semibold">Ya tenés tu turno</div>
+                <div className="capitalize text-neutral-600">
+                  {at.toFormat("cccc d 'de' LLLL")} · {at.toFormat("HH:mm")} hs
+                </div>
+                {booked.serviceName && <div className="text-neutral-500">{booked.serviceName}</div>}
+              </div>
+              {booked.claimCode && (
+                <a href={`/b/${slug}/confirmado?c=${encodeURIComponent(booked.claimCode)}`} className="btn !px-4 !py-2 text-sm">
+                  Ver turno
+                </a>
+              )}
+              <button
+                type="button"
+                className="btn-ghost !px-3 !py-2"
+                onClick={() => {
+                  clearBooked(slug);
+                  setBooked(null);
+                }}
+              >
+                Ocultar
+              </button>
+            </div>
+          );
+        })()}        {/* Reserva que quedó a medias en este navegador: se puede retomar o descartar. */}
         {mode === "list" && resume && (
           <div className="card mb-3 flex flex-wrap items-center gap-3 !border-brand/40">
             <Icon name="clock" size={20} className="text-neutral-500" />
@@ -296,7 +328,8 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               Descartar
             </button>
           </div>
-        )}        {services.length === 0 && <p className="card text-center text-sm text-neutral-500">Este negocio todavía no cargó sus servicios. Volvé a pasar en unos días.</p>}
+        )}
+        {services.length === 0 && <p className="card text-center text-sm text-neutral-500">Este negocio todavía no cargó sus servicios. Volvé a pasar en unos días.</p>}
         <div className="space-y-2.5">
           {services.map((s) => (
             <button

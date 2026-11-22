@@ -46,25 +46,60 @@ function Summary({ p, prev, prevWhat, currency }: { p: Period; prev: Period; pre
   );
 }
 
-/** Barras apiladas (turnos + manuales) sin librerías: la altura es proporcional al mayor valor del gráfico. */
+/** Monto corto para encima de las barras ($1,2M, $815k, $950): evita que los números se pisen en barras angostas. */
+function compact(cents: number) {
+  const v = cents / 100;
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1).replace(".", ",").replace(",0", "")}M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}k`;
+  return `$${Math.round(v)}`;
+}
+
+/**
+ * Gráfico de barras (turnos + manuales apilados) sin librerías: columnas redondeadas que crecen al entrar, guías de fondo y el
+ * valor compacto arriba de cada barra. La barra marcada (hoy) lleva el monto completo en una etiqueta de color.
+ */
 function Bars({ items, currency, highlight }: { items: { label: string; turnosCents: number; manualCents: number; totalCents: number; today?: boolean }[]; currency: string; highlight?: boolean }) {
   const max = Math.max(1, ...items.map((i) => i.totalCents));
   return (
-    <div className="flex h-40 items-end gap-1.5 sm:gap-2" role="img" aria-label="Gráfico de ingresos">
-      {items.map((i) => (
-        <div key={i.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1" title={`${i.label}: ${money(i.totalCents, currency)}`}>
-          <span className="text-[10px] font-medium tabular-nums text-neutral-500">{i.totalCents > 0 ? money(i.totalCents, currency).replace(/\D00$|,00$/, "") : ""}</span>
-          <div className={`flex w-full flex-col justify-end overflow-hidden rounded-t-md ${highlight && i.today ? "ring-2 ring-amber-400" : ""}`} style={{ height: `${Math.max(2, (i.totalCents / max) * 100)}%` }}>
-            <div className="bg-emerald-400" style={{ height: `${i.totalCents ? (i.manualCents / i.totalCents) * 100 : 0}%` }} />
-            <div className="flex-1 bg-brand" />
-          </div>
-          <span className={`w-full truncate text-center text-[10px] ${highlight && i.today ? "font-bold" : "text-neutral-500"}`}>{i.label}</span>
+    <div role="img" aria-label="Gráfico de ingresos">
+      <div className="relative h-52">
+        {/* Guías horizontales */}
+        {[0, 50, 100].map((g) => (
+          <div key={g} aria-hidden className="pointer-events-none absolute inset-x-0 border-t border-dashed border-neutral-200" style={{ bottom: `${g * 0.82}%` }} />
+        ))}
+        <div className="absolute inset-0 flex items-end gap-1.5 sm:gap-3">
+          {items.map((i, n) => {
+            const on = !!(highlight && i.today);
+            const pct = i.totalCents ? Math.max(4, (i.totalCents / max) * 82) : 1.5;
+            return (
+              <div key={i.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={`${i.label}: ${money(i.totalCents, currency)}`}>
+                {i.totalCents > 0 && (
+                  <span className={on ? "whitespace-nowrap rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold tabular-nums text-brand-fg" : "whitespace-nowrap text-[11px] font-semibold tabular-nums text-neutral-500"}>
+                    {on ? money(i.totalCents, currency).replace(/\D00$|,00$/, "") : compact(i.totalCents)}
+                  </span>
+                )}
+                <div
+                  className="animate-grow flex w-full max-w-[2.75rem] origin-bottom flex-col justify-end overflow-hidden rounded-t-2xl rounded-b-md"
+                  style={{ height: `${pct}%`, animationDelay: `${n * 45}ms`, opacity: on || !highlight ? 1 : 0.55 }}
+                >
+                  <div className="bg-teal-400" style={{ height: `${i.totalCents ? (i.manualCents / i.totalCents) * 100 : 0}%` }} />
+                  <div className="flex-1 bg-brand" />
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ))}
+      </div>
+      <div className="mt-2 flex gap-1.5 sm:gap-3">
+        {items.map((i) => (
+          <span key={i.label} className={`min-w-0 flex-1 truncate text-center text-[11px] ${highlight && i.today ? "font-bold text-neutral-900" : "text-neutral-500"}`}>
+            {i.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
-
 export default async function EconomyPage() {
   const { businessId } = await requireAdmin();
   const b = await getBusinessById(businessId);
@@ -119,7 +154,7 @@ export default async function EconomyPage() {
               <i className="inline-block h-2.5 w-2.5 rounded-sm bg-brand" /> Turnos
             </span>
             <span className="flex items-center gap-1">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-400" /> Manuales
+              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-teal-400" /> Manuales
             </span>
           </span>
         </div>

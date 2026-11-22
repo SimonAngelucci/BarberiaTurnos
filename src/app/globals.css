@@ -221,3 +221,7 @@ html[data-theme="dark"] .app-themed .dock { background: rgba(255, 255, 255, 0.96
 .dock-item { color: #6b7358; }
 .dock-item:hover { color: #10150a; }
 .dock-item[aria-current="page"] { background: #10150a; color: #c6f400; }
+/* Barras de los gráficos: crecen desde abajo al aparecer. */
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.animate-grow { animation: grow 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .animate-grow { animation: none; } }

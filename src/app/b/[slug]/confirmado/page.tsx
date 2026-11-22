@@ -8,6 +8,7 @@ import { prisma, getBusinessBySlug } from "@/lib/db";
 import { money } from "@/lib/format";
 import { blocked, recordFailure } from "@/lib/rate-limit";
 import { ReviewCta } from "@/components/site/ReviewCta";
+import { RememberTurn } from "@/components/site/RememberTurn";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
           const pendingPay = appt.paymentStatus === "PENDING_AT_STORE";
           return (
             <div className="space-y-4">
+              {appt.claimCode && <RememberTurn slug={b.slug} startAt={appt.startAt.toISOString()} serviceName={appt.service.name} claimCode={appt.claimCode} />}
               <div className="card text-center">
                 <Icon name="check-circle" size={52} className="mx-auto mb-2 text-green-600" />
                 <h2 className="text-2xl font-bold">¡Turno confirmado!</h2>

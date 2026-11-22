@@ -83,3 +83,42 @@ export function isMeaningful(d: Omit<BookingDraft, "v" | "savedAt">, defaultPref
   const phone = d.form.phone.trim() === defaultPrefix.trim() ? "" : d.form.phone.trim();
   return !!(d.barberId || d.date || d.slot || d.form.firstName.trim() || d.form.lastName.trim() || phone);
 }
+
+/**
+ * Turno ya reservado en este navegador: `dameunturno:booked:<slug>`. Se guarda al llegar a la página de confirmación y la lista de
+ * servicios avisa «Ya tenés tu turno» con el día y la hora. Se descarta solo cuando el turno ya pasó.
+ */
+export type BookedTurn = { v: number; startAt: string; serviceName: string; claimCode: string };
+export const bookedKey = (slug: string) => `dameunturno:booked:${slug}`;
+
+export function saveBooked(slug: string, t: Omit<BookedTurn, "v">) {
+  try {
+    localStorage.setItem(bookedKey(slug), JSON.stringify({ ...t, v: VERSION }));
+  } catch {
+    /* sin storage: simplemente no se recuerda */
+  }
+}
+
+export function loadBooked(slug: string, now = Date.now()): BookedTurn | null {
+  try {
+    const raw = localStorage.getItem(bookedKey(slug));
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Record<string, unknown>;
+    const startAt = typeof d.startAt === "string" ? d.startAt : "";
+    if (d.v !== VERSION || !startAt || !(new Date(startAt).getTime() > now)) {
+      localStorage.removeItem(bookedKey(slug)); // pasó o está roto
+      return null;
+    }
+    return { v: VERSION, startAt, serviceName: str(d.serviceName, 120), claimCode: str(d.claimCode, 20) };
+  } catch {
+    return null;
+  }
+}
+
+export function clearBooked(slug: string) {
+  try {
+    localStorage.removeItem(bookedKey(slug));
+  } catch {
+    /* nada que limpiar */
+  }
+}
