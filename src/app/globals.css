@@ -195,6 +195,8 @@ html[data-theme="dark"] .app-themed {
 .app-themed .input:focus { border-color: var(--primary-strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-strong) 28%, transparent); }
 .app-themed .btn-ghost { background: transparent; border-color: color-mix(in srgb, currentColor 25%, transparent); color: inherit; }
 .app-themed .btn-ghost:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+html[data-theme="dark"] .app-themed .btn-ghost { color: inherit; background: transparent; border-color: color-mix(in srgb, currentColor 25%, transparent); }
+html[data-theme="dark"] .app-themed .btn-ghost:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 .app-themed .label { color: var(--text-muted); }
 .app-themed ::placeholder { color: var(--text-muted); opacity: 0.8; }
 /* Tarjeta negra (sobre superficies claras) y de acento: se usan con className en cualquier pantalla */
@@ -247,7 +249,7 @@ html[data-theme="dark"] .app-themed { --hero: color-mix(in srgb, var(--primary) 
 .hero-block { background: var(--hero); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
 
 /* Tabs tipo carpeta: la activa es de la misma superficie que la tarjeta de abajo y se une a ella con esquinas cóncavas. */
-.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.6rem 0.7rem; border-radius: 1.75rem 1.75rem 0 0; color: inherit; opacity: 0.7; transition: opacity 0.2s; }
+.ftab { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem 0.7rem; white-space: nowrap; border-radius: 1.75rem 1.75rem 0 0; color: inherit; opacity: 0.7; transition: opacity 0.2s; }
 .ftab:hover { opacity: 1; }
 .ftab-on { opacity: 1; background: var(--surface); color: var(--page-fg); }
 .ftab-on::after, .ftab-left::before { content: ""; position: absolute; bottom: -1px; width: 1.5rem; height: 1.5rem; pointer-events: none; }

@@ -15,6 +15,8 @@ export type NavLink = {
   icon: IconName;
   /** Otras rutas que también cuentan como esta sección (ej: Inicio incluye Clientes y Profesionales). */
   also?: string[];
+  /** La pantalla tiene bloque de color arriba (ver Hero): la barra superior toma ese color. */
+  hero?: boolean;
   /** Muestra el globito de reseñas por aprobar. */
   badge?: boolean;
 };
@@ -27,7 +29,8 @@ export type NavLink = {
 export function AdminNav({ links, logoUrl, pendingReviews }: { links: NavLink[]; logoUrl: string | null; pendingReviews: number }) {
   const bar = useRef<HTMLDivElement>(null);
   // En Inicio la barra es parte del bloque de color de arriba (ver Hero): mismo color y texto oscuro encima.
-  const onHome = usePathname() === (links[0]?.href ?? "/admin");
+  const path = usePathname();
+  const onHome = !!links.find((l) => l.href === path)?.hero;
 
   useEffect(() => {
     const el = bar.current;

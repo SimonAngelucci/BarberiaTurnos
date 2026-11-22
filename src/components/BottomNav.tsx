@@ -51,8 +51,6 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      {/* Degradado al color del fondo: lo que pasa por detrás de la barra se desvanece en vez de cortarse. */}
-      <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-32" style={{ background: "linear-gradient(to top, var(--bg) 40%, transparent)" }} />
       <nav aria-label="Panel" className="dock pointer-events-auto relative w-full max-w-md rounded-[2rem]">
         <ul
           ref={track}

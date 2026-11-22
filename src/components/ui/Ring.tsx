@@ -3,7 +3,7 @@
  * El número va en el centro; `label` (DÍAS, HORAS, MIN…) queda al lado en mayúsculas. `value` es de 0 a 1.
  * Es un gráfico decorativo: el dato real está en el texto (número + label), que lo leen los lectores de pantalla.
  */
-export function Ring({ value, children, label, size = 40, stroke = 4, className = "" }: { value: number; children: React.ReactNode; label?: string; size?: number; stroke?: number; className?: string }) {
+export function Ring({ value, children, label, size = 40, stroke = 4, color = "var(--primary-strong)", className = "" }: { value: number; children: React.ReactNode; label?: string; size?: number; stroke?: number; color?: string; className?: string }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const v = Math.min(1, Math.max(0, value));
@@ -12,7 +12,7 @@ export function Ring({ value, children, label, size = 40, stroke = 4, className 
       <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeOpacity={0.16} strokeWidth={stroke} />
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--primary-strong)" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: "stroke-dashoffset .6s ease" }} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: "stroke-dashoffset .6s ease" }} />
         </svg>
         <span className="absolute text-[13px] font-semibold tabular-nums">{children}</span>
       </span>
