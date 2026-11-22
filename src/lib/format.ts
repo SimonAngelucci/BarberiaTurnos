@@ -87,3 +87,21 @@ export function themeCss(brand: string, bg: string) {
 export function contrastFg(hex: string) {
   return contrastRatio(hex, "#ffffff") >= contrastRatio(hex, "#111827") ? "#ffffff" : "#111827";
 }
+
+/** Color por defecto del panel (cian/menta pastel) y el negro que antes era el "color principal" por defecto de los negocios. */
+export const DEFAULT_PRIMARY = "#c2e5de";
+const LEGACY_DEFAULT = "#111827";
+
+/**
+ * Variables del panel de administración (clase .app-themed) a partir del color del negocio. Un negocio que nunca eligió color
+ * (guardado como el negro por defecto anterior) usa el cian de la app. Las variantes *-dark se activan en modo oscuro (globals.css).
+ * - --primary: color principal; --on-primary: texto legible encima (siempre elegido por contraste).
+ * - --primary-strong: versión más profunda para anillos y barras sobre fondo claro (>= 3:1 contra el blanco en el cian por defecto).
+ */
+export function panelThemeCss(brand: string) {
+  const custom = HEX.test(brand) && brand.toLowerCase() !== LEGACY_DEFAULT;
+  const p = custom ? brand : DEFAULT_PRIMARY;
+  const strong = custom ? (luminance(p) > 0.4 ? mix(p, "#000000", 0.35) : p) : "#3fa597";
+  const pd = brandOnDark(p);
+  return `.app-themed{--primary:${p};--on-primary:${contrastFg(p)};--primary-strong:${strong};--primary-dark:${pd};--on-primary-dark:${contrastFg(pd)};--primary-strong-dark:${pd}}`;
+}

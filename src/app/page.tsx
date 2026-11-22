@@ -109,7 +109,7 @@ export default async function Landing() {
   };
 
   return (
-    <div className="app-themed text-neutral-900" style={{ scrollBehavior: "smooth" }}>
+    <div className="app-themed" style={{ scrollBehavior: "smooth" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
 
       {/* Barra superior */}
@@ -130,8 +130,9 @@ export default async function Landing() {
             <Link href="/admin/login" className="rounded-full px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
               Ingresar
             </Link>
-            <CtaLink where="header" className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-brand-fg hover:brightness-110">
-              Comenzar gratis
+            <CtaLink where="header" className="whitespace-nowrap rounded-full bg-brand px-4 py-2 text-sm font-semibold text-brand-fg hover:brightness-110">
+              <span className="sm:hidden">Empezar</span>
+              <span className="hidden sm:inline">Comenzar gratis</span>
             </CtaLink>
           </div>
         </div>
@@ -140,14 +141,14 @@ export default async function Landing() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden px-5 pb-16 pt-12 sm:pb-24 sm:pt-20">
-          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(16,185,129,0.14),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(63,165,151,0.22),transparent)]" />
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="animate-rise text-center lg:text-left">
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-sm font-semibold text-emerald-800">
+              <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary px-3.5 py-1.5 text-sm font-semibold text-on-primary">
                 <Icon name="gift" size={16} />1 mes gratis · Sin tarjeta
               </p>
               <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-                Llená tu agenda y dejá de coordinar turnos <span className="text-emerald-600">a mano</span>
+                Llená tu agenda y dejá de coordinar turnos <span className="text-primary-strong">a mano</span>
               </h1>
               <p className="mx-auto mt-5 max-w-xl text-lg text-neutral-600 sm:text-xl lg:mx-0">
                 Tu propia página de reservas, lista en minutos. Tus clientes eligen su turno solos, reciben recordatorios por WhatsApp y vos ahorrás horas de mensajes y llamadas.
@@ -352,7 +353,7 @@ export default async function Landing() {
 
         {/* CTA final */}
         <section className="px-5 py-16 sm:py-24">
-          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2a3318] via-[#1d2413] to-[#0c1008] px-6 py-14 text-center text-white shadow-2xl sm:px-12">
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] bg-ink px-6 py-14 text-center text-white shadow-2xl sm:px-12">
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">Tu próxima reserva puede estar llegando mientras trabajás</h2>
             <p className="mx-auto mt-3 max-w-xl text-lg text-neutral-300">Creá tu negocio hoy, compartí tu link y empezá a recibir turnos. El primer mes es gratis y no pedimos tarjeta.</p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

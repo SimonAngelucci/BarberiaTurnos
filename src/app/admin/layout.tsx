@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fmtDate, getAccess, type Access } from "@/lib/billing";
+import { panelThemeCss } from "@/lib/format";
 import { CopyLink } from "@/components/CopyLink";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { AdminNav, type NavLink } from "@/components/AdminNav";
@@ -113,6 +114,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="app-themed">
+      {business && <style dangerouslySetInnerHTML={{ __html: panelThemeCss(business.primaryColor) }} />}
       {/* En solo lectura se deshabilitan los formularios del panel (salvo Suscripción y Mi cuenta). La defensa real está en el
           servidor: las acciones exigen la suscripción al día. */}
       <PanelShell chrome={chrome} readonly={!!access?.readonly}>

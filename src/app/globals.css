@@ -90,7 +90,7 @@ body {
   .card {
     @apply border border-neutral-200 bg-white p-4 text-neutral-900 shadow-sm;
     /* El editor de diseño puede cambiar --card-radius; sin él queda en 1.5rem (tarjetas bien redondeadas). */
-    border-radius: var(--card-radius, 1.5rem);
+    border-radius: var(--card-radius, 1.75rem);
   }
   .input {
     @apply w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900 outline-none focus:border-brand focus:ring-2 focus:ring-neutral-200;
@@ -130,73 +130,103 @@ body {
 }
 
 /* ==========================================================================================================================
-   ESTILO DE LA APP (panel de administración, landing y pantallas de acceso: todo lo que lleva la clase .app-themed)
-   Fondo verde oliva oscuro con degradé, tarjetas de vidrio, acento lima, botones en píldora y menú flotante abajo.
-   - Oscuro (por defecto): html[data-theme="dark"], lo fija un script en <head> antes de pintar según la preferencia guardada.
-   - Claro: mismas formas y acento, sobre fondo claro con tarjetas blancas.
-   La página pública de cada negocio NO lleva .app-themed: conserva los colores que eligió el negocio (solo hereda las formas).
+   SISTEMA VISUAL DE LA APP (panel de administración, landing y pantallas de acceso: lo que lleva la clase .app-themed)
+   Superficies claras y bloques negros, con un único color de acento (cian por defecto, o el del negocio), formas muy redondeadas
+   y casi sin sombras. Todo vive en tokens (variables CSS): el color del negocio (panelThemeCss) y el modo oscuro solo los redefinen.
+   La página pública de cada negocio NO lleva .app-themed: conserva los colores que eligió el negocio (hereda solo las formas).
+
+   Tokens:  --primary / --on-primary / --primary-strong   acento, texto encima, versión profunda para anillos y barras
+            --bg / --surface / --surface-muted            fondo de la app, tarjetas claras, bloques secundarios
+            --ink / --ink-soft / --ink-line               tarjetas y secciones negras, tarjeta dentro de negro, borde sobre negro
+            --text-muted                                  subtítulos
    ========================================================================================================================== */
 .app-themed {
-  --brand: #c6f400;
-  --brand-fg: #10150a;
-  --color-primary: #c6f400;
-  --color-primary-hover: #d8ff3d;
-  --color-primary-fg: #10150a;
-  --page-bg: #eef0e4;
-  --page-fg: #171a10;
+  --primary: #c2e5de;
+  --on-primary: #111111;
+  --primary-strong: #3fa597;
+  --primary-dark: #c2e5de;
+  --on-primary-dark: #111111;
+  --primary-strong-dark: #c2e5de;
+  --bg: #eeeeee;
+  --surface: #fafafa;
+  --surface-muted: #e6e6e6;
+  --ink: #111111;
+  --ink-soft: #1e1e1e;
+  --ink-line: #2c2c2c;
+  --text-muted: #6b6b6b;
+  /* Los nombres de siempre (brand, color-primary…) apuntan a los tokens nuevos. */
+  --brand: var(--primary);
+  --brand-fg: var(--on-primary);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--on-primary);
+  --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #000);
+  --page-bg: var(--bg);
+  --page-fg: #141414;
+  color: var(--page-fg);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
-html:not([data-theme="dark"]) body:has(.app-themed) { background: #eef0e4; }
-html:not([data-theme="dark"]) .app-themed .card { border-color: transparent; box-shadow: 0 12px 32px -16px rgba(40, 50, 10, 0.25); }
-html:not([data-theme="dark"]) .app-themed .btn-ghost { border-color: rgba(23, 26, 16, 0.12); }
+html:not([data-theme="dark"]) body:has(.app-themed) { background: #eeeeee; color: #141414; }
+html[data-theme="dark"] body:has(.app-themed) { background: #0b0b0b; color: #f2f2f2; }
 
-html[data-theme="dark"] body:has(.app-themed) {
-  background-color: #0c1008;
-  background-image: radial-gradient(120% 55% at 50% -5%, #3b4324 0%, #1d2413 48%, #0c1008 100%);
-  background-attachment: fixed;
-  color: #eef2e4;
-}
 html[data-theme="dark"] .app-themed {
   color-scheme: dark;
-  --page-bg: #0c1008;
-  --page-fg: #eef2e4;
+  --primary: var(--primary-dark);
+  --on-primary: var(--on-primary-dark);
+  --primary-strong: var(--primary-strong-dark);
+  --bg: #0b0b0b;
+  --surface: #1e1e1e;
+  --surface-muted: #2a2a2a;
+  --ink: #171717;
+  --ink-soft: #242424;
+  --ink-line: #3a3a3a;
+  --text-muted: #a3a3a3;
+  --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #fff);
+  --page-fg: #f2f2f2;
 }
-/* Componentes base */
-html[data-theme="dark"] .app-themed .card { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.08); color: #eef2e4; box-shadow: none; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-html[data-theme="dark"] .app-themed .input { background: rgba(0, 0, 0, 0.28); border-color: rgba(255, 255, 255, 0.14); color: #eef2e4; }
-html[data-theme="dark"] .app-themed .input:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(198, 244, 0, 0.25); }
-/* Botón secundario: píldora blanca (como «Deposit» del diseño de referencia) */
-html[data-theme="dark"] .app-themed .btn-ghost { background: #ffffff; border-color: transparent; color: #10150a; }
-html[data-theme="dark"] .app-themed .btn-ghost:hover { background: #e9edde; }
-html[data-theme="dark"] .app-themed .label { color: #b7bfa6; }
-html[data-theme="dark"] .app-themed ::placeholder { color: #7d876b; }
-/* Superficies y bordes neutros */
-html[data-theme="dark"] .app-themed [class*="bg-white"] { background-color: rgba(255, 255, 255, 0.07); }
-html[data-theme="dark"] .app-themed .bg-neutral-50 { background-color: rgba(255, 255, 255, 0.04); }
-html[data-theme="dark"] .app-themed .bg-neutral-100 { background-color: rgba(255, 255, 255, 0.08); }
-html[data-theme="dark"] .app-themed .bg-neutral-200 { background-color: rgba(255, 255, 255, 0.13); }
-html[data-theme="dark"] .app-themed .bg-neutral-300 { background-color: rgba(255, 255, 255, 0.2); }
+
+/* Tipografía: títulos de pantalla grandes y livianos; la jerarquía la dan el tamaño y el contraste, no el peso. */
+.panel h1 { font-size: 1.75rem; line-height: 1.15; font-weight: 300; letter-spacing: -0.01em; }
+
+/* Componentes base dentro de la app */
+.app-themed .card { background: var(--surface); border-color: transparent; color: inherit; box-shadow: none; }
+.app-themed .input { border-radius: 1rem; background: var(--surface); border-color: color-mix(in srgb, currentColor 18%, transparent); color: inherit; }
+.app-themed .input:focus { border-color: var(--primary-strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-strong) 28%, transparent); }
+.app-themed .btn-ghost { background: transparent; border-color: color-mix(in srgb, currentColor 25%, transparent); color: inherit; }
+.app-themed .btn-ghost:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.app-themed .label { color: var(--text-muted); }
+.app-themed ::placeholder { color: var(--text-muted); opacity: 0.8; }
+/* Tarjeta negra (sobre superficies claras) y de acento: se usan con className en cualquier pantalla */
+.app-themed .card-ink { background: var(--ink); color: #f4f4f4; border: 1px solid var(--ink-line); }
+.app-themed .card-primary { background: var(--primary); color: var(--on-primary); }
+
+/* Superficies neutras del código existente → tokens, también en oscuro */
+html[data-theme="dark"] .app-themed [class*="bg-white"] { background-color: var(--surface); }
+html[data-theme="dark"] .app-themed .bg-neutral-50 { background-color: #171717; }
+html[data-theme="dark"] .app-themed .bg-neutral-100 { background-color: #262626; }
+html[data-theme="dark"] .app-themed .bg-neutral-200 { background-color: #303030; }
+html[data-theme="dark"] .app-themed .bg-neutral-300 { background-color: #3a3a3a; }
 html[data-theme="dark"] .app-themed .border-neutral-100,
-html[data-theme="dark"] .app-themed .border-neutral-200 { border-color: rgba(255, 255, 255, 0.09); }
-html[data-theme="dark"] .app-themed .border-neutral-300 { border-color: rgba(255, 255, 255, 0.16); }
+html[data-theme="dark"] .app-themed .border-neutral-200 { border-color: #2e2e2e; }
+html[data-theme="dark"] .app-themed .border-neutral-300 { border-color: #3d3d3d; }
 html[data-theme="dark"] .app-themed .divide-neutral-100 > :not([hidden]) ~ :not([hidden]),
-html[data-theme="dark"] .app-themed .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.09); }
+html[data-theme="dark"] .app-themed .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: #2e2e2e; }
 html[data-theme="dark"] .app-themed .hover\:bg-neutral-50:hover,
-html[data-theme="dark"] .app-themed .hover\:bg-neutral-100:hover { background-color: rgba(255, 255, 255, 0.1); }
-html[data-theme="dark"] .app-themed .hover\:bg-neutral-200:hover { background-color: rgba(255, 255, 255, 0.16); }
-html[data-theme="dark"] .app-themed .hover\:border-neutral-400:hover { border-color: rgba(255, 255, 255, 0.3); }
+html[data-theme="dark"] .app-themed .hover\:bg-neutral-100:hover { background-color: #2a2a2a; }
+html[data-theme="dark"] .app-themed .hover\:bg-neutral-200:hover { background-color: #343434; }
+html[data-theme="dark"] .app-themed .hover\:border-neutral-400:hover { border-color: #5a5a5a; }
 /* Textos neutros */
 html[data-theme="dark"] .app-themed .text-neutral-900,
-html[data-theme="dark"] .app-themed .text-neutral-800 { color: #f4f7ea; }
-html[data-theme="dark"] .app-themed .text-neutral-700 { color: #d5dbc6; }
-html[data-theme="dark"] .app-themed .text-neutral-600 { color: #b7bfa6; }
-html[data-theme="dark"] .app-themed .text-neutral-500 { color: #a0a98d; }
-html[data-theme="dark"] .app-themed .text-neutral-400 { color: #7f8970; }
-html[data-theme="dark"] .app-themed .text-neutral-300 { color: #5d6652; }
+html[data-theme="dark"] .app-themed .text-neutral-800 { color: #f4f4f4; }
+html[data-theme="dark"] .app-themed .text-neutral-700 { color: #dcdcdc; }
+html[data-theme="dark"] .app-themed .text-neutral-600 { color: #bdbdbd; }
+html[data-theme="dark"] .app-themed .text-neutral-500 { color: #a3a3a3; }
+html[data-theme="dark"] .app-themed .text-neutral-400 { color: #858585; }
+html[data-theme="dark"] .app-themed .text-neutral-300 { color: #626262; }
 html[data-theme="dark"] .app-themed .hover\:text-neutral-900:hover,
 html[data-theme="dark"] .app-themed .hover\:text-neutral-800:hover { color: #ffffff; }
-/* Etiquetas y avisos de color: fondo translúcido y texto claro del mismo tono */
-html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: rgba(198, 244, 0, 0.14); }
-html[data-theme="dark"] .app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #d8ff3d; }
+/* Etiquetas y avisos de estado: fondo translúcido y texto claro del mismo tono */
+html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: rgba(34, 197, 94, 0.15); }
+html[data-theme="dark"] .app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #86efac; }
 html[data-theme="dark"] .app-themed :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100, .bg-orange-100) { background-color: rgba(245, 158, 11, 0.15); }
 html[data-theme="dark"] .app-themed :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-yellow-800, .text-orange-800) { color: #fcd34d; }
 html[data-theme="dark"] .app-themed :is(.bg-red-50, .bg-red-100) { background-color: rgba(239, 68, 68, 0.16); }
@@ -205,22 +235,19 @@ html[data-theme="dark"] .app-themed :is(.bg-blue-100, .bg-sky-50) { background-c
 html[data-theme="dark"] .app-themed :is(.text-blue-800) { color: #93c5fd; }
 html[data-theme="dark"] .app-themed :is(.bg-violet-50, .bg-violet-100) { background-color: rgba(139, 92, 246, 0.16); }
 html[data-theme="dark"] .app-themed :is(.text-violet-800) { color: #c4b5fd; }
-html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: rgba(198, 244, 0, 0.4); }
+html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: rgba(34, 197, 94, 0.4); }
 html[data-theme="dark"] .app-themed :is(.border-amber-200, .border-amber-300, .border-yellow-300) { border-color: rgba(245, 158, 11, 0.45); }
 html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .border-red-400, .border-red-500) { border-color: rgba(239, 68, 68, 0.5); }
-/* Sombras */
-html[data-theme="dark"] .app-themed .shadow-sm,
-html[data-theme="dark"] .app-themed .shadow-md,
-html[data-theme="dark"] .app-themed .shadow-lg,
-html[data-theme="dark"] .app-themed .shadow-xl,
-html[data-theme="dark"] .app-themed .shadow-2xl { --tw-shadow-color: rgba(0, 0, 0, 0.5); }
 
-/* Menú flotante del panel (píldora abajo): vidrio sobre el fondo oscuro, blanco en modo claro. */
-.dock { background: #ffffff; box-shadow: 0 18px 40px -12px rgba(20, 30, 5, 0.35); }
-html[data-theme="dark"] .app-themed .dock { background: rgba(255, 255, 255, 0.96); }
-.dock-item { color: #6b7358; }
-.dock-item:hover { color: #10150a; }
-.dock-item[aria-current="page"] { background: #10150a; color: #c6f400; }
+/* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
+.hero-block { background: var(--primary); color: var(--on-primary); border-radius: 0 0 2.5rem 2.5rem; }
+
+/* Menú flotante inferior (se rediseña en la fase de navegación): superficie clara, la sección activa en el color de acento. */
+.dock { background: var(--surface); box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.35); }
+.dock-item { color: var(--text-muted); }
+.dock-item:hover { color: inherit; }
+.dock-item[aria-current="page"] { background: var(--primary); color: var(--on-primary); }
+
 /* Barras de los gráficos: crecen desde abajo al aparecer. */
 @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .animate-grow { animation: grow 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }

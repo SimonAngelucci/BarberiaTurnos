@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
@@ -7,6 +8,9 @@ export const metadata: Metadata = {
   description: "Reservas online para tu negocio, con link propio.",
 };
 
+// Manrope: sans geométrica con pesos desde light; se sirve desde nuestro propio dominio (next/font).
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
 // viewportFit "cover" habilita env(safe-area-inset-*) en iOS: las barras fijas respetan la muesca.
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
@@ -14,11 +18,11 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // data-theme lo fija el script del <head> antes de pintar (evita el destello del tema equivocado): por eso suppressHydrationWarning.
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={manrope.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }
