@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { getAccess } from "@/lib/billing";
 import { Gallery } from "@/components/site/Gallery";
+import { PublicHeader } from "@/components/site/PublicHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -22,21 +22,15 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
   const home = `/b/${b.slug}`;
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-4 py-8">
-      <header className="mb-6 flex items-center justify-between gap-3">
-        <Link href={home} className="btn-ghost !px-4 !py-2 text-sm">
-          ← Volver
-        </Link>
-        <div className="flex min-w-0 items-center gap-3">
-          {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-cover shadow-sm" />}
-          <h1 className="truncate text-xl font-bold tracking-tight">Galería · {b.name}</h1>
-        </div>
-      </header>
+    <main className="mx-auto min-h-screen max-w-[480px]">
+      <PublicHeader name={b.name} logoUrl={b.logoUrl} title="Galería" back={{ href: home, label: "Volver" }} />
+      <div className="px-4 py-6">
       {items.length === 0 ? (
         <p className="card text-center text-sm text-neutral-500">Todavía no hay fotos en la galería.</p>
       ) : (
         <Gallery items={items} showAll bookHref={accepting ? `${home}#servicios` : undefined} />
       )}
+      </div>
     </main>
   );
 }

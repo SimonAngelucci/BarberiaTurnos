@@ -75,7 +75,7 @@ export function NotificationBell() {
         className="relative rounded-lg px-3 py-2 hover:bg-neutral-100"
       >
         <Icon name="bell" size={20} />
-        {unread > 0 && <span className="absolute right-0.5 top-0.5 min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white">{unread > 9 ? "9+" : unread}</span>}
+        {unread > 0 && <span className="absolute right-0.5 top-0.5 min-w-[16px] rounded-full bg-[var(--dot)] px-1 text-center text-[10px] font-bold leading-[16px] text-[#1a1a1a]">{unread > 9 ? "9+" : unread}</span>}
       </button>
 
       {open && (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { startTransition, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { PrefetchKind } from "next/dist/client/components/router-reducer/router-reducer-types";
 
 /** Eventos entre el menú inferior y el contenedor: «ir a esta pestaña» (con animación) y «voy a esta pestaña» (mueve el círculo ya). */
 const EV_GO = "panel-nav-go";
@@ -48,12 +49,24 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
     el.style.opacity = "";
   };
 
-  // Precarga de las pestañas vecinas: el cambio es casi instantáneo.
+  // Precarga COMPLETA (con datos) de todas las pestañas apenas carga el panel, renovada cada minuto mientras la pantalla está
+  // visible: así la caché del router siempre está vigente y el cambio de pestaña no espera al servidor. (La precarga «auto» de
+  // Next no trae los datos de las páginas dinámicas, y la caché vencía a los 30 s.)
   useEffect(() => {
     if (idx < 0) return;
-    if (tabs[idx - 1]) router.prefetch(tabs[idx - 1]);
-    if (tabs[idx + 1]) router.prefetch(tabs[idx + 1]);
-  }, [idx, tabs, router]);
+    const warm = () => {
+      if (document.visibilityState !== "visible") return;
+      for (const t of tabs) if (t !== path) router.prefetch(t, { kind: PrefetchKind.FULL });
+    };
+    const first = setTimeout(warm, 600);
+    const every = setInterval(warm, 60_000);
+    document.addEventListener("visibilitychange", warm);
+    return () => {
+      clearTimeout(first);
+      clearInterval(every);
+      document.removeEventListener("visibilitychange", warm);
+    };
+  }, [idx, tabs, path, router]);
 
   // Llegó la página nueva: entra deslizando desde el lado opuesto al que salió la anterior.
   useEffect(() => {
@@ -67,10 +80,10 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
     el.style.transform = `translateX(${d * 100}%)`;
     el.style.opacity = "0.4";
     void el.offsetWidth; // fuerza el reflow para que la transición arranque desde acá
-    el.style.transition = "transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease-out";
+    el.style.transition = "transform .26s cubic-bezier(.2,.8,.2,1), opacity .26s ease-out";
     el.style.transform = "translateX(0)";
     el.style.opacity = "1";
-    const t = setTimeout(() => clear(el), 340);
+    const t = setTimeout(() => clear(el), 300);
     return () => clearTimeout(t);
   }, [path]);
 
@@ -80,16 +93,18 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
     if (!el || !content) return;
 
     /** Sale la página actual hacia `dir` (1 = a la izquierda, entra la siguiente) y navega. */
-    const go = (href: string, dir: 1 | -1) => {
+    const go = (href: string, dir: 1 | -1, tap = false) => {
       if (busy.current) return;
       busy.current = true;
       enter.current = dir;
       window.dispatchEvent(new CustomEvent(EV_INTENT, { detail: href }));
       const fast = reduced();
-      content.style.transition = fast ? "none" : "transform .22s cubic-bezier(.4,.1,.6,1), opacity .22s ease-in";
+      const out = tap ? 0.1 : 0.17; // al tocar un ícono la salida es más corta: no hay dedo que ya haya movido la página
+      content.style.transition = fast ? "none" : `transform ${out}s cubic-bezier(.4,.1,.6,1), opacity ${out}s ease-in`;
+      router.prefetch(href, { kind: PrefetchKind.FULL }); // arranca ya: la animación de salida y el pedido al servidor van en paralelo
       content.style.transform = `translateX(${-dir * 100}%)`;
       content.style.opacity = fast ? "1" : "0.4";
-      setTimeout(() => router.push(href), fast ? 0 : 200);
+      setTimeout(() => startTransition(() => router.push(href)), fast ? 0 : out * 1000 - 10);
       // Red de seguridad: si por algo no se llegó a navegar, la página vuelve sola.
       setTimeout(() => {
         if (busy.current && tabs.indexOf(window.location.pathname) === idx) {
@@ -110,13 +125,14 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
       const href = (e as CustomEvent<string>).detail;
       const to = tabs.indexOf(href);
       if (idx < 0 || to < 0 || to === idx) return router.push(href);
-      go(href, to > idx ? 1 : -1);
+      go(href, to > idx ? 1 : -1, true);
     };
     window.addEventListener(EV_GO, onGo);
 
     let start: { x: number; y: number; t: number; id: number } | null = null;
     let lock: "h" | "v" | null = null;
     let dx = 0;
+    let frame = 0;
 
     const down = (e: PointerEvent) => {
       if (e.pointerType === "mouse" || !e.isPrimary || busy.current || idx < 0) return;
@@ -140,14 +156,26 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
         }
       }
       dx = mx;
-      const edge = (dx > 0 && idx === 0) || (dx < 0 && idx === tabs.length - 1);
-      content.style.transition = "none";
-      content.style.transform = `translateX(${edge ? dx * 0.25 : dx}px)`; // en los extremos «hace resistencia»
+      // El movimiento se aplica una vez por cuadro (requestAnimationFrame), no en cada evento del dedo.
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const edge = (dx > 0 && idx === 0) || (dx < 0 && idx === tabs.length - 1);
+        content.style.transition = "none";
+        content.style.transform = `translateX(${edge ? dx * 0.25 : dx}px)`; // en los extremos «hace resistencia»
+      });
     };
     const up = (e: PointerEvent) => {
       if (!start || e.pointerId !== start.id) return;
       const s = start;
       start = null;
+      if (frame) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        const edge = (dx > 0 && idx === 0) || (dx < 0 && idx === tabs.length - 1);
+        content.style.transition = "none";
+        content.style.transform = `translateX(${edge ? dx * 0.25 : dx}px)`;
+      }
       if (lock !== "h") return;
       lock = null;
       const dir: 1 | -1 = dx < 0 ? 1 : -1;
@@ -164,10 +192,10 @@ export function SwipeShell({ tabs, children }: { tabs: string[]; children: React
       if (wasH) bounce();
     };
 
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", cancel);
+    el.addEventListener("pointerdown", down, { passive: true });
+    el.addEventListener("pointermove", move, { passive: true });
+    el.addEventListener("pointerup", up, { passive: true });
+    el.addEventListener("pointercancel", cancel, { passive: true });
     return () => {
       window.removeEventListener(EV_GO, onGo);
       el.removeEventListener("pointerdown", down);

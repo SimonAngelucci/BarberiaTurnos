@@ -6,6 +6,8 @@ import Link from "next/link";
 import { DateTime } from "luxon";
 import { DayPicker, makeDayItems } from "./DayPicker";
 import { Modal } from "./Modal";
+import { NextCountdown } from "./NextCountdown";
+import { SectionLabel } from "@/components/ui/SectionLabel";
 
 type Appt = {
   serviceName: string;
@@ -114,7 +116,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
       <div className="card space-y-2 text-center">
         <h2 className="text-lg font-bold">Reprogramar o cancelar</h2>
         <p className="text-sm text-neutral-600">Este negocio no permite modificar turnos por acá. Comunicate con el negocio directamente.</p>
-        <Link href={`/b/${slug}`} className="btn-ghost w-full">
+        <Link href={`/b/${slug}`} className="btn-ghost w-full !rounded-full">
           Volver a la página de reservas
         </Link>
       </div>
@@ -133,13 +135,15 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
     const d = local(result.startAt);
     return (
       <div className="card space-y-3 text-center">
-        <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
-        <h2 className="text-xl font-bold">¡Turno reprogramado!</h2>
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink text-primary">
+          <Icon name="check" size={28} />
+        </span>
+        <h2 className="text-xl font-light">Turno reprogramado</h2>
         <p className="text-neutral-600">
           {info?.appointment.serviceName} · {d.toFormat("cccc d 'de' LLLL")} a las {d.toFormat("HH:mm")}
         </p>
         <p className="text-sm text-neutral-500">Te enviamos la confirmación por WhatsApp. Tu código sigue siendo {code}.</p>
-        <Link href={`/b/${slug}`} className="btn-ghost w-full">
+        <Link href={`/b/${slug}`} className="btn-ghost w-full !rounded-full">
           Volver al inicio
         </Link>
       </div>
@@ -148,11 +152,13 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
   if (stage === "cancelled") {
     return (
       <div className="card space-y-3 text-center">
-        <Icon name="trash" size={40} className="mx-auto text-neutral-500" />
-        <h2 className="text-xl font-bold">Turno cancelado</h2>
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-muted">
+          <Icon name="trash" size={26} />
+        </span>
+        <h2 className="text-xl font-light">Turno cancelado</h2>
         <p className="text-sm text-neutral-500">Liberamos el horario y te avisamos por WhatsApp.</p>
         {result?.hadPayment && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">Tenías un pago registrado: comunicate con el negocio para coordinar la devolución.</p>}
-        <Link href={`/b/${slug}`} className="btn w-full">
+        <Link href={`/b/${slug}`} className="btn w-full !rounded-full">
           Reservar un nuevo turno
         </Link>
       </div>
@@ -170,7 +176,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
         }}
       >
         <div>
-          <h2 className="text-lg font-bold">Reprogramar o cancelar tu turno</h2>
+          <h2 className="text-lg font-light">Reprogramar o cancelar tu turno</h2>
           <p className="text-sm text-neutral-500">Ingresá el código de reclamo que te enviamos por WhatsApp al confirmar tu turno.</p>
         </div>
         <div>
@@ -191,7 +197,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
           />
         </div>
         <Err />
-        <button className="btn w-full" disabled={busy || code.trim().length < 6}>
+        <button className="btn w-full !rounded-full" disabled={busy || code.trim().length < 6}>
           {busy ? "Buscando…" : "Buscar mi turno"}
         </button>
         <Link href={`/b/${slug}`} className="block text-center text-sm text-neutral-500 underline">
@@ -205,7 +211,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
   const a = info.appointment;
   const when = local(a.startAt);
   const summary = (
-    <div className="space-y-1 rounded-xl bg-neutral-50 p-3 text-sm">
+    <div className="space-y-1 rounded-2xl bg-surface-muted p-4 text-sm">
       <div className="font-semibold">{a.serviceName}</div>
       <div>
         {when.toFormat("cccc d 'de' LLLL")} a las <strong>{when.toFormat("HH:mm")}</strong>
@@ -223,6 +229,14 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
           <p className="text-sm text-neutral-500">Este es tu turno:</p>
         </div>
         {summary}
+        {new Date(a.startAt).getTime() > Date.now() && (
+          <div className="card-ink space-y-3 rounded-2xl p-4">
+            <SectionLabel as="p" className="!text-primary">
+              Faltan
+            </SectionLabel>
+            <NextCountdown startAt={new Date(a.startAt).toISOString()} nowAt={new Date().toISOString()} />
+          </div>
+        )}
         {info.canChange ? (
           <>
             <p className="text-xs text-neutral-500">
@@ -282,7 +296,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
           {slots === null ? (
             <div className="grid grid-cols-4 gap-2" aria-label="Buscando horarios">
               {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="h-[38px] animate-pulse rounded-lg bg-black/10" style={{ animationDelay: `${i * 70}ms` }} />
+                <div key={i} className="h-[42px] animate-pulse rounded-full bg-surface-muted" style={{ animationDelay: `${i * 70}ms` }} />
               ))}
             </div>
           ) : slots.length === 0 ? (
@@ -294,7 +308,7 @@ export function ClaimFlow({ slug, timezone, maxAdvanceDays, initialCode, enabled
                   key={s}
                   onClick={() => setSlot(s)}
                   style={{ animationDelay: `${Math.min(i, 24) * 18}ms` }}
-                  className={`animate-rise rounded-lg border py-2 text-sm font-medium transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-brand bg-brand text-brand-fg" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"}`}
+                  className={`animate-rise rounded-full border py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-transparent bg-primary text-on-primary shadow-sm" : "border-transparent bg-surface-muted hover:-translate-y-0.5"}`}
                 >
                   {local(s).toFormat("HH:mm")}
                 </button>

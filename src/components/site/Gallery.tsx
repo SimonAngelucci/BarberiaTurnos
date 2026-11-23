@@ -99,7 +99,7 @@ export function Gallery({ items, visible = 4, showAll = false, allHref, bookHref
         <ul className="columns-2 gap-2 sm:columns-3 lg:columns-3">
           {items.map((it, i) => (
             <li key={it.url} className="mb-2 break-inside-avoid">
-              <button type="button" onClick={() => setOpen(i)} aria-label={it.type === "VIDEO" ? `Ampliar video ${i + 1}` : `Ampliar foto ${i + 1}`} className="group relative block w-full overflow-hidden rounded-sm bg-neutral-200">
+              <button type="button" onClick={() => setOpen(i)} aria-label={it.type === "VIDEO" ? `Ampliar video ${i + 1}` : `Ampliar foto ${i + 1}`} className="group relative block w-full overflow-hidden rounded-[1.75rem] bg-neutral-200">
                 <span className="block" style={{ paddingBottom: COLLAGE_RATIOS[i % COLLAGE_RATIOS.length] }} />
                 {it.type === "VIDEO" ? (
                   <AutoVideo src={it.url} poster={it.poster} className="absolute inset-0 h-full w-full object-cover" />
@@ -121,7 +121,7 @@ export function Gallery({ items, visible = 4, showAll = false, allHref, bookHref
         >
           {items.map((it, i) => (
             <li key={it.url} className="gallery-item snap-start">
-              <button type="button" onClick={() => setOpen(i)} aria-label={it.type === "VIDEO" ? `Ampliar video ${i + 1}` : `Ampliar foto ${i + 1}`} className="relative block aspect-square w-full overflow-hidden rounded-sm bg-neutral-200">
+              <button type="button" onClick={() => setOpen(i)} aria-label={it.type === "VIDEO" ? `Ampliar video ${i + 1}` : `Ampliar foto ${i + 1}`} className="relative block aspect-square w-full overflow-hidden rounded-[1.75rem] bg-neutral-200">
                 {it.type === "VIDEO" ? (
                   <AutoVideo src={it.url} poster={it.poster} className="h-full w-full object-cover" />
                 ) : (
@@ -188,12 +188,12 @@ export function Gallery({ items, visible = 4, showAll = false, allHref, bookHref
               loop
               playsInline
               disablePictureInPicture
-              className="max-h-[80vh] max-w-full rounded-sm bg-black object-contain"
+              className="max-h-[80vh] max-w-full rounded-2xl bg-black object-contain"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cur.url} alt={`Foto ${open + 1} de ${n}`} className="max-h-[80vh] max-w-full rounded-sm object-contain" onClick={(e) => e.stopPropagation()} />
+            <img src={cur.url} alt={`Foto ${open + 1} de ${n}`} className="max-h-[80vh] max-w-full rounded-2xl object-contain" onClick={(e) => e.stopPropagation()} />
           )}
           <button type="button" aria-label="Cerrar" onClick={() => setOpen(null)} className="absolute right-3 top-3 rounded-full bg-white/15 px-3 py-1.5 text-lg text-white hover:bg-white/30">
             <Icon name="x" size={14} />

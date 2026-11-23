@@ -12,7 +12,7 @@ export function PageHero({ title, subtitle, back, children }: { title: string; s
     <Hero className="mb-6">
       <div className="on-hero flex items-center gap-3">
         {back && (
-          <Link href={back.href} aria-label={back.label} title={back.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#111] shadow-sm ring-4 ring-white/30 transition active:scale-95">
+          <Link href={back.href} aria-label={back.label} title={back.label} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fbfaf8] text-[#1a1a1a] shadow-sm ring-4 ring-white/30 transition active:scale-95">
             <Icon name="arrow-left" size={18} />
           </Link>
         )}

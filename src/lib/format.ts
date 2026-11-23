@@ -54,7 +54,7 @@ const mix = (hex: string, toward: string, amount: number) => {
 };
 
 /** Fondo del panel en modo oscuro (ver globals.css). */
-const DARK_SURFACE = "#0b0f14";
+const DARK_SURFACE = "#161616";
 
 /**
  * Versión del color de marca para fondos oscuros: si el original no se distingue del fondo (ej: el negro por defecto), se lo
@@ -88,14 +88,21 @@ export function contrastFg(hex: string) {
   return contrastRatio(hex, "#ffffff") >= contrastRatio(hex, "#111827") ? "#ffffff" : "#111827";
 }
 
-/** Cian/menta pastel del panel de administración (el de la referencia de color). */
-export const DEFAULT_PRIMARY = "#bfe3dd";
+/** Amarillo de la app (el de la referencia). El panel de administración lo usa siempre. */
+export const DEFAULT_PRIMARY = "#f8d05f";
 
-/**
- * El panel de administración usa SIEMPRE el cian de la app (definido en globals.css, clase .app-themed): el color que cada negocio
- * elige en el círculo cromático aplica solo a su página pública de reservas (ver themeCss). Se conserva la función para no tocar
- * quienes la llaman; ya no emite variables.
- */
+/** El panel de administración no cambia de color con el negocio: se conserva la función por compatibilidad. */
 export function panelThemeCss(_brand?: string) {
   return "";
+}
+
+/**
+ * Color propio del negocio (opcional, apagado por defecto): reemplaza SOLO al acento (--primary) en la web pública de reservas.
+ * El texto encima se elige por contraste. Los colores se validan para no inyectar CSS arbitrario.
+ */
+export function ownColorCss(brand: string) {
+  if (!HEX.test(brand)) return "";
+  const strong = luminance(brand) > 0.4 ? mix(brand, "#000000", 0.35) : brand;
+  const pd = brandOnDark(brand);
+  return `.app-themed{--primary:${brand};--on-primary:${contrastFg(brand)};--primary-strong:${strong};--primary-dark:${pd};--on-primary-dark:${contrastFg(pd)};--primary-strong-dark:${pd}}`;
 }

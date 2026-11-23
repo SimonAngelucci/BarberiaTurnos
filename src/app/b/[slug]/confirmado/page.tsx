@@ -9,6 +9,9 @@ import { money } from "@/lib/format";
 import { blocked, recordFailure } from "@/lib/rate-limit";
 import { ReviewCta } from "@/components/site/ReviewCta";
 import { RememberTurn } from "@/components/site/RememberTurn";
+import { PublicHeader } from "@/components/site/PublicHeader";
+import { ConfirmActions } from "@/components/site/ConfirmActions";
+import { mapsHref } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -39,20 +42,32 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
       : null;
   if (code && !appt) recordFailure(key, 10 * 60_000);
 
-  const profile = appt ? await prisma.businessProfile.findUnique({ where: { businessId: b.id }, select: { address: true, reviewsEnabled: true } }) : null;
+  const profile = appt ? await prisma.businessProfile.findUnique({ where: { businessId: b.id }, select: { address: true, mapsUrl: true, reviewsEnabled: true } }) : null;
   const home = `/b/${b.slug}`;
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
-      <header className="mb-6 text-center">
-        {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt={b.name} className="mx-auto mb-3 h-16 w-16 rounded-full bg-white object-cover shadow" />}
-        <h1 className="text-xl font-bold">{b.name}</h1>
-      </header>
+    <main className="mx-auto min-h-screen max-w-[480px]">
+      <PublicHeader
+        name={b.name}
+        logoUrl={b.logoUrl}
+        title={appt ? "Turno confirmado" : "Tu turno"}
+        back={{ href: home, label: "Volver a la página" }}
+        icon={
+          appt ? (
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink text-primary">
+              <Icon name="check" size={34} />
+            </span>
+          ) : undefined
+        }
+      >
+        {appt && <p className="text-sm opacity-80">Gracias, {appt.customer.firstName}. Te esperamos.</p>}
+      </PublicHeader>
 
+      <div className="px-4 py-6">
       {!appt ? (
         <div className="card space-y-3 text-center">
           <p className="text-sm text-neutral-600">No encontramos ese turno. Si recién reservaste, revisá el WhatsApp de confirmación.</p>
-          <Link href={home} className="btn w-full">
+          <Link href={home} className="btn w-full !rounded-full">
             Volver a la página
           </Link>
         </div>
@@ -61,14 +76,14 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
           const local = DateTime.fromJSDate(appt.startAt).setZone(b.timezone).setLocale("es");
           const mins = Math.round((appt.endAt.getTime() - appt.startAt.getTime()) / 60_000);
           const pendingPay = appt.paymentStatus === "PENDING_AT_STORE";
+          const mapsCandidate = profile ? mapsHref(profile.mapsUrl, profile.address) : null;
+          const maps = mapsCandidate && /^https?:\/\//i.test(mapsCandidate) ? mapsCandidate : null;
+          const shareText = `Mi turno en ${b.name}: ${appt.service.name}, ${local.toFormat("cccc d 'de' LLLL")} a las ${local.toFormat("HH:mm")} hs.`;
           return (
             <div className="space-y-4">
               {appt.claimCode && <RememberTurn slug={b.slug} startAt={appt.startAt.toISOString()} serviceName={appt.service.name} claimCode={appt.claimCode} />}
-              <div className="card text-center">
-                <Icon name="check-circle" size={52} className="mx-auto mb-2 text-green-600" />
-                <h2 className="text-2xl font-bold">¡Turno confirmado!</h2>
-                <p className="mt-1 text-neutral-600">Gracias, {appt.customer.firstName}. Te esperamos.</p>
-              </div>
+
+              <ConfirmActions title={`${appt.service.name} · ${b.name}`} startISO={appt.startAt.toISOString()} endISO={appt.endAt.toISOString()} address={profile?.address ?? null} mapsUrl={maps} shareText={shareText} />
 
               <div className="card">
                 <dl className="divide-y divide-neutral-100">
@@ -91,28 +106,29 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
               </div>
 
               {b.allowClientChanges && appt.claimCode && (
-                <div className="card space-y-2 text-center">
-                  <div className="text-xs text-neutral-500">Tu código para reprogramar o cancelar</div>
+                <div className="card card-ink space-y-2 text-center">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Tu código para reprogramar o cancelar</div>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="font-mono text-2xl font-bold tracking-widest">{appt.claimCode}</span>
+                    <span className="font-mono text-2xl font-bold tracking-widest text-primary">{appt.claimCode}</span>
                     <CopyButton text={appt.claimCode} label="Copiar código" />
                   </div>
-                  <p className="text-xs text-neutral-500">Guardalo: también te lo enviamos por WhatsApp.</p>
-                  <Link href={`/b/${b.slug}/turno?c=${encodeURIComponent(appt.claimCode)}`} className="btn-ghost w-full">
+                  <p className="text-xs opacity-70">Guardalo: también te lo enviamos por WhatsApp.</p>
+                  <Link href={`/b/${b.slug}/turno?c=${encodeURIComponent(appt.claimCode)}`} className="btn w-full !rounded-full">
                     Reprogramar o cancelar
                   </Link>
                 </div>
               )}
 
-              <p className="text-center text-sm text-neutral-500">Te enviamos la confirmación por WhatsApp y te vamos a recordar antes del turno.</p>
+              <p className="text-center text-sm text-muted">Te enviamos la confirmación por WhatsApp y te vamos a recordar antes del turno.</p>
               {profile?.reviewsEnabled && <ReviewCta slug={b.slug} after />}
-              <Link href={home} className="btn-ghost w-full">
+              <Link href={home} className="btn-ghost w-full !rounded-full">
                 Volver a la página
               </Link>
             </div>
           );
         })()
       )}
+      </div>
     </main>
   );
 }

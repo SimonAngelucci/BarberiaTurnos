@@ -42,17 +42,17 @@ export async function BusinessSection({ welcome }: { welcome?: string }) {
 
       <section className="card grid gap-3 sm:grid-cols-2">
         <h2 className="font-semibold sm:col-span-2">Apariencia</h2>
-        <div className="sm:col-span-2">
-          <ColorWheel name="primaryColor" defaultValue={b.primaryColor} label="Color principal (botones y acentos)" />
-        </div>
-        <div>
-          <label className="label">Color de fondo de la página</label>
-          <input name="bgColor" type="color" className="h-11 w-full rounded-xl border border-neutral-300" defaultValue={b.bgColor} />
-        </div>
-        <label className="flex items-center gap-2 text-sm sm:col-span-2">
-          <input type="checkbox" name="applyBgToAdmin" defaultChecked={b.applyBgToAdmin} /> Usar también este fondo en el panel de administración
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" name="useOwnColor" defaultChecked={b.useOwnColor} className="mt-1" />
+          <span>
+            <strong>Usar color propio del negocio</strong>
+            <span className="block text-xs text-neutral-500">Apagado: tu página pública usa el amarillo de la app. Encendido: el color de abajo reemplaza al amarillo solo en la página pública (el texto encima se ajusta solo). El panel siempre usa el amarillo.</span>
+          </span>
         </label>
-        <p className="text-xs text-neutral-500 sm:col-span-2">El texto se ajusta solo (claro u oscuro) según el color de fondo que elijas.</p>
+        <div className="sm:col-span-2">
+          <ColorWheel name="primaryColor" defaultValue={b.primaryColor} label="Color propio (se usa solo si lo activás arriba)" />
+        </div>
+        <input type="hidden" name="bgColor" value={b.bgColor} />
       </section>
 
       <section className="card grid gap-3 sm:grid-cols-3">

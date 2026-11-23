@@ -91,6 +91,8 @@ model Business {
   tagline            String   @default("Reservá tu turno online")
   logoUrl            String?
   primaryColor       String   @default("#111827")
+  /// Si es true, primaryColor reemplaza al amarillo de la app solo en la web pública de reservas. Apagado por defecto.
+  useOwnColor        Boolean  @default(false)
   /// Color de fondo de la página pública (y del panel si applyBgToAdmin).
   bgColor            String   @default("#fafafa")
   applyBgToAdmin     Boolean  @default(false)

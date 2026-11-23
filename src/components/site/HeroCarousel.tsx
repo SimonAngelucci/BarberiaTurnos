@@ -44,7 +44,7 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
 
   return (
     <div
-      className="relative isolate h-[34vh] max-h-[420px] min-h-[220px] w-full overflow-hidden rounded-b-[2.5rem] bg-neutral-900 lg:h-[380px]"
+      className="relative isolate h-[260px] w-full overflow-hidden rounded-[2rem] bg-neutral-900"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}
@@ -75,7 +75,7 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
 
       {n > 1 && (
-        <div className="absolute inset-x-0 bottom-14 flex justify-center gap-2 lg:bottom-6" role="tablist" aria-label="Fotos de la portada">
+        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2" role="tablist" aria-label="Fotos de la portada">
           {photos.map((_, k) => (
             <button
               key={k}

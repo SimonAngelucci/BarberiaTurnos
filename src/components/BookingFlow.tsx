@@ -10,6 +10,8 @@ import { DayPicker, type DayItem } from "./DayPicker";
 import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 
 import { ServiceIcon } from "./ServiceIcon";
+import { FolderTabs } from "@/components/ui/FolderTabs";
+import { SectionLabel } from "@/components/ui/SectionLabel";
 import { clearBooked, clearDraft, isMeaningful, loadBooked, loadDraft, saveDraft, type BookedTurn, type BookingDraft } from "@/lib/booking-storage";
 import type { BusinessType } from "@/lib/service-icons";
 
@@ -43,6 +45,9 @@ type Props = {
 /** El WhatsApp arranca con el prefijo de Argentina ya cargado: el cliente solo completa el resto (puede cambiarlo si es de otro país). */
 const DEFAULT_PREFIX = "+54 ";
 
+/** Primera letra en mayúscula (el resto queda como está). */
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 function Avatar({ b, size }: { b: Barber; size: number }) {
   const style = { width: size, height: size };
   return b.photoUrl ? (
@@ -70,6 +75,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [done, setDone] = useState(false);
   const [reload, setReload] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null); // tarjeta de servicio abierta en la lista
+  const [pickOther, setPickOther] = useState(false); // pestaña «Elegir fecha» del selector de día
 
   // Progreso guardado en el navegador (ver lib/booking-storage.ts): se restaura al recargar o volver, y se borra al confirmar.
   // Lo restaurado que depende de datos del servidor (horario, forma de pago) se aplica recién cuando esos datos llegan.
@@ -249,20 +255,62 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     );
   }
 
+  // ---- Presentación del selector de día y horarios (la lógica de arriba no cambia)
+  const dayTab = pickOther ? 2 : date && date === dayItems[0]?.iso ? 0 : date && date === dayItems[1]?.iso ? 1 : date ? 2 : 0;
+  const barberName = barbers.find((x) => x.id === barberId)?.name ?? null;
+  const slotLocal = slot ? DateTime.fromISO(slot).setZone(timezone).setLocale("es") : null;
+  const dayBody = (
+    <div aria-live="polite">
+      {timing && date && (
+        <p className="mt-3 rounded-2xl bg-green-50 p-2.5 text-sm text-green-900">
+          <Icon name="clock" size={16} className="mr-1.5 inline -translate-y-px" />Ajustamos tu turno a <strong>{timing.durationMin} min</strong> (lo que habitualmente te lleva) en lugar de {service?.durationMin} min.
+        </p>
+      )}
+      <div className="mt-3">
+        {!date ? (
+          <p className="py-2 text-sm text-muted">Elegí un día para ver los horarios disponibles.</p>
+        ) : slots === null ? (
+          // Esqueleto mientras se buscan los horarios
+          <div className="grid grid-cols-4 gap-2" aria-label="Buscando horarios">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="h-[42px] animate-pulse rounded-full bg-surface-muted" style={{ animationDelay: `${i * 70}ms` }} />
+            ))}
+          </div>
+        ) : slots.length === 0 ? (
+          <p className="animate-rise text-sm text-muted">No hay horarios disponibles ese día. Probá con otro.</p>
+        ) : (
+          <div key={date} className="grid grid-cols-4 gap-2">
+            {slots.map((s, i) => (
+              <button
+                key={s}
+                aria-pressed={slot === s}
+                onClick={() => setSlot(s)}
+                style={{ animationDelay: `${Math.min(i, 24) * 18}ms` }}
+                className={`animate-rise rounded-full border py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-transparent bg-primary text-on-primary shadow-sm" : "border-transparent bg-surface-muted hover:-translate-y-0.5"}`}
+              >
+                {DateTime.fromISO(s).setZone(timezone).toFormat("HH:mm")}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="public-flow space-y-6">
       {mode === "book" && service && (
         // Página de reserva: en lugar de la lista, el servicio elegido (con salida para cambiarlo).
-        <section className="card flex items-center gap-3.5 !p-4" aria-label="Servicio elegido">
-          <ServiceIcon iconKey={service.iconKey} iconUrl={service.iconUrl} type={businessType} />
+        <section className="card card-ink flex items-center gap-3.5 !p-4" aria-label="Servicio elegido">
+          <ServiceIcon iconKey={service.iconKey} iconUrl={service.iconUrl} type={businessType} className="!rounded-2xl !bg-ink-soft !text-primary" />
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">Servicio elegido</div>
-            <div className="font-semibold">{service.name}</div>
-            <div className="text-sm text-neutral-500">
-              {service.durationMin} min · <span className="font-semibold text-neutral-900">{money(service.priceCents, currency)}</span>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Servicio elegido</div>
+            <div className="font-semibold text-primary">{cap(service.name)}</div>
+            <div className="text-sm opacity-80">
+              {service.durationMin} min · <span className="font-semibold">{money(service.priceCents, currency)}</span>
             </div>
           </div>
-          <a href={`/b/${slug}#servicios`} className="btn-ghost !px-3 !py-1.5 text-sm">
+          <a href={`/b/${slug}#servicios`} className="btn-ghost !rounded-full !px-3 !py-1.5 text-sm">
             Cambiar
           </a>
         </section>
@@ -270,18 +318,14 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {mode !== "book" && (
       <section>
-        <div className="mb-3 flex items-center gap-3">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-full bg-white object-cover shadow-sm" />
-          )}
-          <h2 className="text-xl font-bold tracking-tight">Servicios</h2>
-        </div>
+        <SectionLabel count={services.length} className="mb-3">
+          Servicios
+        </SectionLabel>
         {/* Turno que ya reservó desde este navegador: día y hora, con acceso a verlo o cambiarlo. */}
         {mode === "list" && booked && (() => {
           const at = DateTime.fromISO(booked.startAt).setZone(timezone).setLocale("es");
           return (
-            <div className="card mb-3 flex flex-wrap items-center gap-3 !border-brand" role="status">
+            <div className="card mb-3 flex flex-wrap items-center gap-3 !border-primary" role="status">
               <Icon name="check-circle" size={24} className="text-green-600" />
               <div className="min-w-0 flex-1 text-sm">
                 <div className="font-semibold">Ya tenés tu turno</div>
@@ -309,7 +353,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           );
         })()}        {/* Reserva que quedó a medias en este navegador: se puede retomar o descartar. */}
         {mode === "list" && resume && (
-          <div className="card mb-3 flex flex-wrap items-center gap-3 !border-brand/40">
+          <div className="card mb-3 flex flex-wrap items-center gap-3">
             <Icon name="clock" size={20} className="text-neutral-500" />
             <div className="min-w-0 flex-1 text-sm">
               <div className="font-semibold">Tenés una reserva sin terminar</div>
@@ -332,13 +376,14 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
         )}
         {services.length === 0 && <p className="card text-center text-sm text-neutral-500">Este negocio todavía no cargó sus servicios. Volvé a pasar en unos días.</p>}
         <div className="space-y-3">
-          {services.map((s) => {
+          {services.map((s, n) => {
+            const ink = n % 2 === 0;
             const open = mode === "list" ? openId === s.id : false;
             const picked = service?.id === s.id;
             return (
               <div
                 key={s.id}
-                className={`card !p-0 overflow-hidden transition ${s.comingSoon ? "!border-dashed opacity-60" : ""} ${picked ? "!border-brand ring-2 ring-brand/30" : ""} ${open ? "shadow-md" : ""}`}
+                className={`card !p-0 overflow-hidden transition ${ink ? "card-ink" : ""} ${s.comingSoon ? "!border-dashed opacity-60" : ""} ${picked ? "ring-2 ring-primary" : ""}`}
               >
                 <button
                   type="button"
@@ -356,19 +401,19 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                   aria-expanded={mode === "list" ? open : undefined}
                   className="group flex w-full items-center gap-3.5 p-4 text-left disabled:cursor-not-allowed"
                 >
-                  <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className="transition group-hover:bg-brand group-hover:text-brand-fg" />
+                  <ServiceIcon iconKey={s.iconKey} iconUrl={s.iconUrl} type={businessType} className={`!rounded-2xl ${ink ? "!bg-ink-soft !text-primary" : "!bg-surface-muted !text-inherit"}`} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight">
-                      {s.name}
+                    <div className={`flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight ${ink ? "text-primary" : ""}`}>
+                      {cap(s.name)}
                       {s.comingSoon && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800">Próximamente</span>}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-                      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-xs font-medium">{s.durationMin} min</span>
-                      <span className="font-semibold text-neutral-900">{money(s.priceCents, currency)}</span>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ borderColor: "color-mix(in srgb, currentColor 35%, transparent)" }}>{s.durationMin} min</span>
+                      <span className="font-semibold">{money(s.priceCents, currency)}</span>
                     </div>
                   </div>
                   {!s.comingSoon && (
-                    <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-300 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 opacity-60 transition-transform duration-300 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d="m9 18 6-6-6-6" />
                     </svg>
                   )}
@@ -377,8 +422,8 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                   <div className={`grid transition-[grid-template-rows] duration-300 motion-reduce:transition-none ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
                     <div className="overflow-hidden">
                       <div className="space-y-3 px-4 pb-4" inert={!open}>
-                        {s.description && <p className="text-sm text-neutral-600">{s.description}</p>}
-                        <button type="button" className="btn w-full !rounded-full" onClick={() => router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(s.id)}`)}>
+                        {s.description && <p className="text-sm opacity-80">{s.description}</p>}
+                        <button type="button" className={`btn w-full !rounded-full ${ink ? "" : "!bg-ink !text-primary"}`} onClick={() => router.push(`/b/${slug}/reservar?servicio=${encodeURIComponent(s.id)}`)}>
                           Reservar este servicio
                         </button>
                       </div>
@@ -393,7 +438,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
 
       {service && barbers.length > 1 && (
         <section>
-          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí profesional</h2>
+          <SectionLabel className="mb-3">Elegí profesional</SectionLabel>
           <div className="grid gap-2 sm:grid-cols-2">
             {barbers.map((b) => (
               <button
@@ -403,7 +448,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                   setSlot(null);
                   setFocusDays((n) => n + 1);
                 }}
-                className={`card flex items-start gap-3 text-left transition ${barberId === b.id ? "!border-brand ring-2 ring-neutral-300" : ""}`}
+                className={`card flex items-start gap-3 text-left transition ${barberId === b.id ? "ring-2 ring-primary" : ""}`}
               >
                 <Avatar b={b} size={56} />
                 <div className="min-w-0">
@@ -434,59 +479,51 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 Tu WhatsApp
               </label>
               <input id="early-phone" className="input" inputMode="tel" autoComplete="tel" placeholder="+54 9 11 1234 5678" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              <p className="text-xs text-neutral-500">Si ya viniste antes, ajustamos la duración del turno a lo que a vos te lleva. Es el mismo número que te vamos a pedir al confirmar.</p>
+              <p className="text-xs text-muted">Si ya viniste antes, ajustamos la duración del turno a lo que a vos te lleva. Es el mismo número que te vamos a pedir al confirmar.</p>
               {form.phone.trim() !== DEFAULT_PREFIX.trim() && form.phone && !phoneOk && <p className="text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
             </div>
           )}
-          <h2 className="mb-2 text-lg font-bold tracking-tight">Elegí el día</h2>
-          <DayPicker days={dayItems} value={date} onChange={setDate} />
-          {timing && date && (
-            <p className="mt-3 rounded-xl bg-green-50 p-2.5 text-sm text-green-900">
-              <Icon name="clock" size={16} className="mr-1.5 inline -translate-y-px" />Ajustamos tu turno a <strong>{timing.durationMin} min</strong> (lo que habitualmente te lleva) en lugar de {service.durationMin} min.
-            </p>
-          )}
-
-          {date && (
-            <div className="mt-3" aria-live="polite">
-              {slots === null ? (
-                // Esqueleto mientras se buscan los horarios
-                <div className="grid grid-cols-4 gap-2" aria-label="Buscando horarios">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <div key={i} className="h-[42px] animate-pulse rounded-full bg-black/10" style={{ animationDelay: `${i * 70}ms` }} />
-                  ))}
-                </div>
-              ) : slots.length === 0 ? (
-                <p className="animate-rise text-sm opacity-70">No hay horarios disponibles ese día. Probá con otro.</p>
-              ) : (
-                <div key={date} className="grid grid-cols-4 gap-2">
-                  {slots.map((s, i) => (
-                    <button
-                      key={s}
-                      onClick={() => setSlot(s)}
-                      style={{ animationDelay: `${Math.min(i, 24) * 18}ms` }}
-                      className={`animate-rise rounded-full border py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-200 active:scale-95 motion-reduce:transition-none ${slot === s ? "border-white/80 bg-[#111] text-white shadow-md" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"}`}
-                    >
-                      {DateTime.fromISO(s).setZone(timezone).toFormat("HH:mm")}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <SectionLabel className="mb-3">Elegí el día</SectionLabel>
+          <FolderTabs
+            plain
+            label="Día del turno"
+            value={dayTab}
+            onValueChange={(n) => {
+              setPickOther(n === 2);
+              if (n === 0) setDate(dayItems[0].iso);
+              if (n === 1 && dayItems[1]) setDate(dayItems[1].iso);
+            }}
+            tabs={[
+              { id: "hoy", label: "Hoy", content: dayBody },
+              { id: "manana", label: "Mañana", content: dayBody },
+              {
+                id: "fecha",
+                label: "Elegir fecha",
+                content: (
+                  <>
+                    <DayPicker days={dayItems} value={date} onChange={setDate} />
+                    {dayBody}
+                  </>
+                ),
+              },
+            ]}
+          />
         </section>
       )}
 
       {slot && (
         <section className="card space-y-3">
-          <h2 className="font-semibold">Tus datos</h2>
+          <SectionLabel as="h2">Tus datos</SectionLabel>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Nombre</label>
               <input className="input" autoComplete="given-name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+              {form.firstName.trim().length === 1 && <p className="mt-1 text-xs text-red-600">Mínimo 2 letras.</p>}
             </div>
             <div>
               <label className="label">Apellido</label>
               <input className="input" autoComplete="family-name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+              {form.lastName.trim().length === 1 && <p className="mt-1 text-xs text-red-600">Mínimo 2 letras.</p>}
             </div>
           </div>
           <div>
@@ -503,9 +540,9 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
           </div>
           {service && options.some((o) => o.choice !== "NONE") && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold">Pago</h3>
+              <SectionLabel as="h3">Pago</SectionLabel>
               {options.length === 1 ? (
-                <p className="rounded-xl bg-neutral-50 p-3 text-sm">
+                <p className="rounded-2xl bg-surface-muted p-3 text-sm">
                   Para reservar tenés que pagar online {options[0].choice === "DEPOSIT" ? "una seña de" : "el total:"}{" "}
                   <strong>{money(options[0].amountCents, currency)}</strong>
                   {options[0].choice === "DEPOSIT" && <> (el resto, {money(service.priceCents - options[0].amountCents, currency)}, lo abonás en el local)</>}.
@@ -515,26 +552,26 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                   {options.map((o) => (
                     <label
                       key={o.choice}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm ${selected?.choice === o.choice ? "border-brand ring-2 ring-neutral-300" : "border-neutral-300"}`}
+                      className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-sm transition ${selected?.choice === o.choice ? "border-primary bg-surface-muted ring-2 ring-primary" : "border-neutral-300"}`}
                     >
                       <input type="radio" name="pay" checked={selected?.choice === o.choice} onChange={() => setChoice(o.choice)} />
                       <span className="flex-1">
                         {o.choice === "DEPOSIT" && (
                           <>
                             <strong>Pagar seña · {money(o.amountCents, currency)}</strong>
-                            <span className="block text-xs text-neutral-500">El resto ({money(service.priceCents - o.amountCents, currency)}) lo abonás en el local</span>
+                            <span className="block text-xs text-muted">El resto ({money(service.priceCents - o.amountCents, currency)}) lo abonás en el local</span>
                           </>
                         )}
                         {o.choice === "FULL" && (
                           <>
                             <strong>Pagar el total · {money(o.amountCents, currency)}</strong>
-                            <span className="block text-xs text-neutral-500">No abonás nada en el local</span>
+                            <span className="block text-xs text-muted">No abonás nada en el local</span>
                           </>
                         )}
                         {o.choice === "NONE" && (
                           <>
                             <strong>Pagar en el local</strong>
-                            <span className="block text-xs text-neutral-500">Reservás ahora y abonás en efectivo o físico en el local</span>
+                            <span className="block text-xs text-muted">Reservás ahora y abonás en efectivo o físico en el local</span>
                           </>
                         )}
                       </span>
@@ -544,11 +581,54 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
               )}
             </div>
           )}
-          {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
-          <button className="btn w-full" disabled={!formOk || busy} onClick={submit}>
-            {busy ? (online ? "Redirigiendo a Mercado Pago…" : "Confirmando…") : online ? `Pagar ${money(selected!.amountCents, currency)} con Mercado Pago` : payAtStore ? "Reservar y pagar en el local" : "Confirmar turno"}
-          </button>
         </section>
+      )}
+
+      {/* Resumen: sección negra con la fila principal destacada en el color de acento */}
+      {slot && service && slotLocal && (
+        <section aria-label="Resumen de la reserva" className="-mx-4 rounded-[2.5rem] bg-ink px-5 pb-8 pt-7 text-white">
+          <SectionLabel as="h2" className="!text-primary">
+            Resumen
+          </SectionLabel>
+          <ul className="mt-4 space-y-2.5">
+            <li className="flex items-center gap-3 rounded-2xl bg-primary p-3 text-on-primary">
+              <ServiceIcon iconKey={service.iconKey} iconUrl={service.iconUrl} type={businessType} size={40} className="!rounded-xl !bg-white/50 !text-inherit" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{cap(service.name)}</div>
+                <div className="text-xs opacity-75">{service.durationMin} min</div>
+              </div>
+              <div className="text-base font-semibold tabular-nums">{money(service.priceCents, currency)}</div>
+            </li>
+            {[
+              ["Día", <span key="d">{cap(slotLocal.toFormat("cccc d 'de' LLLL"))}</span>],
+              ["Hora", <span key="h">{slotLocal.toFormat("HH:mm")} hs</span>],
+              ...(barberName ? [["Profesional", <span key="p">{barberName}</span>] as const] : []),
+            ].map(([label, value]) => (
+              <li key={label as string} className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-sm" style={{ borderColor: "var(--ink-line)", background: "var(--ink-soft)" }}>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">{label}</span>
+                <span className="font-semibold">{value}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {slot && <div aria-hidden className="h-28" />}
+
+      {/* Botón principal fijo abajo (respeta el área segura de iOS) */}
+      {slot && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6" style={{ background: "linear-gradient(to top, var(--bg) 55%, transparent)" }}>
+          <div className="mx-auto max-w-[480px]">
+            {error && (
+              <p role="alert" className="pointer-events-auto mb-2 rounded-2xl bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            <button className="btn cta-confirm pointer-events-auto w-full !rounded-full !py-4 text-base font-semibold shadow-xl" disabled={!formOk || busy} onClick={submit}>
+              {busy ? (online ? "Redirigiendo a Mercado Pago…" : "Confirmando…") : online ? `Pagar ${money(selected!.amountCents, currency)} con Mercado Pago` : payAtStore ? "Reservar y pagar en el local" : "Confirmar turno"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

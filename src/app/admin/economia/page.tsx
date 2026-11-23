@@ -85,7 +85,7 @@ function Bars({ items, currency, highlight }: { items: { label: string; turnosCe
                   style={{ height: `${pct}%`, animationDelay: `${n * 45}ms`, opacity: on || !highlight ? 1 : 0.55 }}
                 >
                   <div style={{ background: "var(--chart-alt)", height: `${i.totalCents ? (i.manualCents / i.totalCents) * 100 : 0}%` }} />
-                  <div className="flex-1 bg-primary-strong" />
+                  <div className="flex-1 bg-primary" />
                 </div>
               </div>
             );
@@ -154,7 +154,7 @@ export default async function EconomyPage() {
           <h2 className="font-semibold">Esta semana, día por día</h2>
           <span className="flex items-center gap-3 text-xs text-neutral-500">
             <span className="flex items-center gap-1">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-primary-strong" /> Turnos
+              <i className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" /> Turnos
             </span>
             <span className="flex items-center gap-1">
               <i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: "var(--chart-alt)" }} /> Manuales

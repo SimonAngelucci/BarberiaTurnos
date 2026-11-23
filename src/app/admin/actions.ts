@@ -419,6 +419,7 @@ export async function saveSettings(formData: FormData) {
       tagline: d.tagline,
       logoUrl,
       primaryColor: d.primaryColor,
+      useOwnColor: formData.get("useOwnColor") === "on",
       bgColor: d.bgColor,
       applyBgToAdmin: formData.get("applyBgToAdmin") === "on",
       timezone: d.timezone,

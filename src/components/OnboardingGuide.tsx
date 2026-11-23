@@ -64,7 +64,7 @@ export function OnboardingGuide({ initialStep, publicUrl }: { initialStep: numbe
             left: `${(i * 37) % 100}%`,
             delay: `${(i % 7) * 0.12}s`,
             dur: `${2.2 + (i % 5) * 0.35}s`,
-            color: ["#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"][i % 5],
+            color: ["#f59e0b", "#f8d05f", "#3b82f6", "#ef4444", "#8b5cf6"][i % 5],
           }))
         : [],
     [celebrate],

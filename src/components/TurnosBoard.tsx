@@ -103,7 +103,7 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
           <SectionLabel as="p">Últimos 3 meses</SectionLabel>
           <div className="flex gap-3">
             {months.map((m) => (
-              <div key={m.label} className={`min-w-0 flex-1 border-l-2 pl-3 ${m.current ? "border-primary-strong" : ""}`} style={m.current ? undefined : subtle}>
+              <div key={m.label} className={`min-w-0 flex-1 border-l-2 pl-3 ${m.current ? "border-primary" : ""}`} style={m.current ? undefined : subtle}>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">{m.label}</div>
                 <div className="mt-0.5 whitespace-nowrap text-sm font-semibold tabular-nums">{m.amount}</div>
               </div>
@@ -120,7 +120,7 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
         <div className="space-y-4">
           <SectionLabel as="p">Próximos 7 días</SectionLabel>
           <div className="flex gap-3">
-            <div className="min-w-0 flex-1 border-l-2 border-primary-strong pl-3">
+            <div className="min-w-0 flex-1 border-l-2 border-primary pl-3">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">Falta cobrar</div>
               <div className="mt-0.5 whitespace-nowrap text-base font-semibold tabular-nums">{due}</div>
             </div>

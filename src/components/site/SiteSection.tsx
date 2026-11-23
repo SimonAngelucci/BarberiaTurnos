@@ -1,10 +1,15 @@
 import type { ReactNode } from "react";
+import { SectionLabel } from "@/components/ui/SectionLabel";
 
-/** Sección de la columna principal: título limpio y contenido. El ancho, la tipografía y el radio los fija el contenedor de la página. */
-export function SiteSection({ id, title, center = false, children }: { id?: string; title?: string; center?: boolean; children: ReactNode }) {
+/** Sección de la columna principal: etiqueta en mayúsculas (con contador opcional) y contenido. */
+export function SiteSection({ id, title, count, center = false, children }: { id?: string; title?: string; count?: number | string; center?: boolean; children: ReactNode }) {
   return (
     <section id={id} className={`scroll-mt-16 ${center ? "text-center" : ""}`}>
-      {title && <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] opacity-70">{title}</h2>}
+      {title && (
+        <SectionLabel count={count} className={`mb-4 ${center ? "justify-center" : ""}`}>
+          {title}
+        </SectionLabel>
+      )}
       {children}
     </section>
   );

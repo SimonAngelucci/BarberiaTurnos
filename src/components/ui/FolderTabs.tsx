@@ -9,7 +9,7 @@ export type FolderTab = { id: string; label: string; count?: number | string; co
  * Tabs tipo carpeta: la pestaña activa comparte superficie con la tarjeta de abajo (esquinas cóncavas en la unión) y la inactiva
  * queda suelta sobre el color de fondo. Accesible: roles tablist/tab/tabpanel, flechas del teclado y foco rodante.
  */
-export function FolderTabs({ tabs, label, value, onValueChange }: { tabs: FolderTab[]; label: string; value?: number; onValueChange?: (n: number) => void }) {
+export function FolderTabs({ tabs, label, value, onValueChange, plain = false }: { tabs: FolderTab[]; label: string; value?: number; onValueChange?: (n: number) => void; /** Sin bloque de color detrás: las pestañas inactivas usan el color de texto de la página. */ plain?: boolean }) {
   // Sin `value` maneja su propio estado; con `value` es controlado (la pantalla puede cambiar otras cosas según la pestaña).
   const [own, setOwn] = useState(0);
   const on = value ?? own;
@@ -46,7 +46,7 @@ export function FolderTabs({ tabs, label, value, onValueChange }: { tabs: Folder
               else return;
               e.preventDefault();
             }}
-            className={`ftab ${n === on ? "ftab-on" : ""} ${n === on && n > 0 ? "ftab-left" : ""}`}
+            className={`ftab ${plain ? "ftab-plain" : ""} ${n === on ? "ftab-on" : ""} ${n === on && n > 0 ? "ftab-left" : ""}`}
           >
             <span className="whitespace-nowrap text-lg font-light tracking-tight sm:text-2xl">{t.label}</span>
             {t.count !== undefined && <CountBadge>{t.count}</CountBadge>}

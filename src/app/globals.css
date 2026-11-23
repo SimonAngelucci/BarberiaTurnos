@@ -131,7 +131,7 @@ body {
 
 /* ==========================================================================================================================
    SISTEMA VISUAL DE LA APP (panel de administración, landing y pantallas de acceso: lo que lleva la clase .app-themed)
-   Superficies claras y bloques negros, con un único color de acento (cian por defecto, o el del negocio), formas muy redondeadas
+   Superficies claras y bloques negros, con un único color de acento (amarillo; el color propio del negocio es opcional y solo vale en su web pública), formas muy redondeadas
    y casi sin sombras. Todo vive en tokens (variables CSS): el color del negocio (panelThemeCss) y el modo oscuro solo los redefinen.
    La página pública de cada negocio NO lleva .app-themed: conserva los colores que eligió el negocio (hereda solo las formas).
 
@@ -141,20 +141,21 @@ body {
             --text-muted                                  subtítulos
    ========================================================================================================================== */
 .app-themed {
-  --primary: #bfe3dd;
-  --on-primary: #111111;
-  --primary-strong: #389ca0;
-  --primary-dark: #bfe3dd;
-  --on-primary-dark: #111111;
-  --primary-strong-dark: #bfe3dd;
-  --bg: #eeeeee;
-  --surface: #fafafa;
-  --surface-muted: #e6e6e6;
-  --ink: #111111;
-  --ink-soft: #1e1e1e;
-  --ink-line: #2c2c2c;
-  --text-muted: #6b6b6b;
-  --chart-alt: #111111;
+  --primary: #f8d05f;
+  --on-primary: #1a1a1a;
+  --primary-strong: #7d7873;
+  --primary-dark: #f8d05f;
+  --on-primary-dark: #1a1a1a;
+  --primary-strong-dark: #f8d05f;
+  --bg: #efe8e2;
+  --surface: #fbfaf8;
+  --surface-muted: #ece5de;
+  --ink: #242222;
+  --ink-soft: #2e2c2c;
+  --ink-line: #3b3939;
+  --text-muted: #726c66;
+  --dot: #ec9641;
+  --chart-alt: #242222;
   /* Los nombres de siempre (brand, color-primary…) apuntan a los tokens nuevos. */
   --brand: var(--primary);
   --brand-fg: var(--on-primary);
@@ -162,25 +163,25 @@ body {
   --color-primary-fg: var(--on-primary);
   --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #000);
   --page-bg: var(--bg);
-  --page-fg: #141414;
+  --page-fg: #2a2a2a;
   color: var(--page-fg);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
-html:not([data-theme="dark"]) body:has(.app-themed) { background: #eeeeee; color: #141414; }
-html[data-theme="dark"] body:has(.app-themed) { background: #0b0b0b; color: #f2f2f2; }
+html:not([data-theme="dark"]) body:has(.app-themed) { background: #efe8e2; color: #2a2a2a; }
+html[data-theme="dark"] body:has(.app-themed) { background: #161616; color: #f2f2f2; }
 
 html[data-theme="dark"] .app-themed {
   color-scheme: dark;
   --primary: var(--primary-dark);
   --on-primary: var(--on-primary-dark);
   --primary-strong: var(--primary-strong-dark);
-  --bg: #0b0b0b;
-  --surface: #1e1e1e;
-  --surface-muted: #2a2a2a;
-  --ink: #171717;
-  --ink-soft: #242424;
+  --bg: #161616;
+  --surface: #252525;
+  --surface-muted: #2f2f2f;
+  --ink: #0f0f0f;
+  --ink-soft: #1f1f1f;
   --ink-line: #3a3a3a;
-  --text-muted: #a3a3a3;
+  --text-muted: #a8a29c;
   --chart-alt: #f2f2f2;
   --color-primary-hover: color-mix(in srgb, var(--primary) 88%, #fff);
   --page-fg: #f2f2f2;
@@ -191,6 +192,7 @@ html[data-theme="dark"] .app-themed {
 
 /* Componentes base dentro de la app */
 .app-themed .card { background: var(--surface); border-color: transparent; color: inherit; box-shadow: none; }
+html[data-theme="dark"] .app-themed .card { border-color: #333333; }
 .app-themed .input { border-radius: 1rem; background: var(--surface); border-color: color-mix(in srgb, currentColor 18%, transparent); color: inherit; }
 .app-themed .input:focus { border-color: var(--primary-strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-strong) 28%, transparent); }
 .app-themed .btn-ghost { background: transparent; border-color: color-mix(in srgb, currentColor 25%, transparent); color: inherit; }
@@ -200,7 +202,7 @@ html[data-theme="dark"] .app-themed .btn-ghost:hover { background: color-mix(in 
 .app-themed .label { color: var(--text-muted); }
 .app-themed ::placeholder { color: var(--text-muted); opacity: 0.8; }
 /* Tarjeta negra (sobre superficies claras) y de acento: se usan con className en cualquier pantalla */
-.app-themed .card-ink { background: var(--ink); color: #f4f4f4; border: 1px solid var(--ink-line); }
+.app-themed .card-ink { background: var(--ink); color: #f4f4f4; border: 1px solid var(--ink-line); --primary-strong: var(--primary); }
 .app-themed .card-primary { background: var(--primary); color: var(--on-primary); }
 
 /* Superficies neutras del código existente → tokens, también en oscuro */
@@ -229,7 +231,7 @@ html[data-theme="dark"] .app-themed .text-neutral-300 { color: #626262; }
 html[data-theme="dark"] .app-themed .hover\:text-neutral-900:hover,
 html[data-theme="dark"] .app-themed .hover\:text-neutral-800:hover { color: #ffffff; }
 /* Etiquetas y avisos de estado: fondo translúcido y texto claro del mismo tono */
-html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 18%, transparent); }
+html[data-theme="dark"] .app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 20%, transparent); }
 html[data-theme="dark"] .app-themed :is(.text-green-600, .text-green-700, .text-green-800, .text-green-900, .text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: var(--primary); }
 html[data-theme="dark"] .app-themed :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50, .bg-yellow-100, .bg-orange-100) { background-color: rgba(245, 158, 11, 0.15); }
 html[data-theme="dark"] .app-themed :is(.text-amber-700, .text-amber-800, .text-amber-900, .text-yellow-800, .text-orange-800) { color: #fcd34d; }
@@ -243,16 +245,20 @@ html[data-theme="dark"] .app-themed :is(.border-green-200, .border-green-300, .b
 html[data-theme="dark"] .app-themed :is(.border-amber-200, .border-amber-300, .border-yellow-300) { border-color: rgba(245, 158, 11, 0.45); }
 html[data-theme="dark"] .app-themed :is(.border-red-200, .border-red-300, .border-red-400, .border-red-500) { border-color: rgba(239, 68, 68, 0.5); }
 
-/* Nada de verde en la app: los avisos "ok" usan el cian (en claro, fondo pastel y texto oscuro). */
-.app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 55%, var(--surface)); }
-.app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #0f3d3f; }
-.app-themed :is(.text-green-600, .text-emerald-600) { color: var(--primary-strong); }
-.app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: color-mix(in srgb, var(--primary-strong) 45%, transparent); }
+/* Nada de verde en la app: los avisos "ok" usan el amarillo (en claro, fondo pastel y texto oscuro). */
+.app-themed :is(.bg-green-50, .bg-green-100, .bg-emerald-50, .bg-emerald-100, .bg-emerald-200) { background-color: color-mix(in srgb, var(--primary) 45%, var(--surface)); }
+.app-themed :is(.bg-green-500, .bg-emerald-400, .bg-emerald-500) { background-color: var(--primary); }
+.app-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, .text-emerald-800, .text-emerald-900) { color: #3d3000; }
+.app-themed :is(.text-green-600, .text-emerald-600, .text-emerald-300, .text-emerald-400, .text-emerald-500) { color: var(--primary-strong); }
+.card-ink :is(.text-green-600, .text-emerald-600, .text-emerald-300, .text-emerald-400, .text-emerald-500), .app-themed .bg-neutral-900 :is(.text-emerald-300, .text-emerald-400, .text-emerald-500) { color: var(--primary); }
+.app-themed .bg-green-500\/20 { background-color: color-mix(in srgb, var(--primary) 25%, transparent); }
+.app-themed .text-green-200 { color: var(--primary); }
+.app-themed :is(.border-green-200, .border-green-300, .border-emerald-300, .border-emerald-400) { border-color: color-mix(in srgb, var(--primary) 70%, transparent); }
 
 /* Bloque de color de arriba de cada pantalla: acento con la esquina inferior curva que se funde con el fondo. */
 .app-themed { --hero: var(--primary); --on-hero: var(--on-primary); }
-/* En oscuro el bloque va en un cian profundo (menos encandilante) con texto claro; el acento pastel queda para botones, anillos y barras. */
-html[data-theme="dark"] .app-themed { --hero: #2f5f59; --on-hero: #f2f2f2; }
+/* En oscuro el bloque conserva el amarillo con texto negro (opción A); la variante atenuada es --hero: #b8942f. */
+html[data-theme="dark"] .app-themed { --hero: var(--primary); --on-hero: var(--on-primary); }
 .on-hero { color: var(--on-hero); }
 .hero-block { background: var(--hero); color: var(--on-hero); border-radius: 0 0 2.5rem 2.5rem; }
 
@@ -268,7 +274,7 @@ html[data-theme="dark"] .app-themed { --hero: #2f5f59; --on-hero: #f2f2f2; }
    que dibuja el hueco curvo alrededor (se ve bien sobre cualquier fondo, claro, negro o de color). */
 /* Franja de fondo sólida detrás de la barra: el contenido nunca se ve por debajo ni por los costados. */
 .dock-wrap { background: var(--bg); box-shadow: 0 -10px 18px -12px rgba(0, 0, 0, 0.15); }
-.dock { background: #ffffff; border: 1px solid #dcdcdc; }
+.dock { background: #f5f0ec; border: 1px solid #e0d8d0; }
 html[data-theme="dark"] .app-themed .dock { background: #111111; border-color: #2c2c2c; }
 html[data-theme="dark"] .app-themed .dock-wrap { box-shadow: 0 -10px 18px -12px rgba(0, 0, 0, 0.6); }
 .dock-item { color: var(--text-muted); transition: color 0.2s; }
@@ -279,7 +285,7 @@ html[data-theme="dark"] .app-themed .dock-wrap { box-shadow: 0 -10px 18px -12px 
   top: -0.7rem;
   width: 3.5rem;
   height: 3.5rem;
-  transform: translateX(-50%);
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,7 +294,8 @@ html[data-theme="dark"] .app-themed .dock-wrap { box-shadow: 0 -10px 18px -12px 
   color: var(--on-primary);
   box-shadow: 0 0 0 0.35rem var(--bg);
   pointer-events: none;
-  transition: left 0.38s cubic-bezier(0.3, 0.9, 0.3, 1.1);
+  transition: transform 0.38s cubic-bezier(0.3, 0.9, 0.3, 1.1);
+  will-change: transform;
 }
 @media (prefers-reduced-motion: reduce) { .dock-bubble { transition: none; } }
 /* Barras de los gráficos: crecen desde abajo al aparecer. */
@@ -310,3 +317,15 @@ html[data-theme="dark"] .app-themed .light-island .text-neutral-300 { color: #d4
 /* Barra superior (siempre sobre el bloque de color): los botones heredan el texto oscuro, también en modo oscuro. */
 .app-themed .topbar :is(button, a, svg) { color: inherit; }
 html[data-theme="dark"] .app-themed .topbar [class*="text-"] { color: inherit; }
+
+/* Pestañas carpeta sobre el fondo de la página (sin bloque de color detrás) */
+.ftab-plain { color: var(--page-fg); }
+.ftab-plain.ftab-on { color: var(--page-fg); }
+
+/* Reserva pública: etiquetas chicas en mayúsculas y botón principal fijo (negro con texto amarillo; en oscuro, al revés) */
+.public-flow .label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; }
+.cta-confirm { background: var(--ink); color: var(--primary); }
+.cta-confirm:hover:not(:disabled) { background: var(--ink); filter: brightness(1.15); }
+.cta-confirm:disabled { opacity: 0.45; }
+html[data-theme="dark"] .app-themed .cta-confirm { background: var(--primary); color: var(--on-primary); }
+html[data-theme="dark"] .app-themed .cta-confirm:hover:not(:disabled) { background: var(--primary); filter: brightness(1.08); }

@@ -5,9 +5,9 @@ const nextConfig = {
     // Las fotos/logos (hasta 2 MB) viajan dentro de la server action; el default de Next es 1 MB.
     // 4 MB es el maximo que admite una funcion de Vercel (4,5 MB).
     serverActions: { bodySizeLimit: "4mb" },
-    // Las pestanas vecinas del panel se precargan para que el swipe sea instantaneo; las precargadas se reutilizan solo 30 s
-    // (por defecto serian 5 min) para no mostrar datos viejos de turnos.
-    staleTimes: { dynamic: 0, static: 30 },
+    // Las 5 pestanas del panel se precargan completas (con datos) y se renuevan cada minuto (ver SwipeShell): static = cuanto vale
+    // una precarga completa; dynamic = paginas ya visitadas. Las acciones del panel invalidan esta cache al guardar.
+    staleTimes: { dynamic: 30, static: 90 },
   },
 };
 export default nextConfig;

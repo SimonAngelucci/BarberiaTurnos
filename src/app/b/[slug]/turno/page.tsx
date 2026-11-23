@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getBusinessBySlug } from "@/lib/db";
 import { ClaimFlow } from "@/components/ClaimFlow";
+import { PublicHeader } from "@/components/site/PublicHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +13,11 @@ export default async function ManageAppointmentPage({ params, searchParams }: { 
   if (!b) notFound();
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
-      <header className="mb-6 text-center">
-        {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt={b.name} className="mx-auto mb-3 h-16 w-16 rounded-full bg-white object-cover shadow" />}
-        <h1 className="text-xl font-bold">{b.name}</h1>
-      </header>
+    <main className="mx-auto min-h-screen max-w-[480px]">
+      <PublicHeader name={b.name} logoUrl={b.logoUrl} title="Mi turno" back={{ href: `/b/${b.slug}`, label: "Volver a la página" }} />
+      <div className="px-4 py-6">
       <ClaimFlow slug={b.slug} timezone={b.timezone} maxAdvanceDays={Math.min(b.maxAdvanceDays, 60)} initialCode={(c ?? "").slice(0, 20)} enabled={b.allowClientChanges} />
+      </div>
     </main>
   );
 }

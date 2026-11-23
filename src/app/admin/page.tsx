@@ -102,7 +102,7 @@ function Row({ a, tz, currency, showDate }: { a: Appt; tz: string; currency: str
 
 function Stat({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (
-    <div className={`min-w-0 flex-1 border-l-2 pl-3 ${accent ? "border-primary-strong" : "border-current/0"}`} style={accent ? undefined : { borderColor: "color-mix(in srgb, currentColor 14%, transparent)" }}>
+    <div className={`min-w-0 flex-1 border-l-2 pl-3 ${accent ? "border-primary" : "border-current/0"}`} style={accent ? undefined : { borderColor: "color-mix(in srgb, currentColor 14%, transparent)" }}>
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</div>
       <div className="mt-0.5 whitespace-nowrap text-base font-semibold tabular-nums">{value}</div>
     </div>

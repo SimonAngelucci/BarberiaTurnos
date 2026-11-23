@@ -6,11 +6,11 @@
 export function AppLogo({ size = 40, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="Turnos" className={`shrink-0 ${className}`}>
-      <rect width="48" height="48" rx="12" fill="#111827" />
+      <rect width="48" height="48" rx="12" fill="#242222" />
       <rect x="11" y="14" width="26" height="23" rx="4" fill="none" stroke="#fff" strokeWidth="2.4" />
       <path d="M11 21h26" stroke="#fff" strokeWidth="2.4" />
       <path d="M17 10v8M31 10v8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="m18.5 29.5 4 4 7.5-8" fill="none" stroke="#34d399" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m18.5 29.5 4 4 7.5-8" fill="none" stroke="#f8d05f" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

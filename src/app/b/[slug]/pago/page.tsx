@@ -10,6 +10,7 @@ import { dispatchDue } from "@/lib/outbox";
 import { expirePendingPayments, payConfig, syncMpPayment } from "@/lib/payments";
 import { HOLD_MINUTES } from "@/lib/payment-math";
 import { PaymentPoller } from "@/components/PaymentPoller";
+import { PublicHeader } from "@/components/site/PublicHeader";
 import { RetryPaymentButton } from "@/components/RetryPaymentButton";
 import type { PaymentState } from "@prisma/client";
 
@@ -52,17 +53,17 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
   const minutesLeft = Math.max(0, HOLD_MINUTES - Math.floor((Date.now() - appt.createdAt.getTime()) / 60_000));
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
-      <header className="mb-6 text-center">
-        {b.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={b.logoUrl} alt={b.name} className="mx-auto mb-3 h-16 w-16 rounded-full bg-white object-cover shadow" />}
-        <h1 className="text-xl font-bold">{b.name}</h1>
-      </header>
-
+    <main className="mx-auto min-h-screen max-w-[480px]">
+      <PublicHeader name={b.name} logoUrl={b.logoUrl} title={paid ? "Pago recibido" : pending && !inProcess ? "Pago pendiente" : pending ? "Confirmando pago" : appt.status === "CONFIRMED" ? "Turno confirmado" : "Pago no completado"} back={{ href: `/b/${slug}`, label: "Volver a la página" }} />
+      <div className="px-4 py-6">
       <div className="card space-y-3 text-center">
         {paid ? (
           <>
-            <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
-            <h2 className="text-xl font-bold">¡Pago recibido! Turno confirmado</h2>
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink text-primary">
+              <Icon name="check" size={28} />
+            </span>
+            <p className="text-5xl font-light tabular-nums tracking-tight">{money(appt.amountPaidCents, b.currency)}</p>
+            <h2 className="text-xl font-light">Pago recibido · Turno confirmado</h2>
             <p className="text-neutral-600">
               {appt.service.name} · {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}
             </p>
@@ -72,7 +73,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
               Te enviamos la confirmación por WhatsApp.
             </p>
             {b.allowClientChanges && appt.claimCode && (
-              <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3">
+              <div className="rounded-2xl border border-dashed border-neutral-300 bg-surface-muted p-3">
                 <div className="text-xs text-neutral-500">Tu código para reprogramar o cancelar</div>
                 <div className="my-1 font-mono text-2xl font-bold tracking-widest">{appt.claimCode}</div>
                 <Link href={`/b/${slug}/turno?c=${appt.claimCode}`} className="btn-ghost mt-1 w-full">
@@ -90,7 +91,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
               {minutesLeft > 0 ? ` ${minutesLeft} min más` : " unos instantes"}. No se te cobró nada.
             </p>
             {canRetry && <RetryPaymentButton a={sp.a} t={sp.t!} />}
-            <Link href={`/b/${slug}`} className="btn-ghost w-full">
+            <Link href={`/b/${slug}`} className="btn-ghost w-full !rounded-full">
               Elegir otro horario
             </Link>
           </>
@@ -105,8 +106,10 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
           </>
         ) : appt.status === "CONFIRMED" ? (
           <>
-            <Icon name="check-circle" size={44} className="mx-auto text-green-600" />
-            <h2 className="text-xl font-bold">Turno confirmado</h2>
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink text-primary">
+              <Icon name="check" size={28} />
+            </span>
+            <h2 className="text-xl font-light">Turno confirmado</h2>
             <p className="text-neutral-600">
               {appt.service.name} · {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}
             </p>
@@ -122,6 +125,7 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
             </Link>
           </>
         )}
+      </div>
       </div>
     </main>
   );

@@ -151,13 +151,12 @@ export function DayPicker({ days, value, onChange }: { days: DayItem[]; value: s
           {/* Resalte que se desliza hasta el día elegido */}
           <span
             aria-hidden
-            className="absolute left-0 top-0 rounded-2xl bg-brand transition-[transform,opacity] duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)] motion-reduce:transition-none"
+            className="absolute left-0 top-0 rounded-2xl bg-ink transition-[transform,opacity] duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)] motion-reduce:transition-none"
             style={{
               width: W,
               height: H,
               transform: `translateX(${Math.max(sel, 0) * STRIDE}px) scale(${sel >= 0 ? 1 : 0.85})`,
               opacity: sel >= 0 ? 1 : 0,
-              boxShadow: "0 12px 22px -10px var(--brand)",
             }}
           />
           {days.map((d, i) => {
@@ -175,7 +174,7 @@ export function DayPicker({ days, value, onChange }: { days: DayItem[]; value: s
                 onClick={() => pick(i)}
                 style={{ width: W, height: H }}
                 className={`relative z-10 flex shrink-0 select-none flex-col items-center justify-center rounded-2xl border text-center transition-[color,transform,border-color,background-color] duration-300 motion-reduce:transition-none ${
-                  active ? "border-transparent text-brand-fg" : "border-neutral-300 bg-white text-neutral-900 hover:-translate-y-0.5 hover:border-neutral-400"
+                  active ? "border-transparent text-primary" : "border-transparent bg-surface-muted hover:-translate-y-0.5"
                 }`}
               >
                 <span className={`text-[11px] font-bold uppercase tracking-wider ${d.weekend && !active ? "text-amber-600" : "opacity-70"}`}>{d.wd}</span>

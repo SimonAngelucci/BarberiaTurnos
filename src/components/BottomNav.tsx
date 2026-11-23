@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "./ui/Icon";
@@ -25,11 +25,22 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
   const path = usePathname() ?? "";
   const [intent, setIntent] = useState<string | null>(null); // pestaña a la que ya se está yendo (el círculo se adelanta)
   const track = useRef<HTMLUListElement>(null);
+  const navEl = useRef<HTMLElement>(null);
+  const [navW, setNavW] = useState(0);
   const carousel = links.length > SLOTS;
   const current = links.findIndex((l) => isActive(path, l));
   const shown = intent ? links.findIndex((l) => l.href === intent) : current;
   const on = shown >= 0 ? shown : 0;
 
+  useLayoutEffect(() => {
+    const el = navEl.current;
+    if (!el) return;
+    const measure = () => setNavW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   useEffect(() => setIntent(null), [path]);
   useEffect(() => {
     const h = (e: Event) => setIntent((e as CustomEvent<string>).detail);
@@ -47,11 +58,12 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
   }, [on, carousel]);
 
   const activeLink = links[on];
-  const bubbleLeft = carousel ? "50%" : `calc(0.5rem + (100% - 1rem) * ${(on + 0.5) / links.length})`;
+  // El círculo se mueve solo con transform (acelerado por GPU): su posición en px sale del ancho medido de la barra.
+  const bubbleX = carousel ? navW / 2 : 8 + (navW - 16) * ((on + 0.5) / links.length);
 
   return (
     <div className="dock-wrap pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-4">
-      <nav aria-label="Panel" className="dock pointer-events-auto relative w-full max-w-md rounded-[2rem]">
+      <nav ref={navEl} aria-label="Panel" className="dock pointer-events-auto relative w-full max-w-md rounded-[2rem]">
         <ul
           ref={track}
           className={carousel ? "no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-[2rem] px-[40%]" : "grid rounded-[2rem] px-2"}
@@ -74,13 +86,13 @@ export function BottomNav({ links, pendingReviews }: { links: NavLink[]; pending
               >
                 <Icon name={l.icon} size={22} className={i === on ? "opacity-0" : ""} />
                 <span className="sr-only">{l.label}</span>
-                {l.badge && pendingReviews > 0 && i !== on && <span aria-hidden className="absolute right-[28%] top-4 h-2.5 w-2.5 rounded-full bg-primary-strong ring-2 ring-[var(--surface)] scale-75" />}
+                {l.badge && pendingReviews > 0 && i !== on && <span aria-hidden className="absolute right-[28%] top-4 h-2.5 w-2.5 rounded-full bg-[var(--dot)] ring-2 ring-[var(--surface)]" />}
               </Link>
             </li>
           ))}
         </ul>
         {/* Círculo elevado con el ícono de la sección activa: el hueco curvo sale del anillo del color de la barra. */}
-        <span aria-hidden className="dock-bubble" style={{ left: bubbleLeft }}>
+        <span aria-hidden className="dock-bubble" style={{ transform: `translateX(${bubbleX - 28}px)`, opacity: navW ? 1 : 0 }}>
           <Icon key={activeLink?.icon} name={activeLink?.icon ?? "circle"} size={24} className="animate-rise" />
         </span>
       </nav>
