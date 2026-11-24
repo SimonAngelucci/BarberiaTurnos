@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -9,7 +9,7 @@ const INTERVAL_MS = 5500;
  * con la pestaña oculta y si la persona pidió «reducir movimiento». Se puede cambiar con los puntos o deslizando.
  * Sin fotos muestra una franja con el color de la marca.
  */
-export function HeroCarousel({ photos }: { photos: string[] }) {
+export function HeroCarousel({ photos, cover = false }: { photos: string[]; cover?: boolean }) {
   const [i, setI] = useState(0);
   const [held, setHeld] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -44,7 +44,7 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
 
   return (
     <div
-      className="relative isolate h-[260px] w-full overflow-hidden rounded-[2rem] bg-neutral-900"
+      className={`relative isolate w-full overflow-hidden bg-neutral-900 ${cover ? "h-[320px] rounded-b-[2.5rem]" : "h-[260px] rounded-[2rem]"}`}
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}
@@ -75,7 +75,7 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
 
       {n > 1 && (
-        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2" role="tablist" aria-label="Fotos de la portada">
+        <div className={`absolute inset-x-0 flex justify-center gap-2 ${cover ? "bottom-14" : "bottom-4"}`} role="tablist" aria-label="Fotos de la portada">
           {photos.map((_, k) => (
             <button
               key={k}
@@ -84,7 +84,7 @@ export function HeroCarousel({ photos }: { photos: string[] }) {
               aria-selected={k === i}
               aria-label={`Foto ${k + 1} de ${n}`}
               onClick={() => setI(k)}
-              className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/90"}`}
+              className={`h-2 rounded-full transition-all ${k === i ? "w-6 bg-[#ffffff]" : "w-2 bg-[#ffffff]/60 hover:bg-[#ffffff]/90"}`}
             />
           ))}
         </div>

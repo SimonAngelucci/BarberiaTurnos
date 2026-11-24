@@ -136,11 +136,29 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       {fonts && <link rel="stylesheet" href={fonts} precedence="default" />}
 
       {/* Bloque de color: logo, nombre, dirección, horario de hoy y redes */}
-      <header className="hero-block px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <div className="topbar flex items-center justify-end gap-1.5">
-          <ThemeCycleButton />
+      {/* Portada: las fotos del negocio arriba, a todo el ancho, con los botones sobre la imagen */}
+      {hero.length > 0 && <HeroCarousel photos={hero} cover />}
+
+      <header
+        className={`hero-block px-5 pb-8 ${hero.length > 0 ? "relative z-10 -mt-12 !rounded-[2.5rem] pt-7" : "pt-[max(1.25rem,env(safe-area-inset-top))]"}`}
+      >
+        <div
+          className={
+            hero.length > 0
+              ? "topbar absolute inset-x-0 -top-[272px] flex items-center justify-end gap-1.5 px-4 pt-[max(1rem,env(safe-area-inset-top))] text-white"
+              : "topbar flex items-center justify-end gap-1.5"
+          }
+        >
+          <span className={hero.length > 0 ? "flex h-9 w-9 items-center justify-center rounded-full bg-black/35 backdrop-blur" : "contents"}>
+            <ThemeCycleButton />
+          </span>
           {callHref && (
-            <a href={callHref} aria-label={phone ? `Llamar al ${prettyPhone(phone)}` : "Llamar"} title="Llamar" className="flex h-9 w-9 items-center justify-center rounded-full">
+            <a
+              href={callHref}
+              aria-label={phone ? `Llamar al ${prettyPhone(phone)}` : "Llamar"}
+              title="Llamar"
+              className={`flex h-9 w-9 items-center justify-center rounded-full ${hero.length > 0 ? "bg-black/35 backdrop-blur" : ""}`}
+            >
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
               </svg>
@@ -148,7 +166,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           )}
         </div>
 
-        <div className="mt-3 flex items-center gap-4">
+        <div className={hero.length > 0 ? "flex items-center gap-4" : "mt-3 flex items-center gap-4"}>
           {b.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={b.logoUrl} alt="" className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-full bg-[#fbfaf8] object-cover ring-4 ring-black/10" />
@@ -214,8 +232,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       <SiteNav items={nav} phoneHref={null} phoneLabel={null} />
 
       <div className="space-y-10 px-4 pb-6 pt-6">
-        {hero.length > 0 && <HeroCarousel photos={hero} />}
-
         {hasPolicy && (
           <SiteSection title="Política de reservas">
             <TextCard text={profile!.policyText!} />
