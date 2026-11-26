@@ -5,6 +5,10 @@ import { requireAdmin } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { summarize } from "@/lib/economy";
 import { CopyLink } from "@/components/CopyLink";
+import { agendaDays } from "@/lib/agenda";
+import { computeStarts } from "@/lib/booking-days";
+import { barberColors } from "@/lib/barber-colors";
+import { HOLD_MINUTES } from "@/lib/payment-math";
 import { TurnosBoard, type BoardAppt, type BoardMonth } from "@/components/TurnosBoard";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +20,43 @@ export default async function TurnosPage() {
   const now = new Date();
   const nowL = DateTime.fromJSDate(now).setZone(b.timezone).setLocale("es");
   const since = nowL.startOf("month").minus({ months: 2 }).toJSDate();
+
+  // Agenda por profesional: los próximos 7 días, con los huecos libres de cada uno (mismas reglas que la reserva online).
+  const days = agendaDays(b.timezone, DateTime.fromJSDate(now));
+  const winStart = DateTime.fromISO(days[0], { zone: b.timezone }).startOf("day");
+  const winEnd = winStart.plus({ days: 7 });
+  const [barbers, services, slotRows, taken, offs] = await Promise.all([
+    prisma.barber.findMany({ where: { businessId, active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, photoUrl: true, color: true } }),
+    prisma.service.findMany({ where: { businessId, active: true, comingSoon: false }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, durationMin: true } }),
+    prisma.timeSlot.findMany({ where: { barber: { businessId, active: true } }, select: { barberId: true, weekday: true, startMin: true } }),
+    prisma.appointment.findMany({
+      where: {
+        businessId,
+        status: { not: "CANCELLED" },
+        NOT: { status: "PENDING_PAYMENT", createdAt: { lt: new Date(Date.now() - HOLD_MINUTES * 60_000) } },
+        startAt: { gte: winStart.toJSDate(), lt: winEnd.toJSDate() },
+      },
+      select: { barberId: true, startAt: true },
+    }),
+    prisma.timeOff.findMany({ where: { businessId, startAt: { lt: winEnd.toJSDate() }, endAt: { gt: winStart.toJSDate() } }, select: { barberId: true, startAt: true, endAt: true } }),
+  ]);
+  const colors = barberColors(barbers);
+  const free: { barberId: string; startAt: string }[] = [];
+  for (const iso of days) {
+    const day = DateTime.fromISO(iso, { zone: b.timezone }).startOf("day");
+    const wd = day.weekday % 7;
+    for (const br of barbers) {
+      const starts = computeStarts({
+        day,
+        slotMins: slotRows.filter((s) => s.barberId === br.id && s.weekday === wd).map((s) => s.startMin).sort((x, y) => x - y),
+        now: nowL,
+        minNoticeMin: b.minNoticeMin,
+        takenMs: new Set(taken.filter((t) => t.barberId === br.id).map((t) => t.startAt.getTime())),
+        timeOffs: offs.filter((o) => o.barberId === br.id || o.barberId === null),
+      });
+      for (const ms of starts) free.push({ barberId: br.id, startAt: new Date(ms).toISOString() });
+    }
+  }
 
   const [rows, eco, manual] = await Promise.all([
     prisma.appointment.findMany({
@@ -40,6 +81,7 @@ export default async function TurnosPage() {
       phone: a.customer.phone,
       service: a.service.name,
       barber: a.barber?.name ?? null,
+      barberId: a.barberId,
       paid,
       paidLabel:
         paid === "PAID"
@@ -68,6 +110,7 @@ export default async function TurnosPage() {
       appts={appts}
       tz={b.timezone}
       months={months}
+      agenda={{ barbers: barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, color: colors.get(x.id)! })), services, days, free }}
       due={money(appts.reduce((sum, a) => sum + a.dueCents, 0), b.currency)}
       footer={
         <div className="card !py-2">

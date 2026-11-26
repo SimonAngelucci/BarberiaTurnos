@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { SaveForm } from "./SaveForm";
 import { phoneKey } from "@/lib/phone-key";
+import { AgendaBoard, type AgendaBarber, type AgendaFree, type AgendaService } from "./AgendaBoard";
 import { Hero } from "./ui/Hero";
 import { FolderTabs } from "./ui/FolderTabs";
 import { Ring } from "./ui/Ring";
@@ -21,6 +22,7 @@ export type BoardAppt = {
   phone: string;
   service: string;
   barber: string | null;
+  barberId?: string | null;
   paid: "PAID" | "DEPOSIT" | "STORE" | "NONE";
   paidLabel: string;
   /** Lo que falta cobrar de este turno, en centavos (0 si ya está pago). */
@@ -60,10 +62,27 @@ const subtle = { borderColor: "color-mix(in srgb, currentColor 14%, transparent)
  * con los próximos turnos (el primero destacado, con anillo de tiempo restante). Los colores de alerta siguen la cercanía
  * (en curso, ≤15 min, ≤1 h, ≤3 h). Se actualiza sola: recalcula cada 20 s y trae datos nuevos cada minuto.
  */
-export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAppt[]; tz: string; months: BoardMonth[]; due: string; footer?: React.ReactNode }) {
+export type BoardAgenda = { barbers: AgendaBarber[]; services: AgendaService[]; days: string[]; free: AgendaFree[] };
+
+const VIEW_KEY = "turnos-view";
+
+export function TurnosBoard({ appts, tz, months, due, footer, agenda }: { appts: BoardAppt[]; tz: string; months: BoardMonth[]; due: string; footer?: React.ReactNode; agenda?: BoardAgenda }) {
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
   const [tab, setTab] = useState(0);
+  const [view, setView] = useState<"lista" | "agenda">("lista"); // se recuerda la última vista elegida
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(VIEW_KEY) === "agenda") setView("agenda");
+    } catch {}
+  }, []);
+  const pickView = (v: "lista" | "agenda") => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
+  const showAgenda = view === "agenda" && !!agenda && agenda.barbers.length > 0;
 
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 20_000);
@@ -155,6 +174,19 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
 
       {/* Sección negra inferior: entra desde abajo con la esquina superior curva y llega hasta el fondo de la pantalla. */}
       <section className="relative -mx-4 -mb-32 mt-2 rounded-t-[2.5rem] border-t border-ink-line bg-ink px-4 pb-44 pt-8 text-[#f4f4f4]">
+        {agenda && agenda.barbers.length > 0 && (
+          <div className="mb-5 inline-flex rounded-full bg-ink-soft p-1 text-sm font-semibold" role="tablist" aria-label="Vista de turnos">
+            {(["lista", "agenda"] as const).map((v) => (
+              <button key={v} role="tab" aria-selected={view === v} onClick={() => pickView(v)} className={`rounded-full px-4 py-1.5 transition ${view === v ? "bg-primary text-on-primary" : "text-white/70"}`}>
+                {v === "lista" ? "Lista" : "Por profesional"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {showAgenda && <AgendaBoard appts={appts} barbers={agenda!.barbers} services={agenda!.services} days={agenda!.days} free={agenda!.free} tz={tz} now={now} />}
+
+        <div className={showAgenda ? "hidden" : ""}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <SectionLabel count={list.length} className="!text-white/60">
             {tab === 0 ? "Próximos turnos" : "Por cobrar"}
@@ -255,6 +287,8 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
             </ul>
           </div>
         )}
+
+        </div>
 
         {footer && <div className="mt-8 text-neutral-900">{footer}</div>}
       </section>

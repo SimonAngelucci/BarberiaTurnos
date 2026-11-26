@@ -8,10 +8,11 @@ import { ImageField } from "@/components/ImageField";
 import { SaveForm } from "@/components/SaveForm";
 import { DeleteBarberButton } from "@/components/DeleteBarberButton";
 import { saveBarber } from "../actions";
+import { BARBER_PALETTE, barberColors } from "@/lib/barber-colors";
 
 type B = { id: string; name: string; bio: string | null; photoUrl: string | null; active: boolean };
 
-function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
+function BarberForm({ b, enabled, color }: { b?: B; enabled: boolean; color?: string }) {
   return (
     <SaveForm action={saveBarber} className="space-y-3" successText={b ? "Profesional guardado" : "Profesional agregado"} resetOnSuccess={!b}>
       {b && <input type="hidden" name="id" value={b.id} />}
@@ -33,6 +34,17 @@ function BarberForm({ b, enabled }: { b?: B; enabled: boolean }) {
           placeholder="Ej: 8 años de experiencia. Especialista en fades y barba clásica."
         />
       </div>
+      <div>
+        <label className="label">Color en la agenda</label>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color del profesional">
+          {BARBER_PALETTE.map((c) => (
+            <label key={c} className="cursor-pointer">
+              <input type="radio" name="color" value={c} defaultChecked={color?.toLowerCase() === c} className="peer sr-only" />
+              <span className="block h-8 w-8 rounded-full ring-offset-2 ring-offset-[var(--surface)] transition peer-checked:ring-2 peer-focus-visible:ring-2" style={{ background: c, ["--tw-ring-color" as string]: c }} />
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="flex items-center gap-4">
         {b && (
           <label className="flex items-center gap-2 text-sm">
@@ -49,6 +61,7 @@ export default async function BarbersPage() {
   const { businessId } = await requireAdmin();
   const barbers = await prisma.barber.findMany({ where: { businessId }, orderBy: [{ active: "desc" }, { name: "asc" }] });
   const enabled = uploadsEnabled();
+  const colors = barberColors(barbers);
 
   // Tope de barberos del plan contratado (durante la prueba no hay tope).
   const access = await getAccess(businessId);
@@ -83,7 +96,7 @@ export default async function BarbersPage() {
 
       {barbers.map((b) => (
         <div key={b.id} className={`card ${b.active ? "" : "opacity-60"}`}>
-          <BarberForm b={b} enabled={enabled} />
+          <BarberForm b={b} enabled={enabled} color={colors.get(b.id)} />
           <div className="mt-3 border-t border-neutral-100 pt-3">
             <DeleteBarberButton id={b.id} name={b.name} futureCount={futureCount.get(b.id) ?? 0} />
           </div>

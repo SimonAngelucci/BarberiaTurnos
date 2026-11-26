@@ -203,6 +203,8 @@ model Barber {
   name       String
   photoUrl   String?
   bio        String?
+  /// Color en la agenda y en toda la app (#rrggbb). Sin color propio se asigna uno de la paleta.
+  color      String?
   active     Boolean  @default(true)
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 

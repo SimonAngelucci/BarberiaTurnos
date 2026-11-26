@@ -16,6 +16,12 @@ import { encryptSecret } from "@/lib/crypto";
 import { configSchema } from "@/lib/page-config";
 import type { Prisma } from "@prisma/client";
 import { verifyMpToken } from "@/lib/payments";
+import { isBarberColor } from "@/lib/barber-colors";
+import { generateClaimCode } from "@/lib/claim";
+import { isSlotAvailable } from "@/lib/slots";
+import { phoneVariants } from "@/lib/phone-key";
+import { enqueueBookingMessages } from "@/lib/outbox";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 // Todas las actions son endpoints públicos: SIEMPRE validar sesión y datos.
 
@@ -42,6 +48,70 @@ export async function setAppointmentStatus(formData: FormData) {
   const status = z.enum(["COMPLETED", "NO_SHOW"]).parse(formData.get("status"));
   await prisma.appointment.updateMany({ where: { id, businessId, status: "CONFIRMED" }, data: { status } });
   revalidatePath("/admin");
+}
+
+export type CreateApptResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Crea un turno desde la agenda (el administrador toca un hueco libre). Solo en horarios que el negocio ofrece y siguen libres:
+ * es la misma validación que usa la reserva online. Queda confirmado, con pago pendiente en el local.
+ */
+export async function createAdminAppointment(input: { barberId: string; serviceId: string; startAt: string; firstName: string; lastName: string; phone: string }): Promise<CreateApptResult> {
+  const { businessId } = await requireWritable();
+  const p = z
+    .object({
+      barberId: z.string().min(1),
+      serviceId: z.string().min(1),
+      startAt: z.string().min(1),
+      firstName: z.string().trim().min(2, "Nombre muy corto").max(60),
+      lastName: z.string().trim().max(60),
+      phone: z.string().trim().min(6).max(25),
+    })
+    .safeParse(input);
+  if (!p.success) return { ok: false, error: p.error.issues[0]?.message ?? "Datos inválidos" };
+  const d = p.data;
+  const phone = parsePhoneNumberFromString(d.phone);
+  if (!phone?.isValid()) return { ok: false, error: "WhatsApp inválido. Incluí el código de país (ej: +54 9 11 1234 5678)." };
+
+  const [service, barber] = await Promise.all([
+    prisma.service.findFirst({ where: { id: d.serviceId, businessId, active: true, comingSoon: false } }),
+    prisma.barber.findFirst({ where: { id: d.barberId, businessId, active: true } }),
+  ]);
+  if (!service || !barber) return { ok: false, error: "Servicio o profesional no disponible" };
+
+  const startAt = new Date(d.startAt);
+  if (!(await isSlotAvailable({ businessId, barberId: barber.id, serviceId: service.id, startAt }))) return { ok: false, error: "Ese horario ya no está disponible." };
+  const endAt = DateTime.fromJSDate(startAt).plus({ minutes: service.durationMin }).toJSDate();
+
+  try {
+    const appt = await prisma.$transaction(async (tx) => {
+      const existing = await tx.customer.findFirst({ where: { businessId, phone: { in: phoneVariants(phone.number) } }, orderBy: { createdAt: "asc" } });
+      const customer = existing ?? (await tx.customer.create({ data: { businessId, phone: phone.number, firstName: d.firstName, lastName: d.lastName || "-" } }));
+      return tx.appointment.create({
+        data: {
+          businessId,
+          barberId: barber.id,
+          serviceId: service.id,
+          customerId: customer.id,
+          startAt,
+          endAt,
+          priceCents: service.priceCents,
+          status: "CONFIRMED",
+          claimCode: generateClaimCode(),
+          events: { create: { businessId, kind: "CREATED", actor: "ADMIN", toStartAt: startAt } },
+        },
+      });
+    });
+    await enqueueBookingMessages(appt.id);
+    after(() => dispatchDue().catch(console.error));
+  } catch (e) {
+    if (/appointment_one_per_start|appointment_no_overlap|23505|23P01|Unique constraint/i.test(String((e as Error)?.message ?? e))) return { ok: false, error: "Ese horario se ocupó recién." };
+    console.error("createAdminAppointment", e);
+    return { ok: false, error: "No se pudo crear el turno." };
+  }
+  revalidatePath("/admin/turnos");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 const serviceSchema = z.object({
@@ -143,7 +213,8 @@ export async function saveBarber(formData: FormData) {
     photoUrl = newPhoto;
   }
 
-  const data = { name: d.name, bio: d.bio || null, photoUrl };
+  const pickedColor = formData.get("color")?.toString();
+  const data = { name: d.name, bio: d.bio || null, photoUrl, ...(isBarberColor(pickedColor) ? { color: pickedColor.toLowerCase() } : {}) };
   if (existing) {
     await prisma.barber.update({ where: { id: existing.id }, data: { ...data, active: formData.get("active") === "on" } });
   } else {
