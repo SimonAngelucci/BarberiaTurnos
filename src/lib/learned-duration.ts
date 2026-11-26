@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { phoneVariants } from "./phone-key";
 
 /** Respuestas necesarias antes de usar el tiempo aprendido (con menos, se usa la duración normal del servicio). */
 export const MIN_SAMPLES = 3;
@@ -59,8 +60,9 @@ export async function sampleMinutes(customerId: string, serviceId: string, reset
 export async function effectiveDuration(p: { businessId: string; serviceId: string; standardMin: number; phone?: string | null; learn: boolean }): Promise<Learned> {
   const standard: Learned = { minutes: p.standardMin, source: "standard", samples: 0 };
   if (!p.learn || !p.phone) return standard;
-  const customer = await prisma.customer.findUnique({
-    where: { businessId_phone: { businessId: p.businessId, phone: p.phone } },
+  const customer = await prisma.customer.findFirst({
+    where: { businessId: p.businessId, phone: { in: phoneVariants(p.phone) } },
+    orderBy: { createdAt: "asc" },
     select: { id: true, times: { where: { serviceId: p.serviceId }, select: { overrideMin: true, resetAt: true } } },
   });
   if (!customer) return standard;

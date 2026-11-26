@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { SaveForm } from "./SaveForm";
+import { phoneKey } from "@/lib/phone-key";
 import { Hero } from "./ui/Hero";
 import { FolderTabs } from "./ui/FolderTabs";
 import { Ring } from "./ui/Ring";
@@ -91,7 +92,18 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
   }, [list, now, tz]);
 
   const highlightId = list.find((a) => new Date(a.endAt).getTime() > now)?.id;
-  const customers = useMemo(() => [...new Set(appts.map((a) => a.customer))].slice(0, 6), [appts]);
+  // Una persona aparece una sola vez (se la reconoce por su teléfono, no por el nombre: dos personas pueden llamarse igual) y, si
+  // tiene varios turnos, con la cantidad. Cada turno sigue siendo una tarjeta propia, con su id como key.
+  const customers = useMemo(() => {
+    const m = new Map<string, { key: string; name: string; turns: number }>();
+    for (const a of appts) {
+      const key = phoneKey(a.phone);
+      const cur = m.get(key);
+      if (cur) cur.turns++;
+      else m.set(key, { key, name: a.customer, turns: 1 });
+    }
+    return [...m.values()].slice(0, 6);
+  }, [appts]);
 
   const tabs = [
     {
@@ -230,12 +242,13 @@ export function TurnosBoard({ appts, tz, months, due, footer }: { appts: BoardAp
             </SectionLabel>
             <ul className="mt-3 flex flex-wrap gap-2">
               {customers.map((c) => (
-                <li key={c}>
+                <li key={c.key}>
                   <Link href="/admin/customers" className="flex items-center gap-2 rounded-2xl border border-ink-line bg-ink-soft py-1.5 pl-1.5 pr-3.5 text-sm font-semibold">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink text-primary">
                       <Icon name="user" size={16} />
                     </span>
-                    {c}
+                    {c.name}
+                    {c.turns > 1 && <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-on-primary">{c.turns} turnos</span>}
                   </Link>
                 </li>
               ))}

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "test": "vitest run",
     "start": "next start",
     "typecheck": "prisma generate && tsc --noEmit",
     "db:setup": "prisma db push && prisma db execute --file prisma/constraints.sql --schema prisma/schema.prisma",
@@ -41,6 +42,8 @@
     "prisma": "^6.0.0",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.9"
   }
 }
+

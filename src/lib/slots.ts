@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { prisma } from "./db";
 import { HOLD_MINUTES } from "./payment-math";
+import { computeStarts } from "./booking-days";
 
 type Params = {
   businessId: string;
@@ -64,11 +65,14 @@ async function loadDay({ businessId, barberId, serviceId, date, excludeAppointme
     }),
   ]);
 
-  const takenMs = new Set(taken.map((a) => a.startAt.getTime()));
-  const earliestMs = now.plus({ minutes: business.minNoticeMin }).toMillis();
-  const starts = slots
-    .map((s) => day.plus({ minutes: s.startMin }).toMillis())
-    .filter((ms) => ms >= earliestMs && !takenMs.has(ms) && !timeOffs.some((t) => ms >= t.startAt.getTime() && ms < t.endAt.getTime()));
+  const starts = computeStarts({
+    day,
+    slotMins: slots.map((s) => s.startMin),
+    now,
+    minNoticeMin: business.minNoticeMin,
+    takenMs: new Set(taken.map((a) => a.startAt.getTime())),
+    timeOffs,
+  });
 
   return { starts };
 }

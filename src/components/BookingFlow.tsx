@@ -12,6 +12,7 @@ import { payOptions, type PayChoice, type PayConfig } from "@/lib/payment-math";
 import { ServiceIcon } from "./ServiceIcon";
 import { FolderTabs } from "@/components/ui/FolderTabs";
 import { SectionLabel } from "@/components/ui/SectionLabel";
+import { bookableDays, findNextAvailableDay } from "@/lib/booking-days";
 import { clearBooked, clearDraft, isMeaningful, loadBooked, loadDraft, saveDraft, type BookedTurn, type BookingDraft } from "@/lib/booking-storage";
 import type { BusinessType } from "@/lib/service-icons";
 
@@ -85,10 +86,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   const [resume, setResume] = useState<BookingDraft | null>(null);
   const [booked, setBooked] = useState<BookedTurn | null>(null); // turno ya reservado desde este navegador (y todavía no pasó)
 
-  const days = useMemo(() => {
-    const today = DateTime.now().setZone(timezone).startOf("day");
-    return Array.from({ length: Math.min(maxAdvanceDays, 30) + 1 }, (_, i) => today.plus({ days: i }).setLocale("es"));
-  }, [timezone, maxAdvanceDays]);
+  const days = useMemo(() => bookableDays(timezone, maxAdvanceDays).map((d) => d.setLocale("es")), [timezone, maxAdvanceDays]);
 
   const dayItems = useMemo<DayItem[]>(
     () =>
@@ -126,6 +124,9 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
   useEffect(() => {
     if (mode === "list") setBooked(loadBooked(slug));
     const d = loadDraft(slug);
+    // «Hoy» viene elegido de entrada: sin esto la pestaña Hoy quedaba marcada pero sin día cargado (y sin horarios).
+    // Si el borrador trae un día válido, lo de abajo lo reemplaza.
+    if (mode !== "list" && dayItems[0]) setDate(dayItems[0].iso);
     if (d) {
       if (mode === "list") {
         // En la lista de servicios solo se ofrece retomar la reserva que quedó a medias.
@@ -255,6 +256,27 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     );
   }
 
+  // «Ver próximo día disponible»: busca (de a un día) el primero con horarios y salta ahí.
+  const [searching, setSearching] = useState(false);
+  const [nextMsg, setNextMsg] = useState<string | null>(null);
+  async function jumpToNextDay() {
+    if (!service || !barberId || !date || searching) return;
+    setSearching(true);
+    setNextMsg(null);
+    const fetchSlots = (iso: string) =>
+      fetch(`/api/availability?slug=${encodeURIComponent(slug)}&serviceId=${service.id}&barberId=${barberId}&date=${iso}`)
+        .then((r) => r.json())
+        .then((j) => (j.slots ?? []) as string[])
+        .catch(() => [] as string[]);
+    const next = await findNextAvailableDay(dayItems.map((d) => d.iso), date, fetchSlots);
+    setSearching(false);
+    if (next) {
+      setPickOther(next !== dayItems[0]?.iso && next !== dayItems[1]?.iso);
+      setDate(next);
+    } else setNextMsg("No encontramos horarios en los próximos días.");
+  }
+  useEffect(() => setNextMsg(null), [date]);
+
   // ---- Presentación del selector de día y horarios (la lógica de arriba no cambia)
   const dayTab = pickOther ? 2 : date && date === dayItems[0]?.iso ? 0 : date && date === dayItems[1]?.iso ? 1 : date ? 2 : 0;
   const barberName = barbers.find((x) => x.id === barberId)?.name ?? null;
@@ -277,7 +299,13 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
             ))}
           </div>
         ) : slots.length === 0 ? (
-          <p className="animate-rise text-sm text-muted">No hay horarios disponibles ese día. Probá con otro.</p>
+          <div className="animate-rise space-y-3 rounded-2xl bg-surface-muted p-4 text-sm">
+            <p className="font-semibold">{date === dayItems[0]?.iso ? "No quedan horarios para hoy" : "No hay horarios disponibles ese día"}</p>
+            {nextMsg && <p className="text-muted">{nextMsg}</p>}
+            <button type="button" className="btn-ghost !rounded-full" disabled={searching} onClick={jumpToNextDay}>
+              {searching ? "Buscando…" : "Ver próximo día disponible"}
+            </button>
+          </div>
         ) : (
           <div key={date} className="grid grid-cols-4 gap-2">
             {slots.map((s, i) => (

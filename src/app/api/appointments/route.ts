@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessForCheckout } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
+import { phoneVariants } from "@/lib/phone-key";
 import { getAccess } from "@/lib/billing";
 import { randomBytes } from "node:crypto";
 import { generateClaimCode } from "@/lib/claim";
@@ -77,11 +78,11 @@ export async function POST(req: Request) {
   try {
     // 2ª defensa: la constraint de Postgres rechaza solapamientos aunque dos requests lleguen a la vez.
     const { appt, payment } = await prisma.$transaction(async (tx) => {
-      const customer = await tx.customer.upsert({
-        where: { businessId_phone: { businessId: business.id, phone: phone.number } },
-        update: { firstName: d.firstName, lastName: d.lastName },
-        create: { businessId: business.id, phone: phone.number, firstName: d.firstName, lastName: d.lastName },
-      });
+      // La misma persona puede haber escrito su número con o sin el 9 (Argentina): se reutiliza el cliente que ya existe.
+      const existing = await tx.customer.findFirst({ where: { businessId: business.id, phone: { in: phoneVariants(phone.number) } }, orderBy: { createdAt: "asc" } });
+      const customer = existing
+        ? await tx.customer.update({ where: { id: existing.id }, data: { firstName: d.firstName, lastName: d.lastName } })
+        : await tx.customer.create({ data: { businessId: business.id, phone: phone.number, firstName: d.firstName, lastName: d.lastName } });
       const created = await tx.appointment.create({
         data: {
           businessId: business.id,

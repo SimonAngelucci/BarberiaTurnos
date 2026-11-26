@@ -1,7 +1,9 @@
 import { PageHero } from "@/components/ui/PageHero";
 import { Icon } from "@/components/ui/Icon";
 import { Collapsible } from "@/components/ui/Collapsible";
+import { DateTime } from "luxon";
 import { prisma } from "@/lib/db";
+import { phoneKey } from "@/lib/phone-key";
 import { requireAdmin } from "@/lib/auth";
 import { prettyPhone } from "@/lib/profile";
 import { SaveForm } from "@/components/SaveForm";
@@ -17,7 +19,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const q = ((await searchParams).q ?? "").trim().slice(0, 60);
 
   const [business, services, customers] = await Promise.all([
-    prisma.business.findUnique({ where: { id: businessId }, select: { learnDurations: true } }),
+    prisma.business.findUnique({ where: { id: businessId }, select: { learnDurations: true, timezone: true } }),
     prisma.service.findMany({ where: { businessId, active: true }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, durationMin: true } }),
     prisma.customer.findMany({
       where: {
@@ -28,11 +30,26 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       take: 40,
       include: {
         times: true,
-        appointments: { where: { actualDurationMin: { not: null }, status: { in: ["CONFIRMED", "COMPLETED"] } }, orderBy: { startAt: "desc" }, select: { serviceId: true, actualDurationMin: true, startAt: true } },
+        appointments: { orderBy: { startAt: "desc" }, select: { id: true, serviceId: true, actualDurationMin: true, startAt: true, status: true, service: { select: { name: true } }, barber: { select: { name: true } } } },
       },
     }),
   ]);
   const learn = business?.learnDurations ?? false;
+  const tz = business?.timezone ?? "America/Argentina/Buenos_Aires";
+
+  // Una persona aparece una sola vez: se la reconoce por su teléfono normalizado (con o sin el 9 de Argentina), no por el nombre.
+  // Si hay registros duplicados de la misma persona se muestran juntos; los ajustes de tiempo se guardan en el registro principal.
+  const groups = new Map<string, typeof customers>();
+  for (const c of customers) {
+    const k = phoneKey(c.phone);
+    groups.set(k, [...(groups.get(k) ?? []), c]);
+  }
+  const people = [...groups.values()].map((g) => {
+    const sorted = [...g].sort((a, b) => b.appointments.length - a.appointments.length);
+    const primary = sorted[0];
+    const all = g.flatMap((c) => c.appointments).sort((a, b) => b.startAt.getTime() - a.startAt.getTime());
+    return { primary, all, active: all.filter((a) => a.status !== "CANCELLED") };
+  });
 
   return (
     <div className="space-y-4">
@@ -59,21 +76,40 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
       {customers.length === 0 && <p className="card text-sm text-neutral-500">{q ? "No encontramos clientes con esa búsqueda." : "Todavía no hay clientes."}</p>}
 
-      {customers.map((c) => {
-        const answered = c.appointments.length;
+      {people.map(({ primary: c, all, active }) => {
+        const learned = c.appointments.filter((a) => a.actualDurationMin != null && ["CONFIRMED", "COMPLETED"].includes(a.status));
+        const answered = learned.length;
         return (
           <details key={c.id} className="card">
             <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
               <span className="font-semibold">
                 {c.firstName} {c.lastName} <span className="font-normal text-neutral-500">· {prettyPhone(c.phone)}</span>
+                {active.length > 1 && <span className="ml-2 rounded-full bg-primary px-2 py-0.5 align-middle text-[11px] font-bold text-on-primary">{active.length} turnos</span>}
               </span>
               <span className="text-xs text-neutral-500">{answered === 0 ? "Sin respuestas todavía" : `${answered} ${answered === 1 ? "respuesta" : "respuestas"}`}</span>
             </summary>
 
+            {all.length > 0 && (
+              <ul className="mt-3 divide-y divide-neutral-100 rounded-xl bg-surface-muted px-3 text-sm">
+                {all.slice(0, 10).map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-x-3 py-2">
+                    <span className="min-w-0">
+                      <span className="font-medium">{a.service.name}</span>
+                      {a.barber ? <span className="text-neutral-500"> · {a.barber.name}</span> : null}
+                    </span>
+                    <span className="text-xs text-neutral-500">
+                      {DateTime.fromJSDate(a.startAt).setZone(tz).setLocale("es").toFormat("ccc d LLL · HH:mm")}
+                      {a.status === "CANCELLED" ? " · cancelado" : a.status === "COMPLETED" ? " · completado" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <div className="mt-3 divide-y divide-neutral-100">
               {services.map((s) => {
                 const adj = c.times.find((t) => t.serviceId === s.id);
-                const samples = c.appointments.filter((a) => a.serviceId === s.id && (!adj?.resetAt || a.startAt > adj.resetAt)).map((a) => a.actualDurationMin!);
+                const samples = learned.filter((a) => a.serviceId === s.id && (!adj?.resetAt || a.startAt > adj.resetAt)).map((a) => a.actualDurationMin!);
                 const res = learnedMinutes({ samples, standardMin: s.durationMin, overrideMin: adj?.overrideMin });
                 const hidden = { customerId: c.id, serviceId: s.id };
                 return (
