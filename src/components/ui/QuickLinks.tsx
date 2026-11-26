@@ -20,7 +20,8 @@ export function QuickLinks({ items, className = "" }: { items: QuickLink[]; clas
 }
 
 /** Los accesos del panel, para mostrar en las pantallas que sirven de punto de partida. */
-export const PANEL_SHORTCUTS: Record<"clientes" | "profesionales" | "pagos" | "personalizacion" | "horarios", QuickLink> = {
+export const PANEL_SHORTCUTS: Record<"clientes" | "profesionales" | "pagos" | "personalizacion" | "horarios" | "promociones", QuickLink> = {
+  promociones: { href: "/admin/promociones", label: "Promociones", icon: "gift" },
   clientes: { href: "/admin/customers", label: "Clientes", icon: "heart" },
   profesionales: { href: "/admin/barbers", label: "Profesionales", icon: "users" },
   pagos: { href: "/admin/payments", label: "Pagos", icon: "credit-card" },

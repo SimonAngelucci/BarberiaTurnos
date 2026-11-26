@@ -18,6 +18,8 @@ import type { Prisma } from "@prisma/client";
 import { verifyMpToken } from "@/lib/payments";
 import { isBarberColor } from "@/lib/barber-colors";
 import { generateClaimCode } from "@/lib/claim";
+import { loadRules } from "@/lib/discount-db";
+import { priceFor } from "@/lib/discounts";
 import { isSlotAvailable } from "@/lib/slots";
 import { phoneVariants } from "@/lib/phone-key";
 import { enqueueBookingMessages } from "@/lib/outbox";
@@ -82,6 +84,9 @@ export async function createAdminAppointment(input: { barberId: string; serviceI
   const startAt = new Date(d.startAt);
   if (!(await isSlotAvailable({ businessId, barberId: barber.id, serviceId: service.id, startAt }))) return { ok: false, error: "Ese horario ya no está disponible." };
   const endAt = DateTime.fromJSDate(startAt).plus({ minutes: service.durationMin }).toJSDate();
+  // Mismas promociones automáticas que la reserva online (sin cupón): el precio guardado es el que realmente se cobra.
+  const biz = await getBusinessById(businessId);
+  const price = priceFor({ rules: await loadRules(businessId), serviceId: service.id, priceCents: service.priceCents, startAt, tz: biz.timezone });
 
   try {
     const appt = await prisma.$transaction(async (tx) => {
@@ -95,7 +100,10 @@ export async function createAdminAppointment(input: { barberId: string; serviceI
           customerId: customer.id,
           startAt,
           endAt,
-          priceCents: service.priceCents,
+          priceCents: price.finalCents,
+          originalPriceCents: price.discountCents > 0 ? price.originalCents : null,
+          discountCents: price.discountCents,
+          discountId: price.discount?.id ?? null,
           status: "CONFIRMED",
           claimCode: generateClaimCode(),
           events: { create: { businessId, kind: "CREATED", actor: "ADMIN", toStartAt: startAt } },

@@ -4,6 +4,9 @@ import { prisma, getBusinessBySlug } from "@/lib/db";
 import { BookingFlow } from "@/components/BookingFlow";
 import { ReviewCta } from "@/components/site/ReviewCta";
 import { payConfig } from "@/lib/payments";
+import { loadRules } from "@/lib/discount-db";
+import { servicePromo } from "@/lib/discounts";
+import { money } from "@/lib/format";
 import { getAccess } from "@/lib/billing";
 import { asBusinessType } from "@/lib/service-icons";
 import { PublicHeader } from "@/components/site/PublicHeader";
@@ -29,6 +32,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
   if (!chosen) redirect(`/b/${b.slug}#servicios`);
 
   const home = `/b/${b.slug}`;
+  const rules = await loadRules(b.id);
 
   return (
     <main className="mx-auto min-h-screen max-w-[480px]">
@@ -57,6 +61,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
             name: s.name,
             description: s.description,
             priceCents: s.priceCents,
+            promo: servicePromo(rules, s.id, s.priceCents, new Date(), (c) => money(c, b.currency)),
             durationMin: s.durationMin,
             comingSoon: s.comingSoon,
             iconKey: s.iconKey,

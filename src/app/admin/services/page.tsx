@@ -60,7 +60,7 @@ export default async function ServicesPage() {
   return (
     <div className="space-y-4">
       <PageHero title="Servicios" subtitle="Lo que ofrecés, con su precio y duración. Tocá un servicio para editarlo.">
-        <QuickLinks items={[GO.horarios]} />
+        <QuickLinks items={[GO.horarios, GO.promociones]} />
       </PageHero>
 
       <SaveForm action={saveBusinessType} className="card flex flex-wrap items-end gap-3" successText="Rubro cambiado">

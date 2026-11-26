@@ -67,6 +67,11 @@ export default async function PaymentReturnPage({ params, searchParams }: { para
             <p className="text-neutral-600">
               {appt.service.name} · {when.toFormat("cccc d 'de' LLLL")} a las {when.toFormat("HH:mm")}
             </p>
+            {appt.discountCents > 0 && appt.originalPriceCents !== null && (
+              <p className="text-sm text-neutral-600">
+                Precio original <span className="line-through opacity-60">{money(appt.originalPriceCents, b.currency)}</span> · Descuento -{money(appt.discountCents, b.currency)} · Total <strong>{money(appt.priceCents, b.currency)}</strong>
+              </p>
+            )}
             <p className="text-sm text-neutral-500">
               Pagaste {money(appt.amountPaidCents, b.currency)}
               {appt.paymentStatus === "DEPOSIT_PAID" ? ` (seña). El resto (${money(appt.priceCents - appt.amountPaidCents, b.currency)}) lo abonás en el local.` : "."}{" "}

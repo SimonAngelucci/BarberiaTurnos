@@ -36,7 +36,7 @@ const links: NavLink[] = [
     also: ["/admin/customers", "/admin/barbers", "/admin/payments", "/admin/personalizacion", "/admin/settings", "/admin/design", "/admin/profile"],
   },
   { href: "/admin/turnos", label: "Turnos", icon: "calendar" },
-  { href: "/admin/services", label: "Servicios", icon: "scissors", also: ["/admin/schedule"] },
+  { href: "/admin/services", label: "Servicios", icon: "scissors", also: ["/admin/schedule", "/admin/promociones"] },
   { href: "/admin/economia", label: "Economía", icon: "wallet" },
   { href: "/admin/account", label: "Cuenta", icon: "user", also: ["/admin/billing"] },
 ];

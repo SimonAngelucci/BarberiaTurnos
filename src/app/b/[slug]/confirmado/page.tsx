@@ -95,7 +95,15 @@ export default async function ConfirmedPage({ params, searchParams }: { params: 
                   </Row>
                   <Row label="Servicio">{appt.service.name}</Row>
                   {appt.barber && <Row label="Profesional">{appt.barber.name}</Row>}
-                  <Row label="Precio">{money(appt.priceCents, b.currency)}</Row>
+                  {appt.discountCents > 0 && appt.originalPriceCents !== null && (
+                    <>
+                      <Row label="Precio original">
+                        <span className="line-through opacity-60">{money(appt.originalPriceCents, b.currency)}</span>
+                      </Row>
+                      <Row label={appt.couponCode ? `Descuento (${appt.couponCode})` : "Descuento"}>-{money(appt.discountCents, b.currency)}</Row>
+                    </>
+                  )}
+                  <Row label={appt.discountCents > 0 ? "Total" : "Precio"}>{money(appt.priceCents, b.currency)}</Row>
                   {appt.amountPaidCents > 0 && <Row label="Pagado online">{money(appt.amountPaidCents, b.currency)}</Row>}
                   {pendingPay && <Row label="Pago">Se abona en el local</Row>}
                   {profile?.address && <Row label="Dirección">{profile.address}</Row>}

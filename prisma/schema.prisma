@@ -86,6 +86,7 @@ enum MessageStatus {
 /// Tenant. En el MVP hay una sola fila; todo cuelga de businessId para poder escalar a multi-tenant.
 model Business {
   id                 String   @id @default(cuid())
+  discounts          Discount[]
   slug               String   @unique
   name               String
   tagline            String   @default("Reservá tu turno online")
@@ -292,6 +293,41 @@ model Service {
   appointments Appointment[]
 }
 
+enum DiscountKind {
+  PERCENT
+  FIXED
+}
+
+/// Descuento del negocio. Sin couponCode se aplica solo; con couponCode, solo si el cliente lo ingresa.
+/// El precio final se calcula siempre en el servidor (lib/discounts.ts).
+/// value: porcentaje (1-100) o monto fijo en centavos. serviceIds vacío = todos los servicios.
+/// weekdays: 0=domingo..6=sábado (vacío = todos); startMin/endMin: franja horaria del TURNO (null = todo el día).
+/// startsAt/endsAt: vigencia, comparada con la fecha del turno (null = sin límite). maxUses null = ilimitado.
+model Discount {
+  id         String       @id @default(cuid())
+  businessId String
+  name       String
+  kind       DiscountKind
+  value      Int
+  serviceIds String[]
+  weekdays   Int[]
+  startMin   Int?
+  endMin     Int?
+  startsAt   DateTime?
+  endsAt     DateTime?
+  /// Pausado = false.
+  active     Boolean      @default(true)
+  /// Siempre en mayúsculas, único por negocio.
+  couponCode String?
+  maxUses    Int?
+  usedCount  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  business   Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, couponCode])
+  @@index([businessId])
+}
+
 model Customer {
   id         String   @id @default(cuid())
   businessId String
@@ -351,7 +387,13 @@ model Appointment {
   startAt    DateTime
   endAt      DateTime
   status     AppointmentStatus @default(CONFIRMED)
+  /// Precio FINAL cobrado (con el descuento ya aplicado): es el que usan Economía, pagos y sueldos.
   priceCents Int
+  /// Precio del servicio antes del descuento (null = sin descuento) y cuánto se descontó.
+  originalPriceCents Int?
+  discountCents      Int     @default(0)
+  discountId         String?
+  couponCode         String?
   paymentStatus   PaymentStatus @default(UNPAID)
   amountPaidCents Int           @default(0)
   /// Código para que el cliente reprograme o cancele (ej. REC-8F3K9A). null en turnos anteriores a esta función.

@@ -6,6 +6,8 @@ import { prisma, getBusinessForCheckout } from "@/lib/db";
 import { isSlotAvailable } from "@/lib/slots";
 import { enqueueBookingMessages, dispatchDue } from "@/lib/outbox";
 import { phoneVariants } from "@/lib/phone-key";
+import { loadRules } from "@/lib/discount-db";
+import { COUPON_MESSAGE, normalizeCoupon, priceFor } from "@/lib/discounts";
 import { getAccess } from "@/lib/billing";
 import { randomBytes } from "node:crypto";
 import { generateClaimCode } from "@/lib/claim";
@@ -23,6 +25,9 @@ const schema = z.object({
   phone: z.string().trim().min(6).max(25),
   /** Lo que el cliente QUIERE hacer; el servidor valida que la barbería lo permita y calcula el monto. */
   payment: z.enum(["NONE", "DEPOSIT", "FULL"]).default("NONE"),
+  /** Cupón que escribió el cliente (opcional) y el total que vio en pantalla: si cambió, el servidor lo avisa. */
+  coupon: z.string().max(40).optional(),
+  expectedPriceCents: z.number().int().min(0).optional(),
 });
 
 const isOverlapError = (e: unknown) => {
@@ -56,8 +61,18 @@ export async function POST(req: Request) {
   const eff = await effectiveDuration({ businessId: business.id, serviceId: service.id, standardMin: service.durationMin, phone: phone.number, learn: business.learnDurations });
   const endAt = DateTime.fromJSDate(startAt).plus({ minutes: eff.minutes }).toJSDate();
 
-  // Opción de pago: se valida contra la configuración de la barbería. El monto lo calcula el servidor.
-  const options = payOptions(service.priceCents, payConfig(business));
+  // Precio final: lo calcula SIEMPRE el servidor (descuentos automáticos + cupón). Si no coincide con lo que el cliente vio,
+  // se avisa para que lo confirme de nuevo (por ejemplo, si la promoción venció mientras reservaba).
+  const price = priceFor({ rules: await loadRules(business.id), serviceId: service.id, priceCents: service.priceCents, startAt, tz: business.timezone, coupon: d.coupon });
+  if (normalizeCoupon(d.coupon) && price.coupon !== "ok") {
+    return NextResponse.json({ error: COUPON_MESSAGE[price.coupon] }, { status: 400 });
+  }
+  if (d.expectedPriceCents !== undefined && d.expectedPriceCents !== price.finalCents) {
+    return NextResponse.json({ error: "El precio cambió mientras reservabas. Revisá el total y confirmá de nuevo.", priceChanged: true, finalCents: price.finalCents, originalCents: price.originalCents }, { status: 409 });
+  }
+
+  // Opción de pago: se valida contra la configuración de la barbería. El monto lo calcula el servidor (sobre el precio final).
+  const options = payOptions(price.finalCents, payConfig(business));
   const chosen = options.find((o) => o.choice === d.payment);
   if (!chosen) {
     const needsPayment = !options.some((o) => o.choice === "NONE");
@@ -83,6 +98,11 @@ export async function POST(req: Request) {
       const customer = existing
         ? await tx.customer.update({ where: { id: existing.id }, data: { firstName: d.firstName, lastName: d.lastName } })
         : await tx.customer.create({ data: { businessId: business.id, phone: phone.number, firstName: d.firstName, lastName: d.lastName } });
+      // Un cupón con límite de usos se cuenta acá, en la misma transacción (si dos personas lo usan a la vez, una sola gana).
+      if (price.discount?.couponCode) {
+        const used = await tx.$executeRaw`UPDATE "Discount" SET "usedCount" = "usedCount" + 1 WHERE id = ${price.discount.id} AND ("maxUses" IS NULL OR "usedCount" < "maxUses")`;
+        if (used === 0) throw new Error("COUPON_EXHAUSTED");
+      }
       const created = await tx.appointment.create({
         data: {
           businessId: business.id,
@@ -91,7 +111,11 @@ export async function POST(req: Request) {
           customerId: customer.id,
           startAt,
           endAt,
-          priceCents: service.priceCents,
+          priceCents: price.finalCents,
+          originalPriceCents: price.discountCents > 0 ? price.originalCents : null,
+          discountCents: price.discountCents,
+          discountId: price.discount?.id ?? null,
+          couponCode: price.discount?.couponCode ?? null,
           // Pago online: el horario queda retenido (PENDING_PAYMENT) hasta que Mercado Pago apruebe el cobro.
           status: online ? "PENDING_PAYMENT" : "CONFIRMED",
           // Código para reprogramar/cancelar (único por restricción de la base) + primer evento del historial.
@@ -135,6 +159,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No pudimos iniciar el pago. Probá de nuevo o elegí pagar después." }, { status: 502 });
     }
   } catch (e) {
+    if (String((e as Error)?.message).includes("COUPON_EXHAUSTED")) {
+      return NextResponse.json({ error: COUPON_MESSAGE.exhausted }, { status: 400 });
+    }
     if (isOverlapError(e)) {
       return NextResponse.json({ error: "Alguien acaba de reservar ese horario. Elegí otro." }, { status: 409 });
     }

@@ -16,7 +16,22 @@ import { bookableDays, findNextAvailableDay } from "@/lib/booking-days";
 import { clearBooked, clearDraft, isMeaningful, loadBooked, loadDraft, saveDraft, type BookedTurn, type BookingDraft } from "@/lib/booking-storage";
 import type { BusinessType } from "@/lib/service-icons";
 
-type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null; comingSoon?: boolean };
+/** Promoción que aplica a cualquier horario de ese servicio (sin días ni franja): permite mostrar el precio tachado en la lista. */
+type Promo = { finalCents: number; badge: string };
+type Service = { id: string; name: string; description: string | null; priceCents: number; durationMin: number; iconKey?: string | null; iconUrl?: string | null; comingSoon?: boolean; promo?: Promo | null };
+type Quote = { originalCents: number; discountCents: number; finalCents: number; badge: string | null; name: string | null; coupon: string; couponMessage: string };
+
+/** Precio con el original tachado, el precio con descuento destacado y la insignia («-20%»). */
+function PriceTag({ priceCents, promo, currency }: { priceCents: number; promo?: Promo | null; currency: string }) {
+  if (!promo) return <span className="font-semibold">{money(priceCents, currency)}</span>;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2">
+      <span className="text-xs line-through opacity-60">{money(priceCents, currency)}</span>
+      <span className="font-bold">{money(promo.finalCents, currency)}</span>
+      <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-on-primary">{promo.badge}</span>
+    </span>
+  );
+}
 type Barber = { id: string; name: string; photoUrl: string | null; bio: string | null };
 
 type Props = {
@@ -183,8 +198,31 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     };
   }, [slug, service, barberId, date, reload, lookupPhone]);
 
+  // Precio con descuento / cupón: es solo una vista previa (/api/pricing); el servidor lo vuelve a calcular al confirmar.
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState(""); // cupón aplicado
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [priceTick, setPriceTick] = useState(0);
+  useEffect(() => {
+    if (!service || !slot) {
+      setQuote(null);
+      return;
+    }
+    let cancelled = false;
+    const q = `slug=${encodeURIComponent(slug)}&serviceId=${service.id}&startAt=${encodeURIComponent(slot)}${coupon ? `&coupon=${encodeURIComponent(coupon)}` : ""}`;
+    fetch(`/api/pricing?${q}`)
+      .then((r) => r.json())
+      .then((j) => !cancelled && typeof j.finalCents === "number" && setQuote(j))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, service, slot, coupon, priceTick]);
+  const price = quote?.finalCents ?? service?.promo?.finalCents ?? service?.priceCents ?? 0;
+  const originalPrice = quote?.originalCents ?? service?.priceCents ?? 0;
+
   // Opciones de pago para el servicio elegido (el servidor las vuelve a validar y calcula el monto real).
-  const options = useMemo(() => (service ? payOptions(service.priceCents, pay) : []), [service, pay]);
+  const options = useMemo(() => (service ? payOptions(price, pay) : []), [service, price, pay]);
   useEffect(() => {
     const want = pendingChoice.current; // forma de pago restaurada del borrador (si sigue siendo una opción válida)
     pendingChoice.current = null;
@@ -205,9 +243,16 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
     const res = await fetch("/api/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form, payment: selected?.choice ?? "NONE" }),
+      body: JSON.stringify({ slug, serviceId: service.id, barberId, startAt: slot, ...form, payment: selected?.choice ?? "NONE", coupon: coupon || undefined, expectedPriceCents: price }),
     });
     const j = await res.json().catch(() => ({}));
+    if (res.status === 409 && j.priceChanged) {
+      // El precio cambió (por ejemplo, venció la promoción): se muestra el nuevo total y se pide confirmar de nuevo.
+      setBusy(false);
+      setPriceTick((n) => n + 1);
+      setError(`${j.error} Nuevo total: ${money(j.finalCents, currency)}.`);
+      return;
+    }
     if (res.ok) clearDraft(slug); // el turno ya está creado: no queda nada a medias
     if (res.ok && j.checkoutUrl) {
       window.location.href = j.checkoutUrl; // Checkout Pro de Mercado Pago; el botón queda ocupado hasta salir
@@ -335,7 +380,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Servicio elegido</div>
             <div className="font-semibold text-primary">{cap(service.name)}</div>
             <div className="text-sm opacity-80">
-              {service.durationMin} min · <span className="font-semibold">{money(service.priceCents, currency)}</span>
+              {service.durationMin} min · <PriceTag priceCents={service.priceCents} promo={service.promo} currency={currency} />
             </div>
           </div>
           <a href={`/b/${slug}#servicios`} className="btn-ghost !rounded-full !px-3 !py-1.5 text-sm">
@@ -437,7 +482,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
                       <span className="rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ borderColor: "color-mix(in srgb, currentColor 35%, transparent)" }}>{s.durationMin} min</span>
-                      <span className="font-semibold">{money(s.priceCents, currency)}</span>
+                      <PriceTag priceCents={s.priceCents} promo={s.promo} currency={currency} />
                     </div>
                   </div>
                   {!s.comingSoon && (
@@ -566,6 +611,39 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
             />
             {form.phone.trim() !== DEFAULT_PREFIX.trim() && form.phone && !phoneOk && <p className="mt-1 text-xs text-red-600">Número inválido. Empezá con + y el código de país.</p>}
           </div>
+          {/* Cupón de descuento (opcional): se valida en vivo; el servidor lo vuelve a validar al confirmar */}
+          <div>
+            <label className="label" htmlFor="coupon">
+              ¿Tenés un cupón? (opcional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="coupon"
+                className="input uppercase"
+                autoCapitalize="characters"
+                autoComplete="off"
+                maxLength={20}
+                placeholder="FADE10"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    setCoupon(couponInput.trim());
+                  }
+                }}
+              />
+              <button type="button" className="btn-ghost !rounded-full" disabled={!couponInput.trim() || couponInput.trim().toUpperCase() === coupon.toUpperCase()} onClick={() => setCoupon(couponInput.trim())}>
+                Aplicar
+              </button>
+            </div>
+            {coupon && quote && quote.coupon !== "none" && (
+              <p role="status" className={`mt-1 text-xs ${quote.coupon === "ok" ? "font-semibold text-muted" : "text-red-600"}`}>
+                {quote.couponMessage}
+                {quote.coupon === "ok" && quote.badge ? ` · ${quote.badge}` : ""}
+              </p>
+            )}
+          </div>
           {service && options.some((o) => o.choice !== "NONE") && (
             <div className="space-y-2">
               <SectionLabel as="h3">Pago</SectionLabel>
@@ -573,7 +651,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 <p className="rounded-2xl bg-surface-muted p-3 text-sm">
                   Para reservar tenés que pagar online {options[0].choice === "DEPOSIT" ? "una seña de" : "el total:"}{" "}
                   <strong>{money(options[0].amountCents, currency)}</strong>
-                  {options[0].choice === "DEPOSIT" && <> (el resto, {money(service.priceCents - options[0].amountCents, currency)}, lo abonás en el local)</>}.
+                  {options[0].choice === "DEPOSIT" && <> (el resto, {money(price - options[0].amountCents, currency)}, lo abonás en el local)</>}.
                 </p>
               ) : (
                 <div className="space-y-2" role="radiogroup" aria-label="Forma de pago">
@@ -587,7 +665,7 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                         {o.choice === "DEPOSIT" && (
                           <>
                             <strong>Pagar seña · {money(o.amountCents, currency)}</strong>
-                            <span className="block text-xs text-muted">El resto ({money(service.priceCents - o.amountCents, currency)}) lo abonás en el local</span>
+                            <span className="block text-xs text-muted">El resto ({money(price - o.amountCents, currency)}) lo abonás en el local</span>
                           </>
                         )}
                         {o.choice === "FULL" && (
@@ -625,7 +703,10 @@ export function BookingFlow({ slug, services, barbers, timezone, currency, maxAd
                 <div className="truncate text-sm font-semibold">{cap(service.name)}</div>
                 <div className="text-xs opacity-75">{service.durationMin} min</div>
               </div>
-              <div className="text-base font-semibold tabular-nums">{money(service.priceCents, currency)}</div>
+              <div className="text-right tabular-nums">
+                {quote && quote.discountCents > 0 && <div className="text-xs line-through opacity-60">{money(originalPrice, currency)}</div>}
+                <div className="text-base font-semibold">{money(price, currency)}</div>
+              </div>
             </li>
             {[
               ["Día", <span key="d">{cap(slotLocal.toFormat("cccc d 'de' LLLL"))}</span>],

@@ -5,6 +5,9 @@ import { DateTime } from "luxon";
 import { prisma, getBusinessBySlug } from "@/lib/db";
 import { BookingFlow } from "@/components/BookingFlow";
 import { payConfig } from "@/lib/payments";
+import { loadRules } from "@/lib/discount-db";
+import { servicePromo } from "@/lib/discounts";
+import { money } from "@/lib/format";
 import { asBusinessType } from "@/lib/service-icons";
 import { getAccess } from "@/lib/billing";
 import { FONTS, fontsHref, resolveConfig, usedFonts } from "@/lib/page-config";
@@ -53,6 +56,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     prisma.timeSlot.findMany({ where: { weekday: todayWeekday, barber: { businessId: b.id, active: true } }, select: { startMin: true } }),
   ]);
 
+  const rules = await loadRules(b.id);
   const config = resolveConfig(b.pageConfig);
   const fonts = fontsHref(usedFonts(config));
 
@@ -121,6 +125,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         name: s.name,
         description: s.description,
         priceCents: s.priceCents,
+        promo: servicePromo(rules, s.id, s.priceCents, new Date(), (c) => money(c, b.currency)),
         durationMin: s.durationMin,
         comingSoon: s.comingSoon,
         iconKey: s.iconKey,

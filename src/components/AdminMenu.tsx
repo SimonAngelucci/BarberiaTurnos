@@ -25,6 +25,8 @@ export const MENU_ITEMS: Item[] = [
   { href: "/admin/payments", label: "Pagos", icon: "credit-card" },
   { href: "/admin/personalizacion", label: "Personalización", icon: "palette", also: ["/admin/settings", "/admin/design", "/admin/profile"] },
   { href: "/admin/account", label: "Cuenta", icon: "user", also: ["/admin/billing"] },
+  // Secciones nuevas: siempre al final.
+  { href: "/admin/promociones", label: "Promociones", icon: "gift" },
 ];
 
 const hit = (path: string, base: string) => (base === "/admin" ? path === base : path === base || path.startsWith(`${base}/`));
