@@ -9,6 +9,7 @@ import { minToHHMM } from "@/lib/format";
 import { groupBlocks } from "@/lib/blocks";
 import { ScheduleEditor, type DayTimes } from "@/components/ScheduleEditor";
 import { SaveForm } from "@/components/SaveForm";
+import { BlockDayPicker } from "@/components/BlockDayPicker";
 import { BlockNew } from "@/components/BlockNew";
 import { BlockList, type BlockCardData } from "@/components/BlockList";
 import { saveSchedule } from "../actions";
@@ -91,6 +92,17 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <h2 className="font-semibold">Bloquear horarios</h2>
           <p className="text-sm text-muted">Ocultan horarios para reservar sin borrarlos de tu configuración: un horario, un rango, un día o varios (vacaciones, feriados, trámites). Los quitás cuando quieras y el horario vuelve al instante.</p>
         </div>
+        {barber && (
+          <BlockDayPicker
+            key={barber.id}
+            barberId={barber.id}
+            barberName={barber.name}
+            weekly={Object.fromEntries(days.map((x) => [x.wd, x.times]))}
+            blocks={timeOffs.map((t) => ({ id: t.id, barberId: t.barberId, startAt: t.startAt.toISOString(), endAt: t.endAt.toISOString() }))}
+            tz={business.timezone}
+            today={today}
+          />
+        )}
         <Collapsible className="rounded-2xl border border-black/10 p-2.5" title="Nuevo bloqueo" leading={<Icon name="lock" size={16} />} headerClassName="text-sm">
           <div className="pt-1">
             <BlockNew barbers={barbers.map((b) => ({ id: b.id, name: b.name }))} tz={business.timezone} today={today} />
