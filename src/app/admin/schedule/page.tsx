@@ -82,7 +82,12 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         <SaveForm key={`${barber.id}-${JSON.stringify(days)}`} action={saveSchedule} className="card space-y-3" successText="Horarios guardados">
           <input type="hidden" name="barberId" value={barber.id} />
           <h2 className="font-semibold">Horarios de {barber.name}</h2>
-          <ScheduleEditor initial={days} />
+          <ScheduleEditor
+            initial={days}
+            barberId={barber.id}
+            tz={business.timezone}
+            blocks={timeOffs.map((t) => ({ id: t.id, barberId: t.barberId, startAt: t.startAt.toISOString(), endAt: t.endAt.toISOString() }))}
+          />
           <p className="text-xs text-neutral-500">Zona horaria: {business.timezone}.</p>
           <button className="btn">Guardar horarios</button>
         </SaveForm>

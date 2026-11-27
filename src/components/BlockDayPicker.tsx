@@ -5,10 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { Icon } from "./ui/Icon";
-import { createBlock, removeBlock } from "@/app/admin/schedule/block-actions";
-import { blockKind, blockLabel } from "@/lib/blocks";
+import { coverOf, toggleSlotBlock, type DayBlock } from "./blockToggle";
 
-export type DayBlock = { id: string; barberId: string | null; startAt: string; endAt: string };
+export type { DayBlock };
 
 /**
  * «Tocá un horario para bloquearlo»: muestra los horarios que el profesional ofrece ese día; un toque lo bloquea (queda en rojo)
@@ -32,34 +31,14 @@ export function BlockDayPicker({ barberId, barberName, weekly, blocks, tz, today
     }
   };
 
-  const coverBy = (t: string) => {
-    const ms = DateTime.fromISO(`${date}T${t}`, { zone: tz }).toMillis();
-    return blocks.find((b) => (b.barberId === null || b.barberId === barberId) && new Date(b.startAt).getTime() <= ms && ms < new Date(b.endAt).getTime());
-  };
+  const coverBy = (t: string) => coverOf(blocks, barberId, date, t, tz);
 
   async function toggle(t: string) {
-    const cover = coverBy(t);
     setMsg(null);
     setBusyKey(t);
     try {
-      if (cover) {
-        const s = new Date(cover.startAt);
-        const e = new Date(cover.endAt);
-        const single = blockKind(s, e, tz) === "slot";
-        if (!single && !window.confirm(`Este horario está bloqueado por «${blockLabel(s, e, tz)}»${cover.barberId ? "" : " (todo el negocio)"}. ¿Quitar ese bloqueo?`)) return;
-        await removeBlock(cover.id, "one");
-      } else {
-        const r = await createBlock({ barberId, dateFrom: date, allDay: false, timeFrom: t });
-        if (!r.ok) {
-          if (r.conflicts?.length) {
-            const c = r.conflicts[0];
-            if (window.confirm(`Hay un turno reservado a las ${t} (${c.customer} · ${c.service}). ¿Bloquear igual y mantener el turno?`)) {
-              const r2 = await createBlock({ barberId, dateFrom: date, allDay: false, timeFrom: t }, Object.fromEntries(r.conflicts.map((x) => [x.id, { action: "keep" as const }])));
-              if (!r2.ok) setMsg({ text: r2.error });
-            } else setMsg({ text: "Para reprogramar o cancelar ese turno, hacelo desde Turnos y después bloqueá el horario.", conflict: true });
-          } else setMsg({ text: r.error });
-        }
-      }
+      const r = await toggleSlotBlock({ barberId, date, time: t, blocks, tz });
+      if (r.error) setMsg({ text: r.error, conflict: r.conflict });
       start(() => router.refresh());
     } catch {
       setMsg({ text: "No se pudo guardar. Probá de nuevo." });
