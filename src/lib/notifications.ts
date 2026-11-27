@@ -1,9 +1,11 @@
 import { DateTime } from "luxon";
 import { prisma } from "./db";
+import { money } from "./format";
+import { loadSalaries } from "./salary-db";
 
 export type Notice = {
   id: string;
-  kind: "new" | "cancel" | "reschedule" | "reminder";
+  kind: "new" | "cancel" | "reschedule" | "reminder" | "payday";
   /** Cuándo pasó (o, en recordatorios, cuándo es el turno), ISO UTC. */
   at: string;
   title: string;
@@ -73,8 +75,37 @@ export async function getNotifications(businessId: string, adminId: string): Pro
     };
   });
 
-  const all = [...reminders, ...items];
+  const all = [...reminders, ...(await payDayNotices(businessId, tz, now, seen)), ...items];
   return { unread: all.filter((i) => i.unread).length, items: all };
+}
+
+/**
+ * Avisos de sueldos: el día antes y el mismo día en que corresponde pagarle a un profesional (con lo que lleva acumulado).
+ * Si falla, la campanita sigue funcionando sin estos avisos.
+ */
+async function payDayNotices(businessId: string, tz: string, now: Date, seen: Date): Promise<Notice[]> {
+  try {
+    const [{ list }, biz] = await Promise.all([loadSalaries(businessId, tz, now), prisma.business.findUnique({ where: { id: businessId }, select: { currency: true } })]);
+    const out: Notice[] = [];
+    for (const x of list) {
+      if (!x.period || !x.state || !x.calc || x.state.daysLeft < 0 || x.state.daysLeft > 1) continue;
+      const today = x.state.daysLeft === 0;
+      const dayStart = DateTime.fromJSDate(now).setZone(tz).startOf("day").toJSDate();
+      const d = (s: string) => DateTime.fromISO(s, { zone: "utc" }).toFormat("dd/MM");
+      out.push({
+        id: `pay-${x.barber.id}-${x.period.end}-${today ? "hoy" : "manana"}`,
+        kind: "payday",
+        at: dayStart.toISOString(),
+        title: today ? `Hoy se le paga a ${x.barber.name}` : `Mañana se le paga a ${x.barber.name}`,
+        detail: `${money(x.calc.totalCents, biz?.currency ?? "ARS")} · período ${d(x.period.start)} al ${d(x.period.end)}`,
+        unread: dayStart > seen,
+      });
+    }
+    return out;
+  } catch (e) {
+    console.error("payDayNotices", e);
+    return [];
+  }
 }
 
 export async function markNotificationsSeen(adminId: string) {

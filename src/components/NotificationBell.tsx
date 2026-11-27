@@ -4,8 +4,9 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Notice } from "@/lib/notifications";
 
-const ICON: Record<Notice["kind"], IconName> = { new: "calendar", cancel: "x", reschedule: "repeat", reminder: "clock" };
+const ICON: Record<Notice["kind"], IconName> = { new: "calendar", cancel: "x", reschedule: "repeat", reminder: "clock", payday: "wallet" };
 const TONE: Record<Notice["kind"], string> = {
+  payday: "bg-amber-50",
   new: "bg-green-50",
   cancel: "bg-red-50",
   reschedule: "bg-violet-50",
@@ -98,7 +99,7 @@ export function NotificationBell() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className={`text-sm ${n.unread ? "font-semibold" : "font-medium"}`}>{n.title}</span>
-                      {n.kind !== "reminder" && <span className="shrink-0 text-[11px] text-neutral-500">{ago(n.at)}</span>}
+                      {n.kind !== "reminder" && n.kind !== "payday" && <span className="shrink-0 text-[11px] text-neutral-500">{ago(n.at)}</span>}
                     </div>
                     <div className="text-sm text-neutral-600">{n.detail}</div>
                   </div>

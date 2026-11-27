@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { change, summarize, type Period } from "@/lib/economy";
 import { SaveForm } from "@/components/SaveForm";
+import { EconomiaNav } from "@/components/EconomiaNav";
 import { addManualIncome, deleteManualIncome } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +129,7 @@ export default async function EconomyPage() {
   return (
     <div className="space-y-6">
       <PageHero title="Economía" subtitle="Lo que ingresó por turnos y por ventas cargadas a mano.">
+        <EconomiaNav active="ingresos" />
         <FolderTabs
           label="Período"
           tabs={[

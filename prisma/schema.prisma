@@ -214,6 +214,67 @@ model Barber {
   disabledSlots DisabledSlot[]
   appointments  Appointment[]
   timeOffs      TimeOff[]
+  payRules      PayRule[]
+  salaryPayments SalaryPayment[]
+}
+
+enum PayFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+/// Cómo se le paga a un profesional. Está versionado: cada fila rige desde `effectiveFrom` (inicio de un período), así un
+/// cambio de porcentaje nunca modifica períodos ya cerrados. Las fechas son días locales del negocio ("2026-11-23").
+model PayRule {
+  id            String       @id @default(cuid())
+  businessId    String
+  barberId      String
+  effectiveFrom String
+  /// Porcentaje en centésimas de punto: 4500 = 45 %.
+  percentBp     Int
+  /// Monto fijo por período (puede ser 0).
+  baseCents     Int          @default(0)
+  /// Porcentaje propio por servicio { serviceId: puntosBase }; los servicios que no estén usan `percentBp`.
+  serviceRates  Json?
+  frequency     PayFrequency
+  /// Semanal/quincenal: 1 = lunes … 7 = domingo. Mensual: día del mes (31 = último día).
+  payDay        Int
+  /// Quincenal: un día de pago de referencia (cada 14 días a partir de ahí).
+  anchorDate    String?
+  createdAt     DateTime     @default(now())
+
+  barber Barber @relation(fields: [barberId], references: [id], onDelete: Cascade)
+
+  @@unique([barberId, effectiveFrom])
+  @@index([businessId, barberId])
+}
+
+/// Un período de sueldo ya liquidado. Guarda una foto de los números al momento de pagar: no cambia aunque después cambie la regla.
+model SalaryPayment {
+  id            String   @id @default(cuid())
+  businessId    String
+  barberId      String?
+  barberName    String
+  /// Primer y último día (inclusive) del período, días locales del negocio.
+  periodStart   String
+  periodEnd     String
+  turnCount     Int
+  billedCents   Int
+  percentBp     Int
+  baseCents     Int
+  /// Lo que daba el cálculo y lo que efectivamente se pagó (puede ajustarse a mano).
+  computedCents Int
+  paidCents     Int
+  method        String
+  note          String?
+  paidAt        DateTime
+  createdAt     DateTime @default(now())
+
+  barber Barber? @relation(fields: [barberId], references: [id], onDelete: SetNull)
+
+  @@unique([barberId, periodStart])
+  @@index([businessId, paidAt])
 }
 
 /// Horario que el administrador cargó a mano: es exactamente la hora que ve el cliente para reservar (recurrente por día de semana).

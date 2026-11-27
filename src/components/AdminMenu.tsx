@@ -27,6 +27,7 @@ export const MENU_ITEMS: Item[] = [
   { href: "/admin/account", label: "Cuenta", icon: "user", also: ["/admin/billing"] },
   // Secciones nuevas: siempre al final.
   { href: "/admin/promociones", label: "Promociones", icon: "gift" },
+  { href: "/admin/economia/sueldos", label: "Sueldos", icon: "wallet" },
 ];
 
 const hit = (path: string, base: string) => (base === "/admin" ? path === base : path === base || path.startsWith(`${base}/`));
@@ -72,7 +73,9 @@ export function AdminMenu() {
             </div>
             <ul className="grid grid-cols-2 gap-3">
               {MENU_ITEMS.map((it) => {
-                const on = hit(path, it.href) || (it.also ?? []).some((a) => hit(path, a));
+                // Si dos secciones coinciden (Economía / Sueldos), se marca solo la más específica.
+                const longer = MENU_ITEMS.some((o) => o.href.length > it.href.length && o.href.startsWith(`${it.href}/`) && hit(path, o.href));
+                const on = !longer && (hit(path, it.href) || (it.also ?? []).some((a) => hit(path, a)));
                 return (
                   <li key={it.href}>
                     <Link
