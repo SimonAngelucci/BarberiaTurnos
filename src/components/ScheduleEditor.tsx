@@ -105,6 +105,7 @@ function DayCard({ d, lock, onAdd, onChange, onCopyAll }: { d: DayTimes; lock?: 
   const [draft, setDraft] = useState("09:00");
   const [series, setSeries] = useState({ from: "09:00", to: "18:00", every: "30" });
   const [msg, setMsg] = useState<string | null>(null);
+  const [editing, setEditing] = useState<number | null>(null);
 
   function addSeries() {
     const from = HHMM.test(series.from) ? hhmmToMin(series.from) : NaN;
@@ -127,7 +128,7 @@ function DayCard({ d, lock, onAdd, onChange, onCopyAll }: { d: DayTimes; lock?: 
 
       {d.times.length > 0 && lock && (
         <p className="mt-2 text-xs text-neutral-500">
-          Tocá el candado de un horario para bloquearlo solo el próximo {d.label.toLowerCase()} (queda en rojo). La semana siguiente vuelve a estar disponible; tocalo de nuevo para desbloquearlo.
+          Tocá un horario para bloquearlo solo el próximo {d.label.toLowerCase()} (queda en rojo). La semana siguiente vuelve a estar disponible; tocalo de nuevo para desbloquearlo. Para cambiar la hora usá el lápiz.
         </p>
       )}
       {d.times.length > 0 && (
@@ -137,25 +138,37 @@ function DayCard({ d, lock, onAdd, onChange, onCopyAll }: { d: DayTimes; lock?: 
             const when = lock && HHMM.test(t) ? DateTime.fromISO(lock.dateFor(t)).setLocale("es").toFormat("cccc d/MM") : "";
             return (
               <li key={i} className={`flex items-center overflow-hidden rounded-lg border ${blocked ? "border-red-600 bg-red-500 text-white" : "border-neutral-300 bg-white"}`}>
-                <input
-                  type="time"
-                  aria-label={`Horario ${i + 1} del ${d.label}${blocked ? ", bloqueado" : ""}`}
-                  value={t}
-                  onChange={(e) => onChange((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
-                  onBlur={() => onChange((list) => clean(list))}
-                  className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm tabular-nums outline-none"
-                />
-                {lock && (
+                {lock && editing !== i ? (
+                  // Tocar el horario lo bloquea (rojo) o desbloquea; el selector de hora solo se abre con el lápiz.
                   <button
                     type="button"
                     disabled={!HHMM.test(t) || lock.busy === `${d.wd}-${t}`}
                     aria-pressed={blocked}
                     aria-label={blocked ? `Desbloquear ${t} del ${when}` : `Bloquear ${t} del ${when}`}
-                    title={blocked ? `Bloqueado el ${when}. Tocá para desbloquear` : `Bloquear solo el ${when}`}
+                    title={blocked ? `Bloqueado el ${when}. Tocá para desbloquear` : `Tocá para bloquear solo el ${when}`}
                     onClick={() => lock.onToggle(t)}
-                    className={`px-2 py-1.5 disabled:opacity-40 ${blocked ? "text-white" : "text-neutral-400 hover:bg-red-50 hover:text-red-600"}`}
+                    className={`flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1.5 text-left text-sm font-semibold tabular-nums disabled:opacity-40 ${blocked ? "" : "hover:bg-red-50 dark:hover:bg-transparent"}`}
                   >
-                    <Icon name="lock" size={14} />
+                    {blocked && <Icon name="lock" size={13} />}
+                    {t}
+                  </button>
+                ) : (
+                  <input
+                    type="time"
+                    aria-label={`Horario ${i + 1} del ${d.label}${blocked ? ", bloqueado" : ""}`}
+                    value={t}
+                    autoFocus={!!lock}
+                    onChange={(e) => onChange((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
+                    onBlur={() => {
+                      onChange((list) => clean(list));
+                      setEditing(null);
+                    }}
+                    className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm tabular-nums outline-none"
+                  />
+                )}
+                {lock && editing !== i && (
+                  <button type="button" aria-label={`Cambiar la hora ${t}`} title="Cambiar la hora" onClick={() => setEditing(i)} className={`px-2 py-1.5 ${blocked ? "text-white/80" : "text-neutral-400 hover:text-neutral-700"}`}>
+                    <Icon name="pencil" size={13} />
                   </button>
                 )}
                 <button type="button" aria-label={`Quitar ${t || "horario"}`} onClick={() => onChange((list) => list.filter((_, j) => j !== i))} className={`px-2 py-1.5 ${blocked ? "text-white/80" : "text-neutral-400 hover:bg-red-50 hover:text-red-600"}`}>
