@@ -56,3 +56,22 @@ describe("colores de profesionales", () => {
     expect(a.get("x1")).toBe(b.get("x1"));
   });
 });
+
+describe("agenda con bloqueos y otras semanas", () => {
+  it("intercala los bloqueos en orden, sin mezclarlos con los libres", () => {
+    const t = buildTimeline([], [{ barberId: "b1", startMs: 3000 }, { barberId: "b1", startMs: 1000 }], null, [{ at: 2000 }]);
+    expect(t.map((i) => i.kind)).toEqual(["free", "block", "free"]);
+  });
+  it("a igual hora, el turno va primero y después el bloqueo", () => {
+    const t = buildTimeline([{ startMs: 1000, endMs: 2000, barberId: "b1" }], [], null, [{ at: 1000 }]);
+    expect(t.map((i) => i.kind)).toEqual(["appt", "block"]);
+  });
+  it("la semana pedida arranca en esa fecha y nunca antes de hoy", () => {
+    const tz = "America/Argentina/Buenos_Aires";
+    const now = DateTime.fromISO("2026-11-27T10:00", { zone: tz });
+    expect(agendaDays(tz, now, "2026-12-14")[0]).toBe("2026-12-14");
+    expect(agendaDays(tz, now, "2026-11-01")[0]).toBe("2026-11-27");
+    expect(agendaDays(tz, now, "basura")[0]).toBe("2026-11-27");
+    expect(agendaDays(tz, now, "2026-12-14")).toHaveLength(7);
+  });
+});

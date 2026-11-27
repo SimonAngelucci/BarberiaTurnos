@@ -1,6 +1,10 @@
 /** Preferencia de tema (claro / oscuro / sistema), guardada en localStorage. Todos los accesos van en try/catch (modo privado, storage bloqueado). */
 export type ThemePref = "light" | "dark" | "system";
-export const THEME_KEY = "theme-pref";
+/**
+ * El valor por defecto es OSCURO en toda la app (landing, página de reservas y panel). La clave lleva versión: al subirla, quien
+ * había guardado «claro» o «sistema» con la versión anterior vuelve a empezar en oscuro y desde ahí puede elegir con el botón.
+ */
+export const THEME_KEY = "theme-pref-v2";
 
 export function readPref(): ThemePref {
   try {

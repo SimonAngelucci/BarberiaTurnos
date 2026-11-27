@@ -325,11 +325,18 @@ model TimeOff {
   barberId   String?
   startAt    DateTime
   endAt      DateTime
+  /// Motivo (solo lo ve el administrador).
   reason     String?
+  /// Quién lo creó (id del administrador) y cuándo. Filas anteriores: null.
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  /// Mismo valor en todas las ocurrencias de una repetición (o de un bloqueo de varios días con horas): permite quitar/editar la serie.
+  groupId    String?
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   barber     Barber?  @relation(fields: [barberId], references: [id], onDelete: Cascade)
 
   @@index([businessId, startAt])
+  @@index([groupId])
 }
 
 model Service {

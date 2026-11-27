@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { SaveForm } from "./SaveForm";
 import { phoneKey } from "@/lib/phone-key";
-import { AgendaBoard, type AgendaBarber, type AgendaFree, type AgendaService } from "./AgendaBoard";
+import { AgendaBoard, type AgendaBarber, type AgendaBlock, type AgendaFree, type AgendaService } from "./AgendaBoard";
 import { Hero } from "./ui/Hero";
 import { FolderTabs } from "./ui/FolderTabs";
 import { Ring } from "./ui/Ring";
@@ -62,7 +62,17 @@ const subtle = { borderColor: "color-mix(in srgb, currentColor 14%, transparent)
  * con los próximos turnos (el primero destacado, con anillo de tiempo restante). Los colores de alerta siguen la cercanía
  * (en curso, ≤15 min, ≤1 h, ≤3 h). Se actualiza sola: recalcula cada 20 s y trae datos nuevos cada minuto.
  */
-export type BoardAgenda = { barbers: AgendaBarber[]; services: AgendaService[]; days: string[]; free: AgendaFree[] };
+export type BoardAgenda = {
+  barbers: AgendaBarber[];
+  services: AgendaService[];
+  days: string[];
+  free: AgendaFree[];
+  /** Turnos de los días que muestra la agenda (puede ser otra semana distinta de la de la lista). */
+  appts: BoardAppt[];
+  blocks: AgendaBlock[];
+  today: string;
+  maxAdvanceIso: string;
+};
 
 const VIEW_KEY = "turnos-view";
 
@@ -184,7 +194,21 @@ export function TurnosBoard({ appts, tz, months, due, footer, agenda }: { appts:
           </div>
         )}
 
-        {showAgenda && <AgendaBoard appts={appts} barbers={agenda!.barbers} services={agenda!.services} days={agenda!.days} free={agenda!.free} tz={tz} now={now} />}
+        {showAgenda && (
+          <AgendaBoard
+            key={agenda!.days[0]}
+            appts={agenda!.appts}
+            barbers={agenda!.barbers}
+            services={agenda!.services}
+            days={agenda!.days}
+            free={agenda!.free}
+            blocks={agenda!.blocks}
+            today={agenda!.today}
+            maxAdvanceIso={agenda!.maxAdvanceIso}
+            tz={tz}
+            now={now}
+          />
+        )}
 
         <div className={showAgenda ? "hidden" : ""}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

@@ -10,19 +10,22 @@ import { computeStarts } from "@/lib/booking-days";
 import { barberColors } from "@/lib/barber-colors";
 import { HOLD_MINUTES } from "@/lib/payment-math";
 import { TurnosBoard, type BoardAppt, type BoardMonth } from "@/components/TurnosBoard";
+import type { AgendaBlock } from "@/components/AgendaBoard";
 
 export const dynamic = "force-dynamic";
 
 /** Pestaña Turnos (/admin/turnos): resumen de los últimos 3 meses y los próximos turnos con color de alerta según la cercanía. */
-export default async function TurnosPage() {
+export default async function TurnosPage({ searchParams }: { searchParams: Promise<{ semana?: string }> }) {
   const { businessId } = await requireAdmin();
   const b = await getBusinessById(businessId);
+  const sp = await searchParams;
   const now = new Date();
   const nowL = DateTime.fromJSDate(now).setZone(b.timezone).setLocale("es");
   const since = nowL.startOf("month").minus({ months: 2 }).toJSDate();
 
-  // Agenda por profesional: los próximos 7 días, con los huecos libres de cada uno (mismas reglas que la reserva online).
-  const days = agendaDays(b.timezone, DateTime.fromJSDate(now));
+  // Agenda por profesional: 7 días (desde hoy, o desde la fecha elegida para bloquear con anticipación), con los huecos libres
+  // de cada uno (mismas reglas que la reserva online) y los bloqueos.
+  const days = agendaDays(b.timezone, DateTime.fromJSDate(now), sp.semana);
   const winStart = DateTime.fromISO(days[0], { zone: b.timezone }).startOf("day");
   const winEnd = winStart.plus({ days: 7 });
   const [barbers, services, slotRows, taken, offs] = await Promise.all([
@@ -38,8 +41,13 @@ export default async function TurnosPage() {
       },
       select: { barberId: true, startAt: true },
     }),
-    prisma.timeOff.findMany({ where: { businessId, startAt: { lt: winEnd.toJSDate() }, endAt: { gt: winStart.toJSDate() } }, select: { barberId: true, startAt: true, endAt: true } }),
+    prisma.timeOff.findMany({ where: { businessId, startAt: { lt: winEnd.toJSDate() }, endAt: { gt: winStart.toJSDate() } }, orderBy: { startAt: "asc" }, select: { id: true, barberId: true, startAt: true, endAt: true, reason: true, groupId: true } }),
   ]);
+  // Cuántas repeticiones próximas tiene cada bloqueo que se repite (para ofrecer «quitar toda la serie»).
+  const groupIds = [...new Set(offs.map((o) => o.groupId).filter((g): g is string => !!g))];
+  const groupCounts = groupIds.length ? await prisma.timeOff.groupBy({ by: ["groupId"], where: { businessId, groupId: { in: groupIds }, endAt: { gt: now } }, _count: { _all: true } }) : [];
+  const seriesOf = new Map(groupCounts.map((g) => [g.groupId, g._count._all]));
+  const blocks: AgendaBlock[] = offs.map((o) => ({ id: o.id, barberId: o.barberId, startAt: o.startAt.toISOString(), endAt: o.endAt.toISOString(), reason: o.reason, series: o.groupId ? (seriesOf.get(o.groupId) ?? 1) : 1 }));
   const colors = barberColors(barbers);
   const free: { barberId: string; startAt: string }[] = [];
   for (const iso of days) {
@@ -58,7 +66,7 @@ export default async function TurnosPage() {
     }
   }
 
-  const [rows, eco, manual] = await Promise.all([
+  const [rows, eco, manual, weekRows] = await Promise.all([
     prisma.appointment.findMany({
       where: { businessId, status: "CONFIRMED", endAt: { gt: now }, startAt: { lt: new Date(now.getTime() + 7 * 86400_000) } },
       orderBy: { startAt: "asc" },
@@ -69,9 +77,14 @@ export default async function TurnosPage() {
       select: { startAt: true, endAt: true, status: true, priceCents: true, serviceId: true },
     }),
     prisma.manualIncome.findMany({ where: { businessId, date: { gte: since } }, select: { date: true, amountCents: true } }),
+    prisma.appointment.findMany({
+      where: { businessId, status: "CONFIRMED", endAt: { gt: now }, startAt: { gte: winStart.toJSDate(), lt: winEnd.toJSDate() } },
+      orderBy: { startAt: "asc" },
+      include: { customer: true, service: true, barber: true },
+    }),
   ]);
 
-  const appts: BoardAppt[] = rows.map((a) => {
+  const toBoard = (a: (typeof rows)[number]): BoardAppt => {
     const paid = a.paymentStatus === "PAID" ? "PAID" : a.paymentStatus === "DEPOSIT_PAID" ? "DEPOSIT" : a.paymentStatus === "PENDING_AT_STORE" ? "STORE" : "NONE";
     return {
       id: a.id,
@@ -91,7 +104,9 @@ export default async function TurnosPage() {
             : "Cobrar en el local",
       dueCents: paid === "PAID" ? 0 : Math.max(0, a.priceCents - a.amountPaidCents),
     };
-  });
+  };
+  const appts = rows.map(toBoard);
+  const maxAdvanceIso = nowL.startOf("day").plus({ days: b.maxAdvanceDays }).toISODate()!;
 
   // Ingresos de los últimos 3 meses (mismo cálculo que Economía: turnos realizados + ingresos manuales).
   const s = summarize({ appts: eco, manual, now, tz: b.timezone, serviceNames: new Map() });
@@ -110,7 +125,16 @@ export default async function TurnosPage() {
       appts={appts}
       tz={b.timezone}
       months={months}
-      agenda={{ barbers: barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, color: colors.get(x.id)! })), services, days, free }}
+      agenda={{
+        barbers: barbers.map((x) => ({ id: x.id, name: x.name, photoUrl: x.photoUrl, color: colors.get(x.id)! })),
+        services,
+        days,
+        free,
+        appts: weekRows.map(toBoard),
+        blocks,
+        today: nowL.toISODate()!,
+        maxAdvanceIso,
+      }}
       due={money(appts.reduce((sum, a) => sum + a.dueCents, 0), b.currency)}
       footer={
         <div className="card !py-2">

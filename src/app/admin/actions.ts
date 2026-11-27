@@ -317,41 +317,6 @@ export async function saveSchedule(formData: FormData) {
   revalidatePath("/admin/schedule");
   revalidatePath("/", "layout");
 }
-export async function addTimeOff(formData: FormData) {
-  const { businessId } = await requireWritable();
-  const business = await getBusinessById(businessId);
-  const d = z
-    .object({
-      barberId: z.string().optional(),
-      start: z.string().min(1),
-      end: z.string().min(1),
-      reason: z.string().max(100).optional(),
-    })
-    .parse(Object.fromEntries(formData));
-
-  const startAt = DateTime.fromISO(d.start, { zone: business.timezone });
-  const endAt = DateTime.fromISO(d.end, { zone: business.timezone });
-  if (!startAt.isValid || !endAt.isValid || endAt <= startAt) throw new Error("Rango inválido");
-
-  await prisma.timeOff.create({
-    data: {
-      businessId,
-      barberId: d.barberId || null,
-      startAt: startAt.toJSDate(),
-      endAt: endAt.toJSDate(),
-      reason: d.reason || null,
-    },
-  });
-  revalidatePath("/admin/schedule");
-}
-
-export async function deleteTimeOff(formData: FormData) {
-  const { businessId } = await requireWritable();
-  const id = z.string().min(1).parse(formData.get("id"));
-  await prisma.timeOff.deleteMany({ where: { id, businessId } });
-  revalidatePath("/admin/schedule");
-}
-
 export type FormState = { ok: boolean; message?: string; error?: string } | null;
 
 const paymentSchema = z.object({

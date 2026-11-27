@@ -1,13 +1,17 @@
 import { PageHero } from "@/components/ui/PageHero";
-import { IconButton } from "@/components/ui/IconButton";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { DateTime } from "luxon";
 import { prisma, getBusinessById } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { minToHHMM, fmtDateTime } from "@/lib/format";
+import { minToHHMM } from "@/lib/format";
+import { groupBlocks } from "@/lib/blocks";
 import { ScheduleEditor, type DayTimes } from "@/components/ScheduleEditor";
 import { SaveForm } from "@/components/SaveForm";
-import { saveSchedule, addTimeOff, deleteTimeOff } from "../actions";
+import { BlockNew } from "@/components/BlockNew";
+import { BlockList, type BlockCardData } from "@/components/BlockList";
+import { saveSchedule } from "../actions";
 
 const DAYS = [
   { wd: 1, label: "Lunes" },
@@ -36,7 +40,22 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     }),
   ]);
   const days: DayTimes[] = DAYS.map(({ wd, label }) => ({ wd, label, times: slots.filter((s) => s.weekday === wd).map((s) => minToHHMM(s.startMin)) }));
-  const nowLocal = DateTime.now().setZone(business.timezone).toFormat("yyyy-MM-dd'T'HH:mm");
+  const today = DateTime.now().setZone(business.timezone).toISODate()!;
+  // Bloqueos próximos: lo que ya pasó queda de historial y no se muestra. Las repeticiones se juntan en una tarjeta.
+  const names = new Map(timeOffs.map((t) => [t.barberId, t.barber?.name ?? null]));
+  const cards: BlockCardData[] = groupBlocks(timeOffs.map((t) => ({ id: t.id, barberId: t.barberId, startAt: t.startAt, endAt: t.endAt, reason: t.reason, groupId: t.groupId }))).map((c) => ({
+    id: c.id,
+    groupId: c.groupId,
+    barberId: c.barberId,
+    barberName: names.get(c.barberId) ?? null,
+    startAt: c.startAt.toISOString(),
+    endAt: c.endAt.toISOString(),
+    lastStart: c.lastStart.toISOString(),
+    lastEnd: c.lastEnd.toISOString(),
+    reason: c.reason,
+    count: c.count,
+    pattern: c.pattern,
+  }));
 
   return (
     <div className="space-y-6">
@@ -67,52 +86,25 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <button className="btn">Guardar horarios</button>
         </SaveForm>
       )}
-      <section className="card space-y-3">
-        <h2 className="font-semibold">Bloquear fechas (vacaciones, feriados, descansos)</h2>
-        <SaveForm action={addTimeOff} className="grid gap-3 sm:grid-cols-5" successText="Fecha bloqueada" resetOnSuccess>
-          <div className="sm:col-span-1">
-            <label className="label">Aplica a</label>
-            <select name="barberId" className="input">
-              <option value="">Todo el negocio</option>
-              {barbers.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+      <section className="card space-y-4" id="bloqueos">
+        <div>
+          <h2 className="font-semibold">Bloquear horarios</h2>
+          <p className="text-sm text-muted">Ocultan horarios para reservar sin borrarlos de tu configuración: un horario, un rango, un día o varios (vacaciones, feriados, trámites). Los quitás cuando quieras y el horario vuelve al instante.</p>
+        </div>
+        <Collapsible className="rounded-2xl border border-black/10 p-2.5" title="Nuevo bloqueo" leading={<Icon name="lock" size={16} />} headerClassName="text-sm">
+          <div className="pt-1">
+            <BlockNew barbers={barbers.map((b) => ({ id: b.id, name: b.name }))} tz={business.timezone} today={today} />
           </div>
-          <div>
-            <label className="label">Desde</label>
-            <input type="datetime-local" name="start" required defaultValue={nowLocal} className="input" />
-          </div>
-          <div>
-            <label className="label">Hasta</label>
-            <input type="datetime-local" name="end" required defaultValue={nowLocal} className="input" />
-          </div>
-          <div>
-            <label className="label">Motivo</label>
-            <input name="reason" className="input" />
-          </div>
-          <div className="flex items-end">
-            <button className="btn w-full">Bloquear</button>
-          </div>
-        </SaveForm>
-
-        <ul className="divide-y divide-neutral-100">
-          {timeOffs.map((t) => (
-            <li key={t.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-              <span>
-                {fmtDateTime(t.startAt, business.timezone)} → {fmtDateTime(t.endAt, business.timezone)} · {t.barber?.name ?? "Todo el negocio"}
-                {t.reason ? ` · ${t.reason}` : ""}
-              </span>
-              <SaveForm action={deleteTimeOff} successText="Bloqueo quitado">
-                <input type="hidden" name="id" value={t.id} />
-                <IconButton type="submit" icon="trash" label="Quitar bloqueo" variant="danger" />
-              </SaveForm>
-            </li>
-          ))}
-          {timeOffs.length === 0 && <li className="py-2 text-sm text-neutral-500">Sin bloqueos activos.</li>}
-        </ul>
+        </Collapsible>
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">Bloqueos próximos</h3>
+          <BlockList
+            cards={cards}
+            barbers={barbers.map((b) => ({ id: b.id, name: b.name }))}
+            tz={business.timezone}
+            today={today}
+          />
+        </div>
       </section>
     </div>
   );
